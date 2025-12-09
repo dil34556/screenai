@@ -18,9 +18,6 @@ INSTALLED_APPS = [
     "rest_framework",
     "corsheaders",
     "accounts",
-    "jobs",
-    "applicants",
-    "activity",
 
     "django.contrib.admin",
     "django.contrib.auth",
