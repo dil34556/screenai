@@ -1,1 +1,44 @@
-.venv/
+# ==============================
+# DJANGO BACKEND
+# ==============================
+
+# Ignore SQLite database
+backend/db.sqlite3
+
+# Ignore all Python cache folders
+backend/**/__pycache__/
+__pycache__/
+
+# Ignore Python compiled files
+*.pyc
+*.pyo
+*.pyd
+*.pye
+*.py.class
+
+# Ignore all migrations except __init__.py
+backend/**/migrations/
+!backend/**/migrations/__init__.py
+
+# ==============================
+# REACT FRONTEND
+# ==============================
+
+# Node modules
+frontend/node_modules/
+
+# Build folders
+frontend/build/
+frontend/dist/
+
+# Cache
+frontend/.cache/
+frontend/.parcel-cache/
+
+# ==============================
+# SYSTEM & EDITOR FILES
+# ==============================
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
