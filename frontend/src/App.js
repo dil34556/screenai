@@ -1,25 +1,25 @@
-import logo from './logo.svg';
-import './App.css';
+import React, { useState, useEffect } from 'react';
+import Home from './components/home';
+import CreateEmployee from './components/CreateEmployee';
+import ViewEmployees from './components/ViewEmployees';
+const API_BASE_URL = 'http://127.0.0.1:8000/api/employees';
 
-function App() {
+export default function App() {
+  const [currentView, setCurrentView] = useState('home');
+
+  const handleNavigate = (view) => {
+    setCurrentView(view);
+  };
+
+  const handleBack = () => {
+    setCurrentView('home');
+  };
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+    <>
+      {currentView === 'home' && <Home onNavigate={handleNavigate} />}
+      {currentView === 'create' && <CreateEmployee onBack={handleBack} />}
+      {currentView === 'view' && <ViewEmployees onBack={handleBack} />}
+    </>
   );
 }
-
-export default App;
