@@ -34,6 +34,19 @@ function Home({ onNavigate }) {
               <p className="text-gray-600">See all registered employees</p>
             </div>
           </button>
+          <button
+            onClick={() => onNavigate('analytics')}
+            className="bg-white rounded-lg shadow-lg p-8 hover:shadow-xl transition transform hover:scale-105"
+          >
+            <div className="text-center">
+              <div className="text-5xl mb-4">📊</div>
+              <h2 className="text-2xl font-semibold text-gray-800 mb-2">
+                Analytics
+              </h2>
+              <p className="text-gray-600">View analytics dashboard</p>
+            </div>
+          </button>
+
         </div>
       </div>
     </div>
