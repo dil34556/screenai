@@ -163,7 +163,12 @@ const DashboardPage = () => {
                                             </div>
                                         </div>
                                         <div className="flex flex-col items-end">
-                                            <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${app.status === 'NEW' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800'}`}>
+                                            <span className={`px-2 inline-flex text-xs leading-5 font-bold rounded-full 
+                                                ${app.status === 'NEW' ? 'bg-blue-100 text-blue-800' :
+                                                    app.status === 'SCREENED' ? 'bg-indigo-100 text-indigo-800' :
+                                                        app.status === 'INTERVIEW' ? 'bg-purple-100 text-purple-800' :
+                                                            app.status === 'OFFER' ? 'bg-green-100 text-green-800' :
+                                                                'bg-red-100 text-red-800'}`}>
                                                 {app.status}
                                             </span>
                                             <p className="mt-1 text-xs text-gray-400">{new Date(app.applied_at).toLocaleDateString()}</p>
