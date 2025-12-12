@@ -259,9 +259,9 @@ const JobDetailsPage = () => {
                                 <th className="px-6 py-4">Phone</th>
                                 <th className="px-6 py-4">Platform</th>
                                 <th className="px-6 py-4">Applied</th>
-                                {/* Status is handled by top filter, but we could add here too if needed */}
                                 <th className="px-6 py-4">Status</th>
-                                <th className="px-6 py-4">Exp / CTC</th>
+                                <th className="px-6 py-4">Experience</th>
+                                <th className="px-6 py-4">CTC (Cur / Exp)</th>
 
                                 {/* Dynamic Question Headers */}
                                 {job.screening_questions && job.screening_questions.map((q, i) => (
@@ -302,33 +302,37 @@ const JobDetailsPage = () => {
                                         <div className="text-sm text-gray-600">{new Date(app.applied_at).toLocaleDateString()}</div>
                                     </td>
                                     <td className="px-6 py-4">
-                                        <select
-                                            value={app.status}
-                                            onChange={(e) => handleStatusUpdate(app.id, e.target.value)}
-                                            className="px-2 py-1 text-xs font-semibold rounded-full border-gray-200 bg-gray-50 cursor-pointer focus:ring-2 focus:ring-indigo-100 focus:border-indigo-300"
-                                            style={{
-                                                color: app.status === 'NEW' ? '#1d4ed8' :
-                                                    app.status === 'REJECTED' ? '#b91c1c' :
-                                                        app.status === 'OFFER' ? '#15803d' : '#374151',
-                                                borderColor: 'transparent'
-                                            }}
-                                        >
-                                            <option value="NEW">New</option>
-                                            <option value="SCREENED">Screened</option>
-                                            <option value="INTERVIEW">Interview</option>
-                                            <option value="OFFER">Offer</option>
-                                            <option value="REJECTED">Rejected</option>
-                                        </select>
+                                        <div className="relative">
+                                            <select
+                                                value={app.status}
+                                                onChange={(e) => handleStatusUpdate(app.id, e.target.value)}
+                                                className={`appearance-none pl-3 pr-8 py-1 text-xs font-bold rounded-full border-0 cursor-pointer focus:ring-2 focus:ring-offset-1 transition shadow-sm ${app.status === 'NEW' ? 'bg-blue-100 text-blue-700' :
+                                                    app.status === 'SCREENED' ? 'bg-indigo-100 text-indigo-700' :
+                                                        app.status === 'INTERVIEW' ? 'bg-purple-100 text-purple-700' :
+                                                            app.status === 'OFFER' ? 'bg-green-100 text-green-700' :
+                                                                'bg-red-100 text-red-700'
+                                                    }`}
+                                            >
+                                                <option value="NEW">New</option>
+                                                <option value="SCREENED">Screened</option>
+                                                <option value="INTERVIEW">Interview</option>
+                                                <option value="OFFER">Offer</option>
+                                                <option value="REJECTED">Rejected</option>
+                                            </select>
+                                            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500">
+                                                <ChevronDown size={12} />
+                                            </div>
+                                        </div>
                                     </td>
                                     <td className="px-6 py-4">
-                                        <div className="text-sm text-gray-700 font-medium">
+                                        <div className="text-sm text-gray-900 font-medium">
                                             {app.experience_years ? `${app.experience_years} Yrs` : '-'}
                                         </div>
-                                        <div className="text-xs text-gray-500 mt-1">
-                                            {app.current_ctc ? `Cur: ${app.current_ctc} ` : ''}
-                                        </div>
-                                        <div className="text-xs text-gray-500">
-                                            {app.expected_ctc ? `Exp: ${app.expected_ctc} ` : ''}
+                                    </td>
+                                    <td className="px-6 py-4">
+                                        <div className="text-xs text-gray-600">
+                                            <div>{app.current_ctc ? `${app.current_ctc} L` : '-'} / </div>
+                                            <div className="font-semibold">{app.expected_ctc ? `${app.expected_ctc} L` : '-'}</div>
                                         </div>
                                     </td>
 
