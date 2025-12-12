@@ -58,21 +58,32 @@ const DashboardPage = () => {
                             <span>⚡ Action Center</span>
                         </h3>
                         <div className="space-y-4">
-                            <Link to="/admin/applications?status=NEW" className="flex justify-between items-center p-3 bg-indigo-50 rounded-md hover:bg-indigo-100 transition cursor-pointer">
+                            <Link to="/admin/applications?status=NEW" className="flex justify-between items-center p-3 bg-blue-50 rounded-md hover:bg-blue-100 transition cursor-pointer">
                                 <div>
                                     <p className="text-sm font-medium text-gray-900">Pending Reviews</p>
                                     <p className="text-xs text-gray-500">New applications to screen</p>
                                 </div>
-                                <span className="text-2xl font-bold text-indigo-600">
+                                <span className="text-2xl font-bold text-blue-600">
                                     {stats.status_breakdown.find(s => s.status === 'NEW')?.count || 0}
                                 </span>
                             </Link>
-                            <Link to="/admin/applications?status=INTERVIEW" className="flex justify-between items-center p-3 bg-green-50 rounded-md hover:bg-green-100 transition cursor-pointer">
+
+                            <Link to="/admin/applications?status=SCREENED" className="flex justify-between items-center p-3 bg-indigo-50 rounded-md hover:bg-indigo-100 transition cursor-pointer">
+                                <div>
+                                    <p className="text-sm font-medium text-gray-900">Screened Candidates</p>
+                                    <p className="text-xs text-gray-500">Ready for interview scheduling</p>
+                                </div>
+                                <span className="text-2xl font-bold text-indigo-600">
+                                    {stats.status_breakdown.find(s => s.status === 'SCREENED')?.count || 0}
+                                </span>
+                            </Link>
+
+                            <Link to="/admin/applications?status=INTERVIEW" className="flex justify-between items-center p-3 bg-purple-50 rounded-md hover:bg-purple-100 transition cursor-pointer">
                                 <div>
                                     <p className="text-sm font-medium text-gray-900">Interviews</p>
                                     <p className="text-xs text-gray-500">Active interview rounds</p>
                                 </div>
-                                <span className="text-2xl font-bold text-green-600">
+                                <span className="text-2xl font-bold text-purple-600">
                                     {stats.status_breakdown.find(s => s.status === 'INTERVIEW')?.count || 0}
                                 </span>
                             </Link>
