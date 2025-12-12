@@ -181,7 +181,7 @@ const JobDetailsPage = () => {
                         <input
                             type="text"
                             placeholder="Search candidates by name or email..."
-                            className="w-full pl-10 pr-4 py-2 bg-gray-50 border-transparent focus:bg-white focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100 rounded-lg transition-all outline-none text-sm placeholder-gray-400"
+                            className="input-premium pl-10"
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                         />
@@ -191,7 +191,7 @@ const JobDetailsPage = () => {
                     <div className="flex flex-wrap gap-3 w-full md:w-auto items-center">
                         <div className="relative">
                             <select
-                                className="appearance-none pl-4 pr-10 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-700 focus:outline-none focus:border-indigo-300 cursor-pointer hover:bg-white transition-colors"
+                                className="input-premium appearance-none cursor-pointer"
                                 value={filterStatus}
                                 onChange={(e) => setFilterStatus(e.target.value)}
                             >
@@ -207,7 +207,7 @@ const JobDetailsPage = () => {
 
                         <div className="relative">
                             <select
-                                className="appearance-none pl-4 pr-10 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-700 focus:outline-none focus:border-indigo-300 cursor-pointer hover:bg-white transition-colors"
+                                className="input-premium appearance-none cursor-pointer"
                                 value={filterPlatform}
                                 onChange={(e) => setFilterPlatform(e.target.value)}
                             >
@@ -239,7 +239,7 @@ const JobDetailsPage = () => {
                                 <input
                                     type="text"
                                     placeholder={`Filter by ${q.question.substring(0, 10)}...`}
-                                    className="w-full text-sm p-2 border border-gray-200 rounded-md focus:ring-1 focus:ring-indigo-500 outline-none"
+                                    className="input-premium py-2"
                                     value={questionFilters[q.question] || ''}
                                     onChange={(e) => setQuestionFilters(prev => ({ ...prev, [q.question]: e.target.value }))}
                                 />
@@ -458,7 +458,7 @@ const JobDetailsPage = () => {
                         <div className="p-6">
                             <p className="text-sm text-gray-500 mb-4">Add or update the note for this candidate. Only one note is stored.</p>
                             <textarea
-                                className="w-full border rounded-lg p-3 text-sm focus:ring-2 focus:ring-indigo-100 focus:border-indigo-300 outline-none"
+                                className="input-premium min-h-[120px]"
                                 rows="5"
                                 placeholder="Write a note..."
                                 value={newComment}

@@ -118,7 +118,7 @@ const ApplyPage = () => {
                                 value={formData.name || ''}
                                 onChange={handleChange}
                                 placeholder="Enter your full name"
-                                className="block w-full border-b border-gray-300 py-2 text-gray-900 focus:border-green-600 focus:outline-none transition-colors placeholder-gray-400"
+                                className="input-premium"
                             />
                         </div>
                         <div>
@@ -130,7 +130,7 @@ const ApplyPage = () => {
                                 value={formData.email || ''}
                                 onChange={handleChange}
                                 placeholder="Enter your email address"
-                                className="block w-full border-b border-gray-300 py-2 text-gray-900 focus:border-green-600 focus:outline-none transition-colors placeholder-gray-400"
+                                className="input-premium"
                             />
                         </div>
                         <div>
@@ -141,7 +141,7 @@ const ApplyPage = () => {
                                 value={formData.phone || ''}
                                 onChange={handleChange}
                                 placeholder="e.g. 9876543210"
-                                className="block w-full border-b border-gray-300 py-2 text-gray-900 focus:border-green-600 focus:outline-none transition-colors placeholder-gray-400"
+                                className="input-premium"
                             />
                         </div>
 
@@ -262,7 +262,7 @@ const ApplyPage = () => {
                                                     <input
                                                         type="text"
                                                         required={isRequired}
-                                                        className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 h-10 px-3 border"
+                                                        className="input-premium"
                                                         onChange={(e) => handleAnswerChange(q.question, e.target.value)}
                                                     />
                                                 )}
@@ -271,7 +271,7 @@ const ApplyPage = () => {
                                                     <textarea
                                                         rows={4}
                                                         required={isRequired}
-                                                        className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2 border"
+                                                        className="input-premium min-h-[100px]"
                                                         onChange={(e) => handleAnswerChange(q.question, e.target.value)}
                                                     />
                                                 )}
@@ -279,7 +279,7 @@ const ApplyPage = () => {
                                                 {type === 'dropdown' && (
                                                     <select
                                                         required={isRequired}
-                                                        className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 h-10 px-3 border"
+                                                        className="input-premium appearance-none"
                                                         onChange={(e) => handleAnswerChange(q.question, e.target.value)}
                                                         defaultValue=""
                                                     >

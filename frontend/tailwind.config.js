@@ -10,6 +10,7 @@ module.exports = {
         extend: {
             fontFamily: {
                 sans: ['Inter', ...defaultTheme.fontFamily.sans],
+                heading: ['Outfit', ...defaultTheme.fontFamily.sans],
             },
             colors: {
                 // Rebrand 'indigo' to a premium Royal Blue
