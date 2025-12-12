@@ -9,8 +9,11 @@ const api = axios.create({
     },
 });
 
-export const getJobs = async () => {
-    const response = await api.get('/jobs/');
+export const getJobs = async (params = {}) => {
+    // Convert object to query string
+    const queryString = new URLSearchParams(params).toString();
+    const url = queryString ? `/jobs/?${queryString}` : '/jobs/';
+    const response = await api.get(url);
     return response.data;
 };
 
@@ -59,6 +62,11 @@ export const getApplicationsForJob = async (jobId) => {
 
 export const createJob = async (jobData) => {
     const response = await api.post('/jobs/', jobData);
+    return response.data;
+};
+
+export const updateJob = async (id, jobData) => {
+    const response = await api.patch(`/jobs/${id}/`, jobData);
     return response.data;
 };
 
