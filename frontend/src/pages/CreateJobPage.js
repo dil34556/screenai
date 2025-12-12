@@ -219,7 +219,7 @@ const CreateJobPage = () => {
                                 <p className="mt-1 text-sm text-gray-500">Describe the role, responsibilities, and requirements.</p>
                             </div>
                             <div className="mt-5 md:mt-0 md:col-span-2">
-                                <textarea name="description" rows={8} required onChange={handleChange} className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border border-gray-300 rounded-md" placeholder="Enter full job description..." />
+                                <textarea name="description" rows={8} required onChange={handleChange} className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border border-gray-300 rounded-md p-3" placeholder="Enter full job description..." />
                             </div>
                         </div>
                     </div>
