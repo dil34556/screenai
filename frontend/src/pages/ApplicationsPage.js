@@ -1,24 +1,41 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
-import { getApplications } from '../services/api';
+import { getApplications, getJobDetail } from '../services/api';
 
 const ApplicationsPage = () => {
     const [searchParams, setSearchParams] = useSearchParams();
     const [applications, setApplications] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [jobDetails, setJobDetails] = useState(null);
 
     // Filter State (Sync with URL)
     const currentStatus = searchParams.get('status') || '';
+    const currentJobId = searchParams.get('job') || '';
 
     useEffect(() => {
         loadApplications();
-    }, [currentStatus]);
+        if (currentJobId) {
+            loadJobDetails(currentJobId);
+        } else {
+            setJobDetails(null);
+        }
+    }, [currentStatus, currentJobId]);
+
+    const loadJobDetails = async (id) => {
+        try {
+            const data = await getJobDetail(id);
+            setJobDetails(data);
+        } catch (error) {
+            console.error("Failed to load job details", error);
+        }
+    };
 
     const loadApplications = async () => {
         setLoading(true);
         try {
             const params = {};
             if (currentStatus) params.status = currentStatus;
+            if (currentJobId) params.job = currentJobId;
 
             const data = await getApplications(params);
             setApplications(data);
@@ -31,10 +48,15 @@ const ApplicationsPage = () => {
 
     const handleStatusChange = (e) => {
         const val = e.target.value;
+        const newParams = { status: val };
+        if (currentJobId) newParams.job = currentJobId; // Preserve job filter
+
         if (val) {
-            setSearchParams({ status: val });
+            setSearchParams(newParams);
         } else {
-            setSearchParams({});
+            const cleanParams = {};
+            if (currentJobId) cleanParams.job = currentJobId;
+            setSearchParams(cleanParams);
         }
     };
 
@@ -55,8 +77,14 @@ const ApplicationsPage = () => {
 
                 <div className="sm:flex sm:items-center justify-between mb-8">
                     <div>
-                        <h1 className="text-3xl font-bold text-gray-900">All Applications</h1>
-                        <p className="mt-2 text-sm text-gray-700">Manage candidates across all job postings.</p>
+                        <h1 className="text-3xl font-bold text-gray-900">
+                            {jobDetails ? `Candidates for ${jobDetails.title}` : 'All Applications'}
+                        </h1>
+                        <p className="mt-2 text-sm text-gray-700">
+                            {jobDetails
+                                ? `Viewing applicants for ${jobDetails.title} (${jobDetails.location})`
+                                : 'Manage candidates across all job postings.'}
+                        </p>
                     </div>
                     <div className="mt-4 sm:mt-0 flex gap-4">
                         <select
