@@ -5,12 +5,18 @@ from appscreenai import views
 urlpatterns = [
     path('admin/', admin.site.urls),
 
-    # API Routes
-    path('api/employees/create/', views.create_employee_api), # Legacy
-    path('api/employees/', views.view_employees_api),         # Legacy
-    path('api/auth/login/', views.login_employee_api),        # Auth
+    # API Routes (Moved to v1)
+    path('api/v1/employees/create/', views.create_employee_api),
+    path('api/v1/employees/', views.view_employees_api),
+    path('api/v1/auth/login/', views.login_employee_api),
 
     # ScreenAI V2 Routes
     path('api/v1/', include('jobs.urls')),
     path('api/v1/', include('candidates.urls')),
 ]
+
+from django.conf import settings
+from django.conf.urls.static import static
+
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

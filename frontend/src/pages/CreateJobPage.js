@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import { createJob } from '../services/api';
 
 const CreateJobPage = () => {
     const navigate = useNavigate();
@@ -8,6 +8,11 @@ const CreateJobPage = () => {
         title: '',
         department: '',
         location: '',
+        salary_range: '',
+        offered_ctc: 12, // Default slider value
+        expected_ctc_limit: 20, // Default slider value
+        min_experience: 1, // Default slider value
+        notice_period_days: 30, // Default slider value
         job_type: 'ONSITE',
         required_skills: '',
         description: ''
@@ -18,8 +23,10 @@ const CreateJobPage = () => {
     // Detailed Question State
     const [currentQ, setCurrentQ] = useState({
         question: '',
-        type: 'short_text', // short_text, long_text, dropdown, multiple_choice
+        type: 'long_text', // Changed default to long_text
         options: [], // For dropdown/multiple_choice
+        min: 0, // For numerical
+        max: 10, // For numerical
         required: false
     });
 
@@ -49,9 +56,15 @@ const CreateJobPage = () => {
             return;
         }
 
+        // Validation: Min/Max for numerical
+        if (currentQ.type === 'numerical' && (Number(currentQ.min) >= Number(currentQ.max))) {
+            alert('Min value must be less than Max value.');
+            return;
+        }
+
         setQuestions([...questions, { ...currentQ, id: Date.now() }]);
         // Reset
-        setCurrentQ({ question: '', type: 'short_text', options: [], required: false });
+        setCurrentQ({ question: '', type: 'long_text', options: [], min: 0, max: 10, required: false });
         setNewOption('');
     };
 
@@ -68,7 +81,7 @@ const CreateJobPage = () => {
                 screening_questions: questions
             };
 
-            await axios.post('http://127.0.0.1:8000/api/v1/jobs/', payload);
+            await createJob(payload);
             alert('Job Posted Successfully!');
             navigate('/admin/jobs');
         } catch (error) {
@@ -114,6 +127,79 @@ const CreateJobPage = () => {
                                             <option value="REMOTE">Remote</option>
                                             <option value="HYBRID">Hybrid</option>
                                         </select>
+                                    </div>
+                                    <div className="col-span-2 space-y-5 pt-2">
+                                        {/* Slider 1: Offered CTC */}
+                                        <div>
+                                            <div className="flex justify-between items-center mb-1">
+                                                <label className="text-sm font-medium text-gray-700">Salary Range (Offered CTC)</label>
+                                                <span className="text-sm font-bold text-gray-900">{formData.offered_ctc} Lakhs</span>
+                                            </div>
+                                            <input
+                                                type="range"
+                                                min="0"
+                                                max="50"
+                                                step="0.5"
+                                                name="offered_ctc"
+                                                value={formData.offered_ctc}
+                                                onChange={handleChange}
+                                                className="w-full h-2 bg-indigo-100 rounded-lg appearance-none cursor-pointer accent-green-600"
+                                            />
+                                        </div>
+
+                                        {/* Slider 2: Target Expected CTC */}
+                                        <div>
+                                            <div className="flex justify-between items-center mb-1">
+                                                <label className="text-sm font-medium text-gray-700">Expected CTC Limit</label>
+                                                <span className="text-sm font-bold text-gray-900">{formData.expected_ctc_limit} Lakhs</span>
+                                            </div>
+                                            <input
+                                                type="range"
+                                                min="0"
+                                                max="100"
+                                                step="0.5"
+                                                name="expected_ctc_limit"
+                                                value={formData.expected_ctc_limit}
+                                                onChange={handleChange}
+                                                className="w-full h-2 bg-indigo-100 rounded-lg appearance-none cursor-pointer accent-green-600"
+                                            />
+                                        </div>
+
+                                        {/* Slider 3: Notice Period */}
+                                        <div>
+                                            <div className="flex justify-between items-center mb-1">
+                                                <label className="text-sm font-medium text-gray-700">Max Notice Period</label>
+                                                <span className="text-sm font-bold text-gray-900">{formData.notice_period_days} days</span>
+                                            </div>
+                                            <input
+                                                type="range"
+                                                min="0"
+                                                max="90"
+                                                step="15"
+                                                name="notice_period_days"
+                                                value={formData.notice_period_days}
+                                                onChange={handleChange}
+                                                className="w-full h-2 bg-indigo-100 rounded-lg appearance-none cursor-pointer accent-green-600"
+                                            />
+                                        </div>
+
+                                        {/* Slider 4: Experience */}
+                                        <div>
+                                            <div className="flex justify-between items-center mb-1">
+                                                <label className="text-sm font-medium text-gray-700">Min Experience Required</label>
+                                                <span className="text-sm font-bold text-gray-900">{formData.min_experience} Years</span>
+                                            </div>
+                                            <input
+                                                type="range"
+                                                min="0"
+                                                max="20"
+                                                step="1"
+                                                name="min_experience"
+                                                value={formData.min_experience}
+                                                onChange={handleChange}
+                                                className="w-full h-2 bg-indigo-100 rounded-lg appearance-none cursor-pointer accent-green-600"
+                                            />
+                                        </div>
                                     </div>
                                 </div>
 
@@ -161,6 +247,10 @@ const CreateJobPage = () => {
                                                             {q.options.map((opt, i) => <li key={i}>{opt}</li>)}
                                                         </ul>
                                                     )}
+
+                                                    {q.type === 'numerical' && (
+                                                        <p className="text-xs text-gray-500 italic mt-1">Range: {q.min} - {q.max}</p>
+                                                    )}
                                                 </div>
                                                 <button type="button" onClick={() => handleRemoveQuestion(idx)} className="absolute top-4 right-4 text-red-600 hover:text-red-800 text-sm font-medium">
                                                     Remove
@@ -198,8 +288,8 @@ const CreateJobPage = () => {
                                                     onChange={(e) => setCurrentQ({ ...currentQ, type: e.target.value, options: [] })}
                                                     className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                                                 >
-                                                    <option value="short_text">Short Text</option>
                                                     <option value="long_text">Long Text</option>
+                                                    <option value="numerical">Numerical (Slider)</option>
                                                     <option value="dropdown">Dropdown</option>
                                                     <option value="multiple_choice">Multiple Choice</option>
                                                 </select>
@@ -216,6 +306,30 @@ const CreateJobPage = () => {
                                                 </label>
                                             </div>
                                         </div>
+
+                                        {/* Min/Max for Numerical */}
+                                        {currentQ.type === 'numerical' && (
+                                            <div className="flex gap-4">
+                                                <div className="w-1/2">
+                                                    <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Min Value</label>
+                                                    <input
+                                                        type="number"
+                                                        value={currentQ.min}
+                                                        onChange={(e) => setCurrentQ({ ...currentQ, min: e.target.value })}
+                                                        className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                                    />
+                                                </div>
+                                                <div className="w-1/2">
+                                                    <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Max Value</label>
+                                                    <input
+                                                        type="number"
+                                                        value={currentQ.max}
+                                                        onChange={(e) => setCurrentQ({ ...currentQ, max: e.target.value })}
+                                                        className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                                    />
+                                                </div>
+                                            </div>
+                                        )}
 
                                         {/* Options Builder for Choice Types */}
                                         {['dropdown', 'multiple_choice'].includes(currentQ.type) && (

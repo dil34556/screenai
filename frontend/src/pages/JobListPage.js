@@ -44,7 +44,9 @@ const JobListPage = () => {
                             <div className="px-4 py-4 sm:px-6 hover:bg-gray-50 flex items-center justify-between">
                                 <div>
                                     <div className="flex items-center">
-                                        <p className="text-sm font-medium text-indigo-600 truncate">{job.title}</p>
+                                        <Link to={`/admin/jobs/${job.id}`} className="text-sm font-medium text-indigo-600 truncate hover:text-indigo-800 hover:underline">
+                                            {job.title}
+                                        </Link>
                                         <span className="ml-2 px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
                                             {job.job_type}
                                         </span>

@@ -60,6 +60,8 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
+X_FRAME_OPTIONS = 'ALLOWALL'
+
 
 ROOT_URLCONF = 'screenai.urls'
 
@@ -115,7 +117,13 @@ USE_TZ = True
 # -------------------------------------------------------------------
 # Static files
 # -------------------------------------------------------------------
+# -------------------------------------------------------------------
+# Static files
+# -------------------------------------------------------------------
 STATIC_URL = 'static/'
+
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
 
 
 # -------------------------------------------------------------------

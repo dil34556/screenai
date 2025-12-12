@@ -1,6 +1,12 @@
 from rest_framework import serializers
-from .models import Candidate, Application
+from .models import Candidate, Application, ApplicationComment
 import json
+
+class ApplicationCommentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ApplicationComment
+        fields = '__all__'
+        read_only_fields = ['application']
 
 class CandidateSerializer(serializers.ModelSerializer):
     class Meta:
@@ -10,11 +16,13 @@ class CandidateSerializer(serializers.ModelSerializer):
 class ApplicationSerializer(serializers.ModelSerializer):
     candidate_details = CandidateSerializer(source='candidate', read_only=True)
     job_title = serializers.CharField(source='job.title', read_only=True)
+    comments_count = serializers.IntegerField(source='comments.count', read_only=True)
+    comments = ApplicationCommentSerializer(many=True, read_only=True)
 
     class Meta:
         model = Application
         fields = '__all__'
-        read_only_fields = ['ai_match_score', 'ai_summary', 'ai_missing_skills', 'ai_red_flags']
+        read_only_fields = []
 
     def to_internal_value(self, data):
         # Handle multipart/form-data where JSON fields might come as strings

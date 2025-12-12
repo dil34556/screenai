@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { getDashboardStats, getApplications } from '../services/api';
 
 const DashboardPage = () => {
@@ -29,12 +30,7 @@ const DashboardPage = () => {
         loadData();
     }, []);
 
-    const getScoreColor = (score) => {
-        if (!score) return 'bg-gray-100 text-gray-800';
-        if (score >= 80) return 'bg-green-100 text-green-800';
-        if (score >= 50) return 'bg-yellow-100 text-yellow-800';
-        return 'bg-red-100 text-red-800';
-    };
+
 
     if (loading) return <div className="flex justify-center items-center h-screen text-indigo-600">Loading Dashboard...</div>;
 
@@ -53,20 +49,76 @@ const DashboardPage = () => {
 
             <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
                 {/* Stats Cards */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                    <div className="bg-white overflow-hidden shadow rounded-lg p-5">
-                        <dt className="text-sm font-medium text-gray-500 truncate">Total Applications</dt>
-                        <dd className="mt-1 text-3xl font-semibold text-gray-900">{stats.total_candidates}</dd>
+                {/* Top Statistics Section */}
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+
+                    {/* 1. Action Center */}
+                    <div className="bg-white overflow-hidden shadow rounded-lg p-5 border-l-4 border-indigo-500">
+                        <h3 className="text-lg font-medium text-gray-900 mb-4 flex items-center">
+                            <span>⚡ Action Center</span>
+                        </h3>
+                        <div className="space-y-4">
+                            <Link to="/admin/applications?status=NEW" className="flex justify-between items-center p-3 bg-indigo-50 rounded-md hover:bg-indigo-100 transition cursor-pointer">
+                                <div>
+                                    <p className="text-sm font-medium text-gray-900">Pending Reviews</p>
+                                    <p className="text-xs text-gray-500">New applications to screen</p>
+                                </div>
+                                <span className="text-2xl font-bold text-indigo-600">
+                                    {stats.status_breakdown.find(s => s.status === 'NEW')?.count || 0}
+                                </span>
+                            </Link>
+                            <Link to="/admin/applications?status=INTERVIEW" className="flex justify-between items-center p-3 bg-green-50 rounded-md hover:bg-green-100 transition cursor-pointer">
+                                <div>
+                                    <p className="text-sm font-medium text-gray-900">Interviews</p>
+                                    <p className="text-xs text-gray-500">Active interview rounds</p>
+                                </div>
+                                <span className="text-2xl font-bold text-green-600">
+                                    {stats.status_breakdown.find(s => s.status === 'INTERVIEW')?.count || 0}
+                                </span>
+                            </Link>
+                        </div>
                     </div>
-                    <div className="bg-white overflow-hidden shadow rounded-lg p-5">
-                        <dt className="text-sm font-medium text-gray-500 truncate">Applied Today</dt>
-                        <dd className="mt-1 text-3xl font-semibold text-indigo-600">{stats.today_candidates}</dd>
+
+                    {/* 2. Hiring Funnel */}
+                    <div className="bg-white overflow-hidden shadow rounded-lg p-5 lg:col-span-2">
+                        <h3 className="text-lg font-medium text-gray-900 mb-4">Hiring Funnel</h3>
+                        <div className="relative flex items-center justify-between pt-6 pb-2">
+                            {/* Pipeline Line */}
+                            <div className="absolute top-1/2 left-0 w-full h-1 bg-gray-200 -z-0"></div>
+
+                            {['NEW', 'SCREENED', 'INTERVIEW', 'OFFER'].map((stage, index) => {
+                                const count = stats.status_breakdown.find(s => s.status === stage)?.count || 0;
+                                const labels = { 'NEW': 'Applied', 'SCREENED': 'Screened', 'INTERVIEW': 'Interview', 'OFFER': 'Offer' };
+                                const colors = { 'NEW': 'bg-blue-500', 'SCREENED': 'bg-indigo-500', 'INTERVIEW': 'bg-purple-500', 'OFFER': 'bg-green-500' };
+
+                                return (
+                                    <div key={stage} className="relative z-10 flex flex-col items-center bg-white px-2">
+                                        <div className={`w-12 h-12 rounded-full flex items-center justify-center text-white font-bold shadow-md ${colors[stage]} mb-2`}>
+                                            {count}
+                                        </div>
+                                        <span className="text-sm font-medium text-gray-700">{labels[stage]}</span>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                        <div className="mt-6 grid grid-cols-4 gap-4 text-center text-xs text-gray-400">
+                            <div>Total Pool</div>
+                            <div>Qualified</div>
+                            <div>In-Progress</div>
+                            <div>Hired</div>
+                        </div>
                     </div>
-                    <div className="bg-white overflow-hidden shadow rounded-lg p-5">
-                        <dt className="text-sm font-medium text-gray-500 truncate">Screened Candidates</dt>
-                        <dd className="mt-1 text-3xl font-semibold text-green-600">
-                            {stats.status_breakdown.find(s => s.status === 'SCREENED')?.count || 0}
-                        </dd>
+                </div>
+
+                {/* Legacy Stats (Optional / Secondary) */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+                    <div className="bg-white p-4 shadow rounded-lg text-center">
+                        <dt className="text-xs text-gray-500 uppercase">Total Candidates</dt>
+                        <dd className="text-xl font-semibold text-gray-900">{stats.total_candidates}</dd>
+                    </div>
+                    <div className="bg-white p-4 shadow rounded-lg text-center">
+                        <dt className="text-xs text-gray-500 uppercase">Applied Today</dt>
+                        <dd className="text-xl font-semibold text-indigo-600">{stats.today_candidates}</dd>
                     </div>
                 </div>
 
@@ -95,24 +147,12 @@ const DashboardPage = () => {
                                             </div>
                                         </div>
                                         <div className="flex flex-col items-end">
-                                            <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getScoreColor(app.ai_match_score)}`}>
-                                                Match: {app.ai_match_score ? `${app.ai_match_score}%` : 'Pending'}
+                                            <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${app.status === 'NEW' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800'}`}>
+                                                {app.status}
                                             </span>
                                             <p className="mt-1 text-xs text-gray-400">{new Date(app.applied_at).toLocaleDateString()}</p>
                                         </div>
                                     </div>
-                                    {app.ai_summary && (
-                                        <div className="mt-2 pl-14">
-                                            <p className="text-sm text-gray-600 italic">"{app.ai_summary}"</p>
-                                            {app.ai_missing_skills && app.ai_missing_skills.length > 0 && (
-                                                <div className="mt-1 flex flex-wrap gap-1">
-                                                    {app.ai_missing_skills.map((skill, idx) => (
-                                                        <span key={idx} className="bg-red-50 text-red-600 text-xs px-1.5 py-0.5 rounded border border-red-100">{skill}</span>
-                                                    ))}
-                                                </div>
-                                            )}
-                                        </div>
-                                    )}
                                 </div>
                             </li>
                         ))}

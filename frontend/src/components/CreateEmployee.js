@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-const API_BASE_URL = 'http://127.0.0.1:8000/api/employees';
+import { createEmployee } from '../services/api';
 
 function CreateEmployee({ onBack }) {
   const [email, setEmail] = useState('');
@@ -20,23 +20,12 @@ function CreateEmployee({ onBack }) {
     setSuccess('');
 
     try {
-      const response = await fetch(API_BASE_URL + '/create/', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        setSuccess('Employee created successfully');
-        setEmail('');
-        setPassword('');
-      } else {
-        setError(data.error || 'Failed to create employee');
-      }
+      await createEmployee({ email, password });
+      setSuccess('Employee created successfully');
+      setEmail('');
+      setPassword('');
     } catch (err) {
-      setError('Network error. Please try again.');
+      setError(err.response?.data?.error || 'Failed to create employee');
     } finally {
       setLoading(false);
     }

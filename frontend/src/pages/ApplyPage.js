@@ -10,12 +10,16 @@ const ApplyPage = () => {
         name: '',
         email: '',
         phone: '',
-        linkedin_url: '',
+        experience_years: '',
+        current_ctc: '',
+        expected_ctc: '',
         resume: null,
     });
     const [loading, setLoading] = useState(false);
     const [success, setSuccess] = useState(false);
     const [error, setError] = useState(null);
+
+    const [answers, setAnswers] = useState({});
 
     useEffect(() => {
         const fetchJob = async () => {
@@ -37,12 +41,6 @@ const ApplyPage = () => {
         }));
     };
 
-    const [answers, setAnswers] = useState({});
-
-    // ... useEffect ...
-
-    // ... handleChange ...
-
     const handleAnswerChange = (question, value) => {
         setAnswers(prev => ({ ...prev, [question]: value }));
     };
@@ -57,7 +55,11 @@ const ApplyPage = () => {
         data.append('name', formData.name);
         data.append('email', formData.email);
         data.append('phone', formData.phone);
-        data.append('linkedin_url', formData.linkedin_url);
+        if (formData.experience_years) {
+            data.append('experience_years', formData.experience_years);
+        }
+        if (formData.current_ctc) data.append('current_ctc', formData.current_ctc);
+        if (formData.expected_ctc) data.append('expected_ctc', formData.expected_ctc);
         data.append('resume', formData.resume);
 
         // Convert answers object to list for backend
@@ -105,25 +107,113 @@ const ApplyPage = () => {
                 </div>
 
                 <form onSubmit={handleSubmit} className="space-y-6">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* Material Style Inputs */}
+                    <div className="space-y-6">
                         <div>
-                            <label className="block text-sm font-medium text-gray-700">Full Name</label>
-                            <input type="text" name="name" required onChange={handleChange} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 h-10 px-3 border" />
+                            <label className="block text-xs text-gray-500 uppercase font-semibold tracking-wider">Name</label>
+                            <input
+                                type="text"
+                                name="name"
+                                required
+                                value={formData.name || ''}
+                                onChange={handleChange}
+                                placeholder="Enter your full name"
+                                className="block w-full border-b border-gray-300 py-2 text-gray-900 focus:border-green-600 focus:outline-none transition-colors placeholder-gray-400"
+                            />
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-gray-700">Email</label>
-                            <input type="email" name="email" required onChange={handleChange} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 h-10 px-3 border" />
+                            <label className="block text-xs text-gray-500 uppercase font-semibold tracking-wider">Email</label>
+                            <input
+                                type="email"
+                                name="email"
+                                required
+                                value={formData.email || ''}
+                                onChange={handleChange}
+                                placeholder="Enter your email address"
+                                className="block w-full border-b border-gray-300 py-2 text-gray-900 focus:border-green-600 focus:outline-none transition-colors placeholder-gray-400"
+                            />
                         </div>
-                    </div>
+                        <div>
+                            <label className="block text-xs text-gray-500 uppercase font-semibold tracking-wider">Phone Number</label>
+                            <input
+                                type="tel"
+                                name="phone"
+                                value={formData.phone || ''}
+                                onChange={handleChange}
+                                placeholder="e.g. 9876543210"
+                                className="block w-full border-b border-gray-300 py-2 text-gray-900 focus:border-green-600 focus:outline-none transition-colors placeholder-gray-400"
+                            />
+                        </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700">Phone</label>
-                            <input type="tel" name="phone" onChange={handleChange} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 h-10 px-3 border" />
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700">LinkedIn URL</label>
-                            <input type="url" name="linkedin_url" onChange={handleChange} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 h-10 px-3 border" />
+                        {/* Sliders Section */}
+                        <div className="space-y-8 pt-4">
+                            {/* Current CTC */}
+                            <div>
+                                <div className="flex justify-between items-end mb-2">
+                                    <label className="text-sm font-medium text-gray-700">Current CTC: <span className="font-bold text-gray-900">{formData.current_ctc} Lakhs</span></label>
+                                </div>
+                                <input
+                                    type="range"
+                                    min="0"
+                                    max="50"
+                                    step="0.5"
+                                    name="current_ctc"
+                                    value={formData.current_ctc || 0}
+                                    onChange={handleChange}
+                                    className="w-full h-1 bg-indigo-100 rounded-lg appearance-none cursor-pointer accent-green-600"
+                                />
+                            </div>
+
+                            {/* Expected CTC */}
+                            <div>
+                                <div className="flex justify-between items-end mb-2">
+                                    <label className="text-sm font-medium text-gray-700">Expected CTC: <span className="font-bold text-gray-900">{formData.expected_ctc} Lakhs</span></label>
+                                </div>
+                                <input
+                                    type="range"
+                                    min="0"
+                                    max="100"
+                                    step="0.5"
+                                    name="expected_ctc"
+                                    value={formData.expected_ctc || 0}
+                                    onChange={handleChange}
+                                    className="w-full h-1 bg-indigo-100 rounded-lg appearance-none cursor-pointer accent-green-600"
+                                />
+                            </div>
+
+                            {/* Notice Period */}
+                            <div>
+                                <div className="flex justify-between items-end mb-2">
+                                    <label className="text-sm font-medium text-gray-700">Your notice period or last day of working: <span className="font-bold text-gray-900">{formData.notice_period || 30} days</span></label>
+                                </div>
+                                <input
+                                    type="range"
+                                    min="0"
+                                    max="90"
+                                    step="15"
+                                    name="notice_period"
+                                    value={formData.notice_period || 0}
+                                    onChange={handleChange}
+                                    className="w-full h-1 bg-indigo-100 rounded-lg appearance-none cursor-pointer accent-green-600"
+                                />
+                            </div>
+
+                            {/* Experience */}
+                            <div>
+                                <div className="flex justify-between items-end mb-2">
+                                    <label className="text-sm font-medium text-gray-700">Whats your total years of experience : <span className="font-bold text-gray-900">{formData.experience_years} Years</span></label>
+                                </div>
+                                <input
+                                    type="range"
+                                    min="0"
+                                    max="30"
+                                    step="1"
+                                    name="experience_years"
+                                    value={formData.experience_years || 0}
+                                    onChange={handleChange}
+                                    className="w-full h-1 bg-indigo-100 rounded-lg appearance-none cursor-pointer accent-green-600"
+                                />
+                            </div>
                         </div>
                     </div>
 
@@ -137,11 +227,11 @@ const ApplyPage = () => {
                                 <div className="flex text-sm text-gray-600">
                                     <label htmlFor="file-upload" className="relative cursor-pointer bg-white rounded-md font-medium text-indigo-600 hover:text-indigo-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-indigo-500">
                                         <span>Upload a file</span>
-                                        <input id="file-upload" name="resume" type="file" accept=".pdf" required onChange={handleChange} className="sr-only" />
+                                        <input id="file-upload" name="resume" type="file" accept=".pdf,.doc,.docx" required onChange={handleChange} className="sr-only" />
                                     </label>
                                     <p className="pl-1">or drag and drop</p>
                                 </div>
-                                <p className="text-xs text-gray-500">PDF up to 10MB</p>
+                                <p className="text-xs text-gray-500">PDF, DOC, DOCX up to 10MB</p>
                                 {formData.resume && (
                                     <p className="text-sm text-green-600 font-semibold mt-2">Selected: {formData.resume.name}</p>
                                 )}
@@ -150,103 +240,122 @@ const ApplyPage = () => {
                     </div>
 
                     {/* Screening Questions Section */}
-                    {job.screening_questions && job.screening_questions.length > 0 && (
-                        <div className="bg-gray-50 p-6 rounded-lg border border-gray-200">
-                            <h3 className="text-lg font-medium text-gray-900 mb-4">Screening Questions</h3>
-                            <div className="space-y-6">
-                                {job.screening_questions.map((q, idx) => {
-                                    // Handle Legacy format (if any) or new Format
-                                    const type = q.type || 'short_text';
-                                    const isRequired = q.required || false;
+                    {
+                        job.screening_questions && job.screening_questions.length > 0 && (
+                            <div className="bg-gray-50 p-6 rounded-lg border border-gray-200">
+                                <h3 className="text-lg font-medium text-gray-900 mb-4">Screening Questions</h3>
+                                <div className="space-y-6">
+                                    {job.screening_questions.map((q, idx) => {
+                                        // Handle Legacy format (if any) or new Format
+                                        const type = q.type || 'long_text';
+                                        const isRequired = q.required || false;
 
-                                    return (
-                                        <div key={idx}>
-                                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                                                {q.question} {isRequired && <span className="text-red-500">*</span>}
-                                            </label>
+                                        return (
+                                            <div key={idx}>
+                                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                                    {q.question} {isRequired && <span className="text-red-500">*</span>}
+                                                </label>
 
-                                            {/* RENDER INPUT BASED ON TYPE */}
-                                            {type === 'short_text' && (
-                                                <input
-                                                    type="text"
-                                                    required={isRequired}
-                                                    className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 h-10 px-3 border"
-                                                    onChange={(e) => handleAnswerChange(q.question, e.target.value)}
-                                                />
-                                            )}
+                                                {/* RENDER INPUT BASED ON TYPE */}
+                                                {/* Default text input for legacy short_text or if type missing */}
+                                                {(type === 'short_text' || type === 'text') && (
+                                                    <input
+                                                        type="text"
+                                                        required={isRequired}
+                                                        className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 h-10 px-3 border"
+                                                        onChange={(e) => handleAnswerChange(q.question, e.target.value)}
+                                                    />
+                                                )}
 
-                                            {type === 'long_text' && (
-                                                <textarea
-                                                    rows={4}
-                                                    required={isRequired}
-                                                    className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2 border"
-                                                    onChange={(e) => handleAnswerChange(q.question, e.target.value)}
-                                                />
-                                            )}
+                                                {type === 'long_text' && (
+                                                    <textarea
+                                                        rows={4}
+                                                        required={isRequired}
+                                                        className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2 border"
+                                                        onChange={(e) => handleAnswerChange(q.question, e.target.value)}
+                                                    />
+                                                )}
 
-                                            {type === 'dropdown' && (
-                                                <select
-                                                    required={isRequired}
-                                                    className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 h-10 px-3 border"
-                                                    onChange={(e) => handleAnswerChange(q.question, e.target.value)}
-                                                    defaultValue=""
-                                                >
-                                                    <option value="" disabled>Select an option</option>
-                                                    {q.options && q.options.map((opt, i) => (
-                                                        <option key={i} value={opt}>{opt}</option>
-                                                    ))}
-                                                </select>
-                                            )}
+                                                {type === 'dropdown' && (
+                                                    <select
+                                                        required={isRequired}
+                                                        className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 h-10 px-3 border"
+                                                        onChange={(e) => handleAnswerChange(q.question, e.target.value)}
+                                                        defaultValue=""
+                                                    >
+                                                        <option value="" disabled>Select an option</option>
+                                                        {q.options && q.options.map((opt, i) => (
+                                                            <option key={i} value={opt}>{opt}</option>
+                                                        ))}
+                                                    </select>
+                                                )}
 
-                                            {type === 'multiple_choice' && (
-                                                <div className="space-y-2">
-                                                    {q.options && q.options.map((opt, i) => (
-                                                        <div key={i} className="flex items-center">
-                                                            <input
-                                                                id={`q-${idx}-opt-${i}`}
-                                                                name={`q-${idx}`} // Group by question index to act as radio group
-                                                                type="radio"
-                                                                value={opt}
-                                                                required={isRequired}
-                                                                onChange={(e) => handleAnswerChange(q.question, e.target.value)}
-                                                                className="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300"
-                                                            />
-                                                            <label htmlFor={`q-${idx}-opt-${i}`} className="ml-3 block text-sm font-medium text-gray-700">
-                                                                {opt}
-                                                            </label>
+                                                {type === 'multiple_choice' && (
+                                                    <div className="space-y-2">
+                                                        {q.options && q.options.map((opt, i) => (
+                                                            <div key={i} className="flex items-center">
+                                                                <input
+                                                                    id={`q-${idx}-opt-${i}`}
+                                                                    name={`q-${idx}`} // Group by question index to act as radio group
+                                                                    type="radio"
+                                                                    value={opt}
+                                                                    required={isRequired}
+                                                                    onChange={(e) => handleAnswerChange(q.question, e.target.value)}
+                                                                    className="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300"
+                                                                />
+                                                                <label htmlFor={`q-${idx}-opt-${i}`} className="ml-3 block text-sm font-medium text-gray-700">
+                                                                    {opt}
+                                                                </label>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                )}
+
+                                                {type === 'numerical' && (
+                                                    <div className="pt-2">
+                                                        <div className="flex items-center justify-between text-xs text-gray-500 mb-2">
+                                                            <span>{q.min || 0}</span>
+                                                            <span className="font-bold text-indigo-600 text-sm">
+                                                                {answers[q.question] || (q.min || 0)}
+                                                            </span>
+                                                            <span>{q.max || 10}</span>
                                                         </div>
-                                                    ))}
-                                                </div>
-                                            )}
-
-                                            {/* Fallback for 'number' type from previous version, treated as short_text with type=number */}
-                                            {type === 'number' && (
-                                                <input
-                                                    type="number"
-                                                    required={isRequired}
-                                                    className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 h-10 px-3 border"
-                                                    onChange={(e) => handleAnswerChange(q.question, e.target.value)}
-                                                />
-                                            )}
-                                        </div>
-                                    );
-                                })}
+                                                        <input
+                                                            type="range"
+                                                            min={q.min || 0}
+                                                            max={q.max || 10}
+                                                            step="1"
+                                                            required={isRequired}
+                                                            className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-indigo-600"
+                                                            onChange={(e) => handleAnswerChange(q.question, e.target.value)}
+                                                            defaultValue={q.min || 0}
+                                                        />
+                                                    </div>
+                                                )}
+                                            </div>
+                                        );
+                                    })}
+                                </div>
                             </div>
-                        </div>
-                    )}
+                        )
+                    }
 
                     {error && <div className="text-red-500 text-sm">{error}</div>}
 
-                    <button
-                        type="submit"
-                        disabled={loading}
-                        className={`w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition duration-150 ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
-                    >
-                        {loading ? 'Submitting...' : 'Submit Application'}
-                    </button>
-                </form>
-            </div>
-        </div>
+                    <div className="pt-4">
+                        <button
+                            type="submit"
+                            disabled={loading}
+                            className={`w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white 
+                                ${loading ? 'bg-green-400 cursor-not-allowed' : 'bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500'}
+                            `}
+                        >
+                            {loading ? 'Submitting...' : 'SUBMIT APPLICATION'}
+                        </button>
+                    </div>
+                </form >
+            </div >
+        </div >
     );
 };
 

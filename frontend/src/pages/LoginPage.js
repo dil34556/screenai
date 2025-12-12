@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import { login } from '../services/api';
 
 const LoginPage = () => {
     const [email, setEmail] = useState('');
@@ -11,13 +11,10 @@ const LoginPage = () => {
     const handleLogin = async (e) => {
         e.preventDefault();
         try {
-            const response = await axios.post('http://127.0.0.1:8000/api/auth/login/', {
-                email,
-                password
-            });
+            const response = await login({ email, password });
 
             // Save user info (Basic Session Mock)
-            localStorage.setItem('user', JSON.stringify(response.data.user));
+            localStorage.setItem('user', JSON.stringify(response.user));
 
             navigate('/admin/dashboard');
         } catch (err) {

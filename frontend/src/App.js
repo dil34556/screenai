@@ -2,6 +2,8 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
 import JobListPage from './pages/JobListPage';
 import DashboardPage from './pages/DashboardPage';
+import JobDetailsPage from './pages/JobDetailsPage';
+import ApplicationsPage from './pages/ApplicationsPage';
 import ApplyPage from './pages/ApplyPage';
 
 import CreateJobPage from './pages/CreateJobPage';
@@ -27,9 +29,11 @@ export default function App() {
         <Route path="/admin" element={<AdminLayout />}>
           <Route index element={<DashboardPage />} /> {/* Default to Dashboard */}
           <Route path="dashboard" element={<DashboardPage />} />
+          <Route path="applications" element={<ApplicationsPage />} />
 
           <Route path="jobs" element={<JobListPage />} />
           <Route path="jobs/create" element={<CreateJobPage />} />
+          <Route path="jobs/:jobId" element={<JobDetailsPage />} />
 
           <Route path="employees" element={<ViewEmployeesWithNav />} />
           <Route path="employees/create" element={<CreateEmployeeWithNav />} />
