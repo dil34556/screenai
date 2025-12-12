@@ -18,7 +18,7 @@ const HomePage = () => {
                         <Link to="/admin/dashboard" className="text-sm font-medium text-slate-600 hover:text-indigo-600 transition-colors">
                             Sign In
                         </Link>
-                        <Link to="/admin/dashboard" className="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-500/20 hover:shadow-indigo-500/30">
+                        <Link to="/register" className="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-500/20 hover:shadow-indigo-500/30">
                             Get Started
                         </Link>
                     </div>

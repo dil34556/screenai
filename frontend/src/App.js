@@ -13,6 +13,7 @@ import ViewEmployees from './components/ViewEmployees';
 import AdminLayout from './components/AdminLayout';
 
 import LoginPage from './pages/LoginPage';
+import RegisterPage from './pages/RegisterPage';
 import CandidateJobBoard from './pages/CandidateJobBoard';
 
 export default function App() {
@@ -21,6 +22,7 @@ export default function App() {
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/register" element={<RegisterPage />} />
 
         {/* Public Routes */}
         <Route path="/jobs" element={<CandidateJobBoard />} />

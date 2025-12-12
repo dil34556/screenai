@@ -9,6 +9,22 @@ const api = axios.create({
     },
 });
 
+// Add Interceptor to attach Recruiter ID
+api.interceptors.request.use((config) => {
+    try {
+        const userStr = localStorage.getItem('user');
+        if (userStr) {
+            const user = JSON.parse(userStr);
+            if (user && user.id) {
+                config.headers['X-Employee-Id'] = user.id;
+            }
+        }
+    } catch (e) {
+        // Ignore JSON parse errors
+    }
+    return config;
+});
+
 export const getJobs = async (params = {}) => {
     // Convert object to query string
     const queryString = new URLSearchParams(params).toString();

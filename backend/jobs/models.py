@@ -1,4 +1,5 @@
 from django.db import models
+from appscreenai.models import Employee
 
 class JobPosting(models.Model):
     JOB_TYPES = [
@@ -25,6 +26,7 @@ class JobPosting(models.Model):
     screening_questions = models.JSONField(default=list, blank=True, help_text="Custom questions for the candidate")
     
     is_active = models.BooleanField(default=True)
+    recruiter = models.ForeignKey(Employee, on_delete=models.CASCADE, null=True, blank=True, related_name='job_postings')
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):

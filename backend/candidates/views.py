@@ -83,6 +83,12 @@ class ApplicationListView(generics.ListAPIView):
 
     def get_queryset(self):
         queryset = Application.objects.select_related('candidate', 'job').all().order_by('-applied_at')
+        
+        # 1. Multi-tenant Filter
+        employee_id = self.request.headers.get('X-Employee-Id')
+        if employee_id:
+            queryset = queryset.filter(job__recruiter_id=employee_id)
+            
         job_id = self.request.query_params.get('job')
         if job_id:
             queryset = queryset.filter(job_id=job_id)
@@ -131,11 +137,17 @@ class AddCommentView(generics.CreateAPIView):
 
 class DashboardStatsView(views.APIView):
     def get(self, request):
-        total = Application.objects.count()
-        today = Application.objects.filter(applied_at__date__gte=datetime.date.today()).count()
+        employee_id = request.headers.get('X-Employee-Id')
+        
+        apps_query = Application.objects.all()
+        if employee_id:
+            apps_query = apps_query.filter(job__recruiter_id=employee_id)
+            
+        total = apps_query.count()
+        today = apps_query.filter(applied_at__date__gte=datetime.date.today()).count()
         
         # Status counts
-        status_counts = Application.objects.values('status').annotate(count=Count('status'))
+        status_counts = apps_query.values('status').annotate(count=Count('status'))
         
         return Response({
             "total_candidates": total,
