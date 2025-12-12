@@ -33,7 +33,7 @@ const AdminLayout = () => {
                         Screen<span className="text-indigo-500">AI</span> <span className="text-slate-400 text-xs font-normal">Admin</span>
                     </h1>
                 </div>
-                <nav className="p-4 space-y-1 flex-1">
+                <nav className="p-4 space-y-2">
                     {navigation.map((item) => {
                         const isActive = location.pathname.startsWith(item.href);
                         return (
@@ -50,24 +50,28 @@ const AdminLayout = () => {
                             </Link>
                         );
                     })}
-                </nav>
-                <div className="p-4 border-t border-slate-800 space-y-2 mt-auto">
-                    <button onClick={handleLogout} className="w-full text-left flex items-center px-4 py-2 text-sm text-rose-400 hover:bg-slate-800 rounded-md transition-colors">
-                        <span className="opacity-80">🚪</span>
-                        <span className="ml-3">Logout</span>
-                    </button>
-                    <Link to="/" className="flex items-center px-4 py-2 text-sm text-slate-500 hover:text-slate-300 transition-colors">
-                        <span className="opacity-80">⬅️</span>
-                        <span className="ml-3">Back to Home</span>
+
+                    {/* Divider */}
+                    <div className="pt-4 mt-4 border-t border-slate-800"></div>
+
+                    {/* Secondary Actions */}
+                    <Link to="/" className="flex items-center px-4 py-3 text-sm font-medium rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition-colors duration-200">
+                        <span className="mr-3 text-xl opacity-80">🏠</span>
+                        Back to Home
                     </Link>
-                </div>
+
+                    <button onClick={handleLogout} className="w-full text-left flex items-center px-4 py-3 text-sm font-medium rounded-lg text-rose-400 hover:bg-slate-800 hover:text-rose-300 transition-colors duration-200">
+                        <span className="mr-3 text-xl opacity-80">🚪</span>
+                        Logout
+                    </button>
+                </nav>
             </div>
 
             {/* Content Area */}
-            <div className="flex-1 overflow-auto">
+            < div className="flex-1 overflow-auto" >
                 <Outlet />
-            </div>
-        </div>
+            </div >
+        </div >
     );
 };
 
