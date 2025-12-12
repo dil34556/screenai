@@ -191,7 +191,7 @@ const JobDetailsPage = () => {
                     <div className="flex flex-wrap gap-3 w-full md:w-auto items-center">
                         <div className="relative">
                             <select
-                                className="input-premium appearance-none cursor-pointer"
+                                className="input-premium appearance-none cursor-pointer pr-10"
                                 value={filterStatus}
                                 onChange={(e) => setFilterStatus(e.target.value)}
                             >
@@ -207,7 +207,7 @@ const JobDetailsPage = () => {
 
                         <div className="relative">
                             <select
-                                className="input-premium appearance-none cursor-pointer"
+                                className="input-premium appearance-none cursor-pointer pr-10"
                                 value={filterPlatform}
                                 onChange={(e) => setFilterPlatform(e.target.value)}
                             >
@@ -223,9 +223,9 @@ const JobDetailsPage = () => {
 
                         <button
                             onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
-                            className={`flex items - center gap - 2 px - 3 py - 2 rounded - lg text - sm font - medium transition - colors ${showAdvancedFilters ? 'bg-indigo-100 text-indigo-700' : 'bg-gray-50 text-gray-600 hover:bg-gray-100'} `}
+                            className={`flex items-center gap-2 px-4 py-3 rounded-xl text-sm font-medium transition-all border ${showAdvancedFilters ? 'bg-indigo-50 border-indigo-200 text-indigo-700' : 'bg-gray-50 border-gray-200 text-gray-600 hover:bg-white hover:border-indigo-300'}`}
                         >
-                            <SlidersHorizontal size={14} /> Filters
+                            <SlidersHorizontal size={16} /> Filters
                         </button>
                     </div>
                 </div>
