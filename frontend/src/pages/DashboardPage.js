@@ -23,8 +23,9 @@ const DashboardPage = () => {
         const loadData = async () => {
             const statsData = await getDashboardStats();
             const appsData = await getApplications();
+            // Handle pagination: if results exist, use them, otherwise use data directly
+            setApplications(appsData.results || appsData);
             setStats(statsData);
-            setApplications(appsData);
             setLoading(false);
         };
         loadData();

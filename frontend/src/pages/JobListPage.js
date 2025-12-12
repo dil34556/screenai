@@ -30,9 +30,12 @@ const JobListPage = () => {
         const fetchJobs = async () => {
             try {
                 // Fetch ALL jobs, including closed ones
+                // Fetch ALL jobs, including closed ones
                 const data = await getJobs({ include_closed: 'true' });
-                setJobs(data);
-                setFilteredJobs(data);
+                // Handle pagination
+                const jobsList = data.results || data;
+                setJobs(jobsList);
+                setFilteredJobs(jobsList);
             } catch (err) {
                 console.error("Failed to fetch jobs", err);
             } finally {

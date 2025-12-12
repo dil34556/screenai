@@ -38,7 +38,8 @@ const JobDetailsPage = () => {
                 getApplicationsForJob(jobId)
             ]);
             setJob(jobData);
-            setApplications(appsData);
+            // Handle pagination: use results if available, else fallback to data
+            setApplications(appsData.results || appsData);
         } catch (err) {
             console.error("Failed to fetch job details", err);
         } finally {
