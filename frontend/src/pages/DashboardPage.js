@@ -53,37 +53,37 @@ const DashboardPage = () => {
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
 
                     {/* 1. Action Center */}
-                    <div className="bg-white overflow-hidden shadow rounded-lg p-5 border-l-4 border-indigo-500">
-                        <h3 className="text-lg font-medium text-gray-900 mb-4 flex items-center">
+                    <div className="bg-white overflow-hidden shadow-sm rounded-xl p-5 border border-gray-100">
+                        <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
                             <span>⚡ Action Center</span>
                         </h3>
-                        <div className="space-y-4">
-                            <Link to="/admin/applications?status=NEW" className="flex justify-between items-center p-3 bg-blue-50 rounded-md hover:bg-blue-100 transition cursor-pointer">
+                        <div className="space-y-3">
+                            <Link to="/admin/applications?status=NEW" className="flex justify-between items-center p-4 bg-blue-50 hover:bg-blue-100 border border-blue-100 rounded-xl transition-all cursor-pointer group">
                                 <div>
-                                    <p className="text-sm font-medium text-gray-900">Pending Reviews</p>
-                                    <p className="text-xs text-gray-500">New applications to screen</p>
+                                    <p className="text-sm font-bold text-blue-900 group-hover:text-blue-700">Pending Reviews</p>
+                                    <p className="text-xs text-blue-600">New applications to screen</p>
                                 </div>
-                                <span className="text-2xl font-bold text-blue-600">
+                                <span className="text-2xl font-bold text-blue-600 group-hover:scale-110 transition-transform">
                                     {stats.status_breakdown.find(s => s.status === 'NEW')?.count || 0}
                                 </span>
                             </Link>
 
-                            <Link to="/admin/applications?status=SCREENED" className="flex justify-between items-center p-3 bg-indigo-50 rounded-md hover:bg-indigo-100 transition cursor-pointer">
+                            <Link to="/admin/applications?status=SCREENED" className="flex justify-between items-center p-4 bg-indigo-50 hover:bg-indigo-100 border border-indigo-100 rounded-xl transition-all cursor-pointer group">
                                 <div>
-                                    <p className="text-sm font-medium text-gray-900">Screened Candidates</p>
-                                    <p className="text-xs text-gray-500">Ready for interview scheduling</p>
+                                    <p className="text-sm font-bold text-indigo-900 group-hover:text-indigo-700">Screened Candidates</p>
+                                    <p className="text-xs text-indigo-600">Ready for interview scheduling</p>
                                 </div>
-                                <span className="text-2xl font-bold text-indigo-600">
+                                <span className="text-2xl font-bold text-indigo-600 group-hover:scale-110 transition-transform">
                                     {stats.status_breakdown.find(s => s.status === 'SCREENED')?.count || 0}
                                 </span>
                             </Link>
 
-                            <Link to="/admin/applications?status=INTERVIEW" className="flex justify-between items-center p-3 bg-purple-50 rounded-md hover:bg-purple-100 transition cursor-pointer">
+                            <Link to="/admin/applications?status=INTERVIEW" className="flex justify-between items-center p-4 bg-purple-50 hover:bg-purple-100 border border-purple-100 rounded-xl transition-all cursor-pointer group">
                                 <div>
-                                    <p className="text-sm font-medium text-gray-900">Interviews</p>
-                                    <p className="text-xs text-gray-500">Active interview rounds</p>
+                                    <p className="text-sm font-bold text-purple-900 group-hover:text-purple-700">Interviews</p>
+                                    <p className="text-xs text-purple-600">Active interview rounds</p>
                                 </div>
-                                <span className="text-2xl font-bold text-purple-600">
+                                <span className="text-2xl font-bold text-purple-600 group-hover:scale-110 transition-transform">
                                     {stats.status_breakdown.find(s => s.status === 'INTERVIEW')?.count || 0}
                                 </span>
                             </Link>
@@ -91,54 +91,59 @@ const DashboardPage = () => {
                     </div>
 
                     {/* 2. Hiring Funnel */}
-                    <div className="bg-white overflow-hidden shadow rounded-lg p-5 lg:col-span-2">
-                        <h3 className="text-lg font-medium text-gray-900 mb-4">Hiring Funnel</h3>
-                        <div className="relative flex items-center justify-between pt-6 pb-2">
+                    <div className="bg-white overflow-hidden shadow-sm rounded-xl p-6 lg:col-span-2 border border-gray-100 flex flex-col justify-center">
+                        <h3 className="text-lg font-bold text-gray-900 mb-8">Hiring Funnel</h3>
+                        <div className="relative flex items-center justify-between px-4 sm:px-10">
                             {/* Pipeline Line */}
-                            <div className="absolute top-1/2 left-0 w-full h-1 bg-gray-200 -z-0"></div>
+                            <div className="absolute top-1/2 left-4 right-4 h-1 bg-gray-100 -z-0 -translate-y-4"></div>
 
                             {['NEW', 'SCREENED', 'INTERVIEW', 'OFFER'].map((stage, index) => {
                                 const count = stats.status_breakdown.find(s => s.status === stage)?.count || 0;
                                 const labels = { 'NEW': 'Applied', 'SCREENED': 'Screened', 'INTERVIEW': 'Interview', 'OFFER': 'Offer' };
+                                const subLabels = { 'NEW': 'Total Pool', 'SCREENED': 'Qualified', 'INTERVIEW': 'In-Progress', 'OFFER': 'Hired' };
                                 const colors = { 'NEW': 'bg-blue-500', 'SCREENED': 'bg-indigo-500', 'INTERVIEW': 'bg-purple-500', 'OFFER': 'bg-green-500' };
+                                const ringColors = { 'NEW': 'ring-blue-100', 'SCREENED': 'ring-indigo-100', 'INTERVIEW': 'ring-purple-100', 'OFFER': 'ring-green-100' };
 
                                 return (
-                                    <div key={stage} className="relative z-10 flex flex-col items-center bg-white px-2">
-                                        <div className={`w-12 h-12 rounded-full flex items-center justify-center text-white font-bold shadow-md ${colors[stage]} mb-2`}>
+                                    <div key={stage} className="relative z-10 flex flex-col items-center group">
+                                        <div className={`w-14 h-14 rounded-full flex items-center justify-center text-white font-bold text-lg shadow-lg ${colors[stage]} mb-3 ring-4 ${ringColors[stage]} transition-transform group-hover:scale-110`}>
                                             {count}
                                         </div>
-                                        <span className="text-sm font-medium text-gray-700">{labels[stage]}</span>
+                                        <span className="text-sm font-bold text-gray-800">{labels[stage]}</span>
+                                        <span className="text-xs text-gray-400 mt-1">{subLabels[stage]}</span>
                                     </div>
                                 );
                             })}
                         </div>
-                        <div className="mt-6 grid grid-cols-4 gap-4 text-center text-xs text-gray-400">
-                            <div>Total Pool</div>
-                            <div>Qualified</div>
-                            <div>In-Progress</div>
-                            <div>Hired</div>
-                        </div>
                     </div>
                 </div>
 
-                {/* Legacy Stats (Optional / Secondary) */}
+                {/* Legacy Stats (Secondary) */}
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-                    <div className="bg-white p-4 shadow rounded-lg text-center">
-                        <dt className="text-xs text-gray-500 uppercase">Total Candidates</dt>
-                        <dd className="text-xl font-semibold text-gray-900">{stats.total_candidates}</dd>
+                    <div className="bg-white p-5 shadow-sm rounded-xl border border-gray-100 text-center hover:shadow-md transition-shadow">
+                        <dt className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Total Candidates</dt>
+                        <dd className="text-3xl font-bold text-gray-900">{stats.total_candidates}</dd>
                     </div>
-                    <div className="bg-white p-4 shadow rounded-lg text-center">
-                        <dt className="text-xs text-gray-500 uppercase">Applied Today</dt>
-                        <dd className="text-xl font-semibold text-indigo-600">{stats.today_candidates}</dd>
+                    <div className="bg-white p-5 shadow-sm rounded-xl border border-gray-100 text-center hover:shadow-md transition-shadow">
+                        <dt className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Applied Today</dt>
+                        <dd className="text-3xl font-bold text-indigo-600">{stats.today_candidates}</dd>
                     </div>
                 </div>
 
                 {/* Candidate Table */}
-                <div className="bg-white shadow overflow-hidden sm:rounded-lg">
-                    <div className="px-4 py-5 sm:px-6 flex justify-between items-center bg-gray-50 border-b">
-                        <h3 className="text-lg leading-6 font-medium text-gray-900">Recent Applications</h3>
-                        <div className="flex gap-2">
-                            <input type="text" placeholder="Search candidates..." className="border rounded-md px-3 py-1 text-sm text-gray-600" />
+                <div className="bg-white shadow-sm overflow-hidden sm:rounded-xl border border-gray-100">
+                    <div className="px-6 py-5 flex justify-between items-center bg-white border-b border-gray-100">
+                        <h3 className="text-lg leading-6 font-bold text-gray-900">Recent Applications</h3>
+                        <div className="relative">
+                            {/* SVG Search Icon */}
+                            <svg className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                            </svg>
+                            <input
+                                type="text"
+                                placeholder="Search candidates..."
+                                className="pl-9 pr-4 py-2 border border-gray-200 rounded-lg text-sm text-gray-700 focus:ring-2 focus:ring-indigo-100 focus:border-indigo-300 outline-none transition-all"
+                            />
                         </div>
                     </div>
                     <ul className="divide-y divide-gray-200">
