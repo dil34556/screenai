@@ -232,7 +232,7 @@ const JobListPage = () => {
                                 <div className="flex items-center gap-3">
                                     <Link
                                         to={`/admin/applications?job=${job.id}`}
-                                        className="flex-1 bg-white border border-gray-200 text-gray-900 hover:bg-teal-500 hover:text-white hover:border-teal-500 font-semibold py-2.5 px-4 rounded-lg text-center transition-all duration-200 shadow-sm"
+                                        className="flex-1 bg-white border border-gray-200 text-gray-900 hover:bg-blue-600 hover:text-white hover:border-blue-600 font-semibold py-2.5 px-4 rounded-lg text-center transition-all duration-200 shadow-sm"
                                     >
                                         View Candidates
                                     </Link>
