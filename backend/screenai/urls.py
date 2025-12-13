@@ -5,12 +5,14 @@ from appscreenai import views
 urlpatterns = [
     path('admin/', admin.site.urls),
 
-    # API Routes
-    path('api/employees/create/', views.create_employee_api),  # Legacy
-    path('api/employees/', views.view_employees_api),          # Legacy
+    # Auth
+    path('api/auth/login/', views.login_employee_api),
 
-    # ScreenAI V2 Routes
+    # Employee APIs
+    path('api/employees/create/', views.create_employee_api),
+    path('api/employees/', views.view_employees_api),
+
+    # V1 APIs
     path('api/v1/', include('jobs.urls')),
     path('api/v1/', include('candidates.urls')),
 ]
-

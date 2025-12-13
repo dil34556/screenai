@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 
-const API_BASE_URL = 'http://127.0.0.1:8000/api/employees';
+import { getEmployees } from '../services/api';
 
 function ViewEmployees({ onBack }) {
   const [employees, setEmployees] = useState([]);
@@ -16,8 +16,7 @@ function ViewEmployees({ onBack }) {
     setError('');
 
     try {
-      const response = await fetch(API_BASE_URL + '/');
-      const data = await response.json();
+      const data = await getEmployees();
       setEmployees(data.employees || []);
     } catch (err) {
       setError('Failed to fetch employees');
