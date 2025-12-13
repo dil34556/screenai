@@ -1,29 +1,51 @@
-import React, { useState, useEffect } from 'react';
-import Home from './components/home';
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
+import JobListPage from './pages/JobListPage';
+import DashboardPage from './pages/DashboardPage';
+import JobDetailsPage from './pages/JobDetailsPage';
+import ApplicationsPage from './pages/ApplicationsPage';
+import ApplyPage from './pages/ApplyPage';
+import HomePage from './pages/HomePage';
+
+import CreateJobPage from './pages/CreateJobPage';
 import CreateEmployee from './components/CreateEmployee';
 import ViewEmployees from './components/ViewEmployees';
-import Analytics from "./components/Analytics";
+import AdminLayout from './components/AdminLayout';
 
-const API_BASE_URL = 'http://127.0.0.1:8000/api/employees';
+import LoginPage from './pages/LoginPage';
+import RegisterPage from './pages/RegisterPage';
+import CandidateJobBoard from './pages/CandidateJobBoard';
 
 export default function App() {
-  const [currentView, setCurrentView] = useState('home');
-
-  const handleNavigate = (view) => {
-    setCurrentView(view);
-  };
-
-  const handleBack = () => {
-    setCurrentView('home');
-  };
-
   return (
-    <>
-      {currentView === 'home' && <Home onNavigate={handleNavigate} />}
-      {currentView === 'create' && <CreateEmployee onBack={handleBack} />}
-      {currentView === 'view' && <ViewEmployees onBack={handleBack} />}
-      {currentView === 'analytics' && <Analytics onBack={handleBack} />}
+    <Router>
+      <Routes>
+        <Route path="/" element={<HomePage />} />
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/register" element={<RegisterPage />} />
 
-    </>
+        {/* Public Routes */}
+        <Route path="/jobs" element={<CandidateJobBoard />} />
+        <Route path="/jobs/:jobId/apply" element={<ApplyPage />} />
+
+        {/* Admin Portal (Nested Routes) */}
+        <Route path="/admin" element={<AdminLayout />}>
+          <Route index element={<DashboardPage />} /> {/* Default to Dashboard */}
+          <Route path="dashboard" element={<DashboardPage />} />
+          <Route path="applications" element={<ApplicationsPage />} />
+
+          <Route path="jobs" element={<JobListPage />} />
+          <Route path="jobs/create" element={<CreateJobPage />} />
+          <Route path="jobs/:jobId" element={<JobDetailsPage />} />
+
+          <Route path="employees" element={<ViewEmployeesWithNav />} />
+          <Route path="employees/create" element={<CreateEmployeeWithNav />} />
+        </Route>
+      </Routes>
+    </Router>
   );
 }
+
+// Wrappers to ensure they can navigate back using the new Router
+const CreateEmployeeWithNav = () => <CreateEmployee onBack={() => window.history.back()} />;
+const ViewEmployeesWithNav = () => <ViewEmployees onBack={() => window.history.back()} />;
