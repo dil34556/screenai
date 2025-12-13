@@ -3,17 +3,6 @@ import { Link } from 'react-router-dom';
 import { getDashboardStats, getApplications } from '../services/api';
 
 const DashboardPage = () => {
-    const navigate = React.useRef(null);
-    // Safe navigation if using generic wrapper, but here we can import useNavigate
-    // Let's use window.location for simplicity if hooks are tricky in replace, but DashboardPage is a component so useNavigate is fine.
-    // However, I need to check if I can add imports. 
-    // Wait, I can't easily add 'useNavigate' import at top of file with replace_file if I only target this block.
-    // I already imported React, { useState, useEffect } in the file.
-    // I should check if I can use <a href> or if I need to do a full file replace to add hook.
-    // Actually, I can just use <Link> if I import it, or window.location.
-    // Let's assume I can add <a href="/admin/jobs/create">. 
-
-    // Better: let's just make the button an anchor tag styled as button.
 
     const [stats, setStats] = useState({ total_candidates: 0, today_candidates: 0, status_breakdown: [] });
     const [applications, setApplications] = useState([]);
@@ -21,15 +10,22 @@ const DashboardPage = () => {
 
     useEffect(() => {
         const loadData = async () => {
-            const statsData = await getDashboardStats();
-            const appsData = await getApplications();
-            // Handle pagination: if results exist, use them, otherwise use data directly
-            setApplications(appsData.results || appsData);
-            setStats(statsData);
-            setLoading(false);
+            try {
+                const statsData = await getDashboardStats();
+                const appsData = await getApplications();
+                // Handle pagination: if results exist, use them, otherwise use data directly
+                setApplications(appsData.results || appsData);
+                setStats(statsData);
+            } catch (error) {
+                console.error("Failed to load dashboard data:", error);
+                // Optional: set an error state here to show to user
+            } finally {
+                setLoading(false);
+            }
         };
         loadData();
     }, []);
+
 
 
 

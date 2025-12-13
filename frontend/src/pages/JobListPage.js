@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 
 import { getJobs, updateJob } from '../services/api';
-import { MoreVertical, Copy, Eye, ExternalLink, Activity, MoreHorizontal, Users } from 'lucide-react';
+import { MoreVertical, Copy, Eye, ExternalLink, Users } from 'lucide-react';
+
 import FormPreviewModal from '../components/FormPreviewModal';
 // Removed Headless UI import
 
