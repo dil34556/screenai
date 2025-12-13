@@ -1,0 +1,14 @@
+from django.contrib import admin
+from .models import Candidate, Application
+
+@admin.register(Candidate)
+class CandidateAdmin(admin.ModelAdmin):
+    list_display = ('name', 'email', 'phone', 'created_at')
+    search_fields = ('name', 'email')
+
+@admin.register(Application)
+class ApplicationAdmin(admin.ModelAdmin):
+    list_display = ('candidate', 'job', 'status', 'ai_match_score', 'applied_at')
+    list_filter = ('status', 'job')
+    search_fields = ('candidate__name', 'candidate__email', 'job__title')
+    readonly_fields = ('ai_match_score', 'ai_summary', 'ai_missing_skills')
