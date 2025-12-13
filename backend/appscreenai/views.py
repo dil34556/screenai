@@ -57,3 +57,50 @@ def view_employees_api(request):
         return JsonResponse({"employees": data}, status=200)
 
     return JsonResponse({"error": "Only GET method allowed"}, status=405)
+
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+import json
+from .models import Employee
+
+@csrf_exempt
+def login_employee_api(request):
+    if request.method == "POST":
+        try:
+            data = json.loads(request.body.decode("utf-8"))
+            email = data.get("email")
+            password = data.get("password")
+
+            if not email or not password:
+                return JsonResponse(
+                    {"error": "Email and password are required"},
+                    status=400
+                )
+
+            try:
+                employee = Employee.objects.get(
+                    email=email,
+                    password=password  # ⚠️ plain-text only for now
+                )
+
+                return JsonResponse({
+                    "message": "Login successful",
+                    "user": {
+                        "id": employee.id,
+                        "email": employee.email
+                    }
+                }, status=200)
+
+            except Employee.DoesNotExist:
+                return JsonResponse(
+                    {"error": "Invalid email or password"},
+                    status=401
+                )
+
+        except Exception as e:
+            return JsonResponse({"error": str(e)}, status=500)
+
+    return JsonResponse(
+        {"error": "Only POST method allowed"},
+        status=405
+    )
