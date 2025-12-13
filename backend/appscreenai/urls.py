@@ -1,5 +1,13 @@
 from django.urls import path
 from . import views
+from django.urls import path
+from .views import parse_resume_api
+
+urlpatterns = [
+    # ... your existing routes
+    path("parse/<int:application_id>/", parse_resume_api),
+]
+
 
 urlpatterns = [
     # UI Route
