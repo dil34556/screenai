@@ -58,6 +58,16 @@ class ApplicationCreateView(views.APIView):
             except: return None
 
         try:
+            # Extract skills and experiences
+            skills = request.data.get("skills", "")
+            experiences_str = request.data.get("experiences")
+            experiences_data = []
+            if experiences_str:
+                try:
+                    experiences_data = json.loads(experiences_str)
+                except ValueError:
+                    pass
+
             application = Application.objects.create(
                 job=job,
                 candidate=candidate,
@@ -66,8 +76,20 @@ class ApplicationCreateView(views.APIView):
                 current_ctc=safe_float(current_ctc),
                 expected_ctc=safe_float(expected_ctc),
                 notice_period=safe_int(notice_period),
-                answers=answers_data
+                answers=answers_data,
+                skills=skills
             )
+
+            # Save Experiences
+            from .models import Experience
+            for exp in experiences_data:
+                Experience.objects.create(
+                    application=application,
+                    company=exp.get('company'),
+                    role=exp.get('role'),
+                    duration=exp.get('duration')
+                )
+
         except Exception as e:
             import traceback
             traceback.print_exc()

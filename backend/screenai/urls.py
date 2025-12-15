@@ -19,4 +19,12 @@ from django.conf import settings
 from django.conf.urls.static import static
 
 if settings.DEBUG:
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+    from django.urls import re_path
+    from screenai.debug_views import serve_media_inline
+    # Manually map the media URL using our custom view that forces inline content-disposition
+    # This prevents the browser from downloading PDFs and allows them to be viewed in a new tab.
+    urlpatterns += [
+        re_path(r'^media/(?P<path>.*)$', serve_media_inline, {
+            'document_root': settings.MEDIA_ROOT,
+        }),
+    ]

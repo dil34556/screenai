@@ -44,8 +44,20 @@ class Application(models.Model):
     # Screening Answers
     answers = models.JSONField(default=list, blank=True, help_text="Candidate answers to screening questions")
     
+    # New Fields
+    skills = models.TextField(blank=True, help_text="Comma-separated skills")
+    
     def __str__(self):
         return f"{self.candidate.name} - {self.job.title}"
+
+class Experience(models.Model):
+    application = models.ForeignKey(Application, on_delete=models.CASCADE, related_name='experiences')
+    company = models.CharField(max_length=255)
+    role = models.CharField(max_length=255)
+    duration = models.CharField(max_length=100, blank=True, help_text="e.g. 2 years, 2020-2022")
+
+    def __str__(self):
+        return f"{self.role} at {self.company}"
 
 class ApplicationComment(models.Model):
     application = models.ForeignKey(Application, on_delete=models.CASCADE, related_name='comments')

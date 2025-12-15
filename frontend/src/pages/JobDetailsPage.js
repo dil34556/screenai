@@ -1,10 +1,9 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { getJobDetail, getApplicationsForJob, updateApplicationStatus, addComment } from '../services/api';
 import {
     Search, Filter, ChevronDown,
-    Linkedin, FileText, ArrowLeft,
+    Linkedin, ExternalLink, FileText, ArrowLeft,
     Briefcase, MapPin, Users, MessageSquare, Eye, SlidersHorizontal, Download
 } from 'lucide-react';
 import mammoth from 'mammoth';
@@ -262,7 +261,11 @@ const JobDetailsPage = () => {
                                 <th className="px-6 py-4">Applied</th>
                                 <th className="px-6 py-4">Status</th>
                                 <th className="px-6 py-4">Experience</th>
-                                <th className="px-6 py-4">CTC (Cur / Exp)</th>
+
+                                <th className="px-6 py-4">Current CTC</th>
+                                <th className="px-6 py-4">Expected CTC</th>
+                                <th className="px-6 py-4">Skills</th>
+                                <th className="px-6 py-4">Prev. Exp</th>
 
                                 {/* Dynamic Question Headers */}
                                 {job.screening_questions && job.screening_questions.map((q, i) => (
@@ -331,9 +334,34 @@ const JobDetailsPage = () => {
                                         </div>
                                     </td>
                                     <td className="px-6 py-4">
-                                        <div className="text-xs text-gray-600">
-                                            <div>{app.current_ctc ? `${app.current_ctc} L` : '-'} / </div>
-                                            <div className="font-semibold">{app.expected_ctc ? `${app.expected_ctc} L` : '-'}</div>
+                                        <div className="text-sm text-gray-900 font-medium">
+                                            {app.current_ctc ? `${app.current_ctc} L` : '-'}
+                                        </div>
+                                    </td>
+                                    <td className="px-6 py-4">
+                                        <div className="text-sm text-gray-900 font-medium">
+                                            {app.expected_ctc ? `${app.expected_ctc} L` : '-'}
+                                        </div>
+                                    </td>
+                                    <td className="px-6 py-4">
+                                        <div className="text-sm text-gray-600 max-w-xs truncate" title={app.skills}>
+                                            {app.skills || '-'}
+                                        </div>
+                                    </td>
+                                    <td className="px-6 py-4">
+                                        <div className="text-sm text-gray-600 max-w-xs overflow-hidden">
+                                            {app.experiences && app.experiences.length > 0 ? (
+                                                <div className="flex flex-col gap-1">
+                                                    {app.experiences.map((exp, idx) => (
+                                                        <div key={idx} className="truncate" title={`${exp.role} at ${exp.company} (${exp.duration})`}>
+                                                            <span className="font-medium text-gray-900">{exp.role}</span>
+                                                            <span className="text-gray-500"> @ {exp.company}</span>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            ) : (
+                                                '-'
+                                            )}
                                         </div>
                                     </td>
 
@@ -485,17 +513,20 @@ const JobDetailsPage = () => {
                         <div className="p-4 border-b flex justify-between items-center">
                             <h3 className="text-lg font-bold text-gray-900">Resume: {selectedApp.candidate_details.name}</h3>
                             <div className="flex gap-2">
+                                <a href={selectedApp.resume} target="_blank" rel="noreferrer" className="text-gray-600 hover:text-gray-800 text-sm font-medium flex items-center gap-1">
+                                    <ExternalLink size={14} /> Open
+                                </a>
                                 <a href={selectedApp.resume} download className="text-indigo-600 hover:text-indigo-800 text-sm font-medium flex items-center gap-1">
                                     <Download size={14} /> Download
                                 </a>
                                 <button onClick={() => setShowResumeModal(false)} className="text-gray-400 hover:text-gray-600">✕</button>
                             </div>
                         </div>
-                        <div className="flex-1 bg-gray-100 p-4 overflow-hidden relative">
+                        <div className="flex-1 bg-gray-200 p-4 overflow-hidden relative flex flex-col items-center justify-center">
                             {selectedApp.resume.toLowerCase().endsWith('.pdf') ? (
                                 <iframe
-                                    src={selectedApp.resume}
-                                    className="w-full h-full rounded shadow-sm bg-white"
+                                    src={`${selectedApp.resume}?t=${Date.now()}#view=FitH`}
+                                    className="w-full h-full rounded shadow-sm bg-white border border-gray-200"
                                     title="Resume Viewer"
                                 />
                             ) : selectedApp.resume.toLowerCase().endsWith('.docx') ? (

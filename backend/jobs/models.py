@@ -23,6 +23,8 @@ class JobPosting(models.Model):
     
     # AI-Ready Fields
     required_skills = models.JSONField(default=list, help_text="List of mandatory skills for AI matching")
+    previous_companies = models.JSONField(default=list, blank=True, help_text="List of preferred previous companies")
+    previous_roles = models.JSONField(default=list, blank=True, help_text="List of preferred previous job roles")
     screening_questions = models.JSONField(default=list, blank=True, help_text="Custom questions for the candidate")
     
     is_active = models.BooleanField(default=True)

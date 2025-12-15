@@ -13,6 +13,8 @@ const ApplyPage = () => {
         experience_years: '',
         current_ctc: '',
         expected_ctc: '',
+        skills: '',
+        experiences: [], // Array of { company, role, duration }
         resume: null,
     });
     const [loading, setLoading] = useState(false);
@@ -45,6 +47,26 @@ const ApplyPage = () => {
         setAnswers(prev => ({ ...prev, [question]: value }));
     };
 
+    // Experience Handlers
+    const handleAddExperience = () => {
+        setFormData(prev => ({
+            ...prev,
+            experiences: [...prev.experiences, { company: '', role: '', duration: '' }]
+        }));
+    };
+
+    const handleExperienceChange = (index, field, value) => {
+        const newExp = [...formData.experiences];
+        newExp[index][field] = value;
+        setFormData(prev => ({ ...prev, experiences: newExp }));
+    };
+
+    const handleRemoveExperience = (index) => {
+        const newExp = [...formData.experiences];
+        newExp.splice(index, 1);
+        setFormData(prev => ({ ...prev, experiences: newExp }));
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
@@ -60,6 +82,10 @@ const ApplyPage = () => {
         }
         if (formData.current_ctc) data.append('current_ctc', formData.current_ctc);
         if (formData.expected_ctc) data.append('expected_ctc', formData.expected_ctc);
+        if (formData.skills) data.append('skills', formData.skills);
+        if (formData.experiences.length > 0) {
+            data.append('experiences', JSON.stringify(formData.experiences));
+        }
         data.append('resume', formData.resume);
 
         // Convert answers object to list for backend
@@ -144,6 +170,73 @@ const ApplyPage = () => {
                                 className="input-premium"
                             />
                         </div>
+                        <div>
+                            <label className="block text-xs text-gray-500 uppercase font-semibold tracking-wider">Skills</label>
+                            <input
+                                type="text"
+                                name="skills"
+                                value={formData.skills || ''}
+                                onChange={handleChange}
+                                placeholder="e.g. Java, Python, React"
+                                className="input-premium"
+                            />
+                        </div>
+
+                        {/* Dynamic Experience Section */}
+                        <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                            <label className="block text-xs text-gray-500 uppercase font-semibold tracking-wider mb-3">Previous Experience</label>
+
+                            {formData.experiences.map((exp, index) => (
+                                <div key={index} className="mb-4 pb-4 border-b border-gray-200 last:border-0 last:pb-0">
+                                    <div className="flex justify-between items-center mb-2">
+                                        <span className="text-xs font-semibold text-gray-500 uppercase">Experience {index + 1}</span>
+                                        <button
+                                            type="button"
+                                            onClick={() => handleRemoveExperience(index)}
+                                            className="text-red-500 hover:text-red-700 text-xs font-semibold"
+                                        >
+                                            Remove
+                                        </button>
+                                    </div>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                        <div>
+                                            <input
+                                                placeholder="Company Name"
+                                                value={exp.company}
+                                                onChange={(e) => handleExperienceChange(index, 'company', e.target.value)}
+                                                className="input-premium text-sm"
+                                                required
+                                            />
+                                        </div>
+                                        <div>
+                                            <input
+                                                placeholder="Job Role"
+                                                value={exp.role}
+                                                onChange={(e) => handleExperienceChange(index, 'role', e.target.value)}
+                                                className="input-premium text-sm"
+                                                required
+                                            />
+                                        </div>
+                                        <div className="sm:col-span-2">
+                                            <input
+                                                placeholder="Duration (e.g. 2020-2022)"
+                                                value={exp.duration}
+                                                onChange={(e) => handleExperienceChange(index, 'duration', e.target.value)}
+                                                className="input-premium text-sm"
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+
+                            <button
+                                type="button"
+                                onClick={handleAddExperience}
+                                className="mt-2 text-sm text-indigo-600 font-medium hover:text-indigo-800 flex items-center gap-1"
+                            >
+                                + Add Experience
+                            </button>
+                        </div>
 
                         {/* Sliders Section */}
                         <div className="space-y-8 pt-4">
@@ -218,7 +311,7 @@ const ApplyPage = () => {
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium text-gray-700">Resume (PDF)</label>
+                        <label className="block text-sm font-medium text-gray-700">Resume (PDF, DOC, DOCX)</label>
                         <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md hover:border-indigo-500 transition-colors">
                             <div className="space-y-1 text-center">
                                 <svg className="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48">
