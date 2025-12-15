@@ -2,8 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 
 import { getJobs, updateJob } from '../services/api';
-import { MoreVertical, Copy, ExternalLink, Users } from 'lucide-react';
-// Removed FormPreviewModal and unused icons
+import { MoreVertical, Copy, Eye, ExternalLink, Users } from 'lucide-react';
+
+import FormPreviewModal from '../components/FormPreviewModal';
+// Removed Headless UI import
 
 const JobListPage = () => {
     const [jobs, setJobs] = useState([]);

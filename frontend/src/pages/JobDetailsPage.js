@@ -168,6 +168,33 @@ const JobDetailsPage = () => {
                         </div>
                     </div>
                 </div>
+
+                {/* Platform Application Links */}
+                <div className="mt-6 bg-gradient-to-r from-indigo-50 to-purple-50 p-4 rounded-xl border border-indigo-100">
+                    <div className="flex items-center justify-between flex-wrap gap-3">
+                        <div className="flex items-center gap-2">
+                            <span className="text-sm font-semibold text-gray-700">Apply via Platform:</span>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                            {[
+                                { name: 'LinkedIn', value: 'LINKEDIN', color: 'bg-[#0077B5] hover:bg-[#006399]', icon: <Linkedin size={16} /> },
+                                { name: 'Indeed', value: 'INDEED', color: 'bg-[#2164F3] hover:bg-[#1b52c9]', icon: <span className="font-bold">In</span> },
+                                { name: 'Glassdoor', value: 'GLASSDOOR', color: 'bg-[#0CAA41] hover:bg-[#0a8835]', icon: <span className="font-bold">Gd</span> },
+                                { name: 'Naukri', value: 'NAUKRI', color: 'bg-[#FBD235] hover:bg-[#e6be2a] text-gray-900', icon: <span className="font-bold">Nk</span> }
+                            ].map((platform) => (
+                                <Link
+                                    key={platform.value}
+                                    to={`/jobs/${jobId}/apply?platform=${platform.value}`}
+                                    className={`${platform.color} text-white px-4 py-2 rounded-lg text-sm font-medium transition-all shadow-sm hover:shadow-md flex items-center gap-2`}
+                                    title={`Apply via ${platform.name}`}
+                                >
+                                    {platform.icon}
+                                    {platform.name}
+                                </Link>
+                            ))}
+                        </div>
+                    </div>
+                </div>
             </div>
 
             {/* Toolbar: Search & Filters */}

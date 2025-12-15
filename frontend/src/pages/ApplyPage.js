@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { getJobDetail, submitApplication } from '../services/api';
 
 const ApplyPage = () => {
     const { jobId } = useParams();
     const navigate = useNavigate();
+    const location = useLocation();
     const [job, setJob] = useState(null);
+    const [platform, setPlatform] = useState('Website');
     const [formData, setFormData] = useState({
         name: '',
         email: '',
@@ -24,6 +26,13 @@ const ApplyPage = () => {
     const [answers, setAnswers] = useState({});
 
     useEffect(() => {
+        // Extract platform from URL query parameter
+        const searchParams = new URLSearchParams(location.search);
+        const platformParam = searchParams.get('platform');
+        if (platformParam) {
+            setPlatform(platformParam);
+        }
+
         const fetchJob = async () => {
             try {
                 const data = await getJobDetail(jobId);
@@ -33,7 +42,8 @@ const ApplyPage = () => {
             }
         };
         fetchJob();
-    }, [jobId]);
+    }, [jobId, location.search]);
+
 
     const handleChange = (e) => {
         const { name, value, files } = e.target;
@@ -77,6 +87,7 @@ const ApplyPage = () => {
         data.append('name', formData.name);
         data.append('email', formData.email);
         data.append('phone', formData.phone);
+        data.append('platform', platform); // Add platform from URL
         if (formData.experience_years) {
             data.append('experience_years', formData.experience_years);
         }
@@ -102,6 +113,7 @@ const ApplyPage = () => {
         }
     };
 
+
     if (!job) return <div className="p-8 text-center text-gray-500">Loading Job Details...</div>;
     if (success) return (
         <div className="min-h-screen flex items-center justify-center bg-green-50">
@@ -117,14 +129,31 @@ const ApplyPage = () => {
         <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
             <div className="max-w-2xl mx-auto bg-white rounded-xl shadow-md overflow-hidden p-8">
                 <div className="mb-8 border-b pb-6">
-                    <h1 className="text-3xl font-bold text-gray-900 mb-2">{job.title}</h1>
-                    <p className="text-gray-600 flex items-center gap-2">
-                        <span>📍 {job.location}</span>
-                        <span>•</span>
-                        <span className="font-medium text-gray-700">{job.department || 'General'}</span>
-                        <span>•</span>
-                        <span className="bg-indigo-100 text-indigo-800 px-2 py-0.5 rounded text-sm">{job.job_type}</span>
-                    </p>
+                    <div className="flex items-start justify-between">
+                        <div>
+                            <h1 className="text-3xl font-bold text-gray-900 mb-2">{job.title}</h1>
+                            <p className="text-gray-600 flex items-center gap-2">
+                                <span>📍 {job.location}</span>
+                                <span>•</span>
+                                <span className="font-medium text-gray-700">{job.department || 'General'}</span>
+                                <span>•</span>
+                                <span className="bg-indigo-100 text-indigo-800 px-2 py-0.5 rounded text-sm">{job.job_type}</span>
+                            </p>
+                        </div>
+                        {platform && platform !== 'Website' && (
+                            <div className="flex flex-col items-end gap-1">
+                                <span className="text-xs text-gray-500">Applying via</span>
+                                <div className={`px-3 py-1.5 rounded-lg text-sm font-bold shadow-sm ${platform === 'LINKEDIN' ? 'bg-[#0077B5] text-white' :
+                                        platform === 'INDEED' ? 'bg-[#2164F3] text-white' :
+                                            platform === 'GLASSDOOR' ? 'bg-[#0CAA41] text-white' :
+                                                platform === 'NAUKRI' ? 'bg-[#FBD235] text-gray-900' :
+                                                    'bg-gray-200 text-gray-700'
+                                    }`}>
+                                    {platform}
+                                </div>
+                            </div>
+                        )}
+                    </div>
                 </div>
 
                 <div className="mb-8 prose prose-indigo text-gray-500">

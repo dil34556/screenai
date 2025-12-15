@@ -13,6 +13,7 @@ urlpatterns = [
     # ScreenAI V2 Routes
     path('api/v1/', include('jobs.urls')),
     path('api/v1/', include('candidates.urls')),
+    path("api/", include("appscreenai.urls")),
 ]
 
 from django.conf import settings

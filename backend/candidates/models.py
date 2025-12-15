@@ -41,6 +41,8 @@ class Application(models.Model):
     
     applied_at = models.DateTimeField(auto_now_add=True)
 
+
+
     # Screening Answers
     answers = models.JSONField(default=list, blank=True, help_text="Candidate answers to screening questions")
     

@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Briefcase, Users, LogOut, Home, User } from 'lucide-react';
+import { LayoutDashboard, Briefcase, Users, LogOut, Home, BarChart3 } from 'lucide-react';
+
+
 
 const AdminLayout = () => {
     const location = useLocation();
@@ -31,7 +33,9 @@ const AdminLayout = () => {
         { name: 'Dashboard', href: '/admin/dashboard', icon: LayoutDashboard },
         { name: 'Jobs', href: '/admin/jobs', icon: Briefcase },
         { name: 'Employees', href: '/admin/employees', icon: Users },
+        { name: 'Analytics', href: '/admin/analytics', icon: BarChart3 },
     ];
+
 
 
 
