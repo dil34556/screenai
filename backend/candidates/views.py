@@ -2,10 +2,12 @@ from rest_framework import generics, status, views
 from rest_framework.response import Response
 from rest_framework.parsers import MultiPartParser, FormParser
 from django.db.models import Count, Q
+from django.db.models.functions import TruncDate, TruncWeek
+from django.db.models import F
 import datetime
-from .models import Candidate, Application
-from jobs.models import JobPosting
-from .serializers import ApplicationSerializer, CandidateSerializer
+from .models import Candidate, Application, ApplicationComment
+from jobs.models import JobPosting, Employee
+from .serializers import ApplicationSerializer, CandidateSerializer, ApplicationCommentSerializer
 
 
 class ApplicationCreateView(views.APIView):
@@ -109,9 +111,6 @@ class ApplicationDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Application.objects.all()
     serializer_class = ApplicationSerializer
 
-from .models import ApplicationComment
-from .serializers import ApplicationCommentSerializer
-
 class AddCommentView(generics.CreateAPIView):
     queryset = ApplicationComment.objects.all()
     serializer_class = ApplicationCommentSerializer
@@ -160,3 +159,150 @@ class DashboardStatsView(views.APIView):
             "today_candidates": today,
             "status_breakdown": status_counts
         })
+
+class AnalyticsView(views.APIView):
+    def get(self, request):
+        try:
+            employee_id = request.headers.get('X-Employee-Id')
+            
+            # Base query
+            apps_query = Application.objects.all()
+            if employee_id:
+                apps_query = apps_query.filter(job__recruiter_id=employee_id)
+            
+            # 1. Summary Stats
+            total_applications = apps_query.count()
+            this_month = apps_query.filter(applied_at__month=datetime.date.today().month).count()
+            today_calls = apps_query.filter(applied_at__date=datetime.date.today()).count()
+            
+            # Conversion rate (OFFER / total)
+            hired_count = apps_query.filter(status='OFFER').count()
+            conversion_rate = round((hired_count / total_applications * 100), 1) if total_applications > 0 else 0
+            
+            # 2. Weekly Application Trend (last 4 weeks)
+            today = datetime.date.today()
+            four_weeks_ago = today - datetime.timedelta(weeks=4)
+            
+            weekly_data = apps_query.filter(applied_at__date__gte=four_weeks_ago).annotate(
+                week=TruncWeek('applied_at')
+            ).values('week').annotate(
+                applications=Count('id'),
+                hired=Count('id', filter=Q(status='OFFER'))
+            ).order_by('week')
+            
+            # Format weekly data
+            weekly_trend = []
+            for i, week in enumerate(weekly_data, 1):
+                weekly_trend.append({
+                    'week': f'Week {i}',
+                    'applications': week['applications'],
+                    'hired': week['hired']
+                })
+            
+            # Fill in missing weeks if needed
+            while len(weekly_trend) < 4:
+                weekly_trend.append({
+                    'week': f'Week {len(weekly_trend) + 1}',
+                    'applications': 0,
+                    'hired': 0
+                })
+            
+            # 3. Pipeline Status Distribution
+            pipeline_distribution = list(apps_query.values('status').annotate(count=Count('status')))
+            
+            # 4. Daily Applications (last 7 days)
+            seven_days_ago = today - datetime.timedelta(days=7)
+            daily_data = apps_query.filter(applied_at__date__gte=seven_days_ago).annotate(
+                day=TruncDate('applied_at')
+            ).values('day').annotate(
+                count=Count('id')
+            ).order_by('day')
+            
+            # Fill in missing days
+            daily_applications = []
+            for i in range(7):
+                date = seven_days_ago + datetime.timedelta(days=i)
+                day_name = date.strftime('%a')
+                count = next((d['count'] for d in daily_data if d['day'] == date), 0)
+                daily_applications.append({
+                    'day': day_name,
+                    'count': count
+                })
+            
+            # 5. Platform Performance
+            platform_stats = apps_query.values('platform').annotate(count=Count('id'))
+            total_platform_apps = sum(p['count'] for p in platform_stats)
+            
+            platform_performance = []
+            for platform in platform_stats:
+                percentage = round((platform['count'] / total_platform_apps * 100), 1) if total_platform_apps > 0 else 0
+                platform_performance.append({
+                    'platform': platform['platform'] or 'Website',
+                    'count': platform['count'],
+                    'percentage': percentage
+                })
+            
+            # 6. HR Team Performance
+            hr_performance = []
+            try:
+                employees = Employee.objects.all()
+                
+                for emp in employees:
+                    emp_apps = apps_query.filter(job__recruiter_id=emp.id)
+                    emp_total = emp_apps.count()
+                    
+                    if emp_total > 0:
+                        calls_today = emp_apps.filter(applied_at__date=datetime.date.today()).count()
+                        shortlisted = emp_apps.filter(status='SCREENED').count()
+                        rejected = emp_apps.filter(status='REJECTED').count()
+                        hired = emp_apps.filter(status='OFFER').count()
+                        conversion = round((hired / emp_total * 100), 1)
+                        
+                        # Build name from available fields
+                        name = f"{emp.first_name} {emp.last_name}".strip() if hasattr(emp, 'first_name') and hasattr(emp, 'last_name') else emp.email.split('@')[0]
+                        
+                        hr_performance.append({
+                            'id': emp.id,
+                            'name': name or emp.email,
+                            'email': emp.email,
+                            'calls_today': calls_today,
+                            'shortlisted': shortlisted,
+                            'rejected': rejected,
+                            'hired': hired,
+                            'conversion': conversion
+                        })
+            except Exception as e:
+                print(f"Error fetching HR performance: {e}")
+                # Continue without HR performance data
+            
+            return Response({
+                'summary': {
+                    'total_applications': total_applications,
+                    'hired_this_month': this_month,
+                    'total_calls_today': today_calls,
+                    'conversion_rate': conversion_rate
+                },
+                'weekly_trend': weekly_trend,
+                'pipeline_distribution': pipeline_distribution,
+                'daily_applications': daily_applications,
+                'platform_performance': platform_performance,
+                'hr_team_performance': hr_performance
+            })
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            return Response({
+                'error': str(e),
+                'summary': {
+                    'total_applications': 0,
+                    'hired_this_month': 0,
+                    'total_calls_today': 0,
+                    'conversion_rate': 0
+                },
+                'weekly_trend': [],
+                'pipeline_distribution': [],
+                'daily_applications': [],
+                'platform_performance': [],
+                'hr_team_performance': []
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
