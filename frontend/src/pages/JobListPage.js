@@ -2,9 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 
 import { getJobs, updateJob } from '../services/api';
-import { MoreVertical, Copy, Eye, ExternalLink, Users } from 'lucide-react';
-
-import FormPreviewModal from '../components/FormPreviewModal';
+import { MoreVertical, Copy, ExternalLink, Users } from 'lucide-react';
 // Removed Headless UI import
 
 const JobListPage = () => {

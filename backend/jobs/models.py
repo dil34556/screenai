@@ -26,6 +26,7 @@ class JobPosting(models.Model):
     previous_companies = models.JSONField(default=list, blank=True, help_text="List of preferred previous companies")
     previous_roles = models.JSONField(default=list, blank=True, help_text="List of preferred previous job roles")
     screening_questions = models.JSONField(default=list, blank=True, help_text="Custom questions for the candidate")
+    custom_platforms = models.JSONField(default=list, blank=True, help_text="List of custom platform names")
     
     is_active = models.BooleanField(default=True)
     recruiter = models.ForeignKey(Employee, on_delete=models.CASCADE, null=True, blank=True, related_name='job_postings')

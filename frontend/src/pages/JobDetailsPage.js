@@ -1,15 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
-import { getJobDetail, getApplicationsForJob, updateApplicationStatus, addComment } from '../services/api';
-import {
-    Search, Filter, ChevronDown,
-    Linkedin, ExternalLink, FileText, ArrowLeft,
-    Briefcase, MapPin, Users, MessageSquare, Eye, SlidersHorizontal, Download
-} from 'lucide-react';
+import { useParams, Link, useNavigate } from 'react-router-dom';
+import { getJobDetail, getApplicationsForJob, updateApplicationStatus, addComment, updateJob } from '../services/api';
+import { ArrowLeft, Briefcase, MapPin, Users, Linkedin, Search, Filter, ChevronDown, Download, FileText, ExternalLink, Plus, ArrowRight, MessageSquare, Eye, SlidersHorizontal } from 'lucide-react';
 import mammoth from 'mammoth';
 
 const JobDetailsPage = () => {
     const { jobId } = useParams();
+    const navigate = useNavigate();
     const [job, setJob] = useState(null);
     const [applications, setApplications] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -29,6 +26,10 @@ const JobDetailsPage = () => {
     const [showResumeModal, setShowResumeModal] = useState(false);
     const [newComment, setNewComment] = useState("");
     const [docxContent, setDocxContent] = useState(""); // State for rendered docx HTML
+
+    // Custom Platform State
+    const [customPlatform, setCustomPlatform] = useState('');
+    const [showCustomInput, setShowCustomInput] = useState(false);
 
     const fetchData = async () => {
         try {
@@ -176,6 +177,7 @@ const JobDetailsPage = () => {
                             <span className="text-sm font-semibold text-gray-700">Apply via Platform:</span>
                         </div>
                         <div className="flex flex-wrap gap-2">
+                            {/* Standard Platforms */}
                             {[
                                 { name: 'LinkedIn', value: 'LINKEDIN', color: 'bg-[#0077B5] hover:bg-[#006399]', icon: <Linkedin size={16} /> },
                                 { name: 'Indeed', value: 'INDEED', color: 'bg-[#2164F3] hover:bg-[#1b52c9]', icon: <span className="font-bold">In</span> },
@@ -192,6 +194,79 @@ const JobDetailsPage = () => {
                                     {platform.name}
                                 </Link>
                             ))}
+
+                            {/* Dynamically Added Custom Platforms */}
+                            {job.custom_platforms && job.custom_platforms.map((platformName, idx) => (
+                                <Link
+                                    key={`custom-${idx}`}
+                                    to={`/jobs/${jobId}/apply?platform=${encodeURIComponent(platformName)}`}
+                                    className="bg-gray-800 hover:bg-gray-900 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all shadow-sm hover:shadow-md flex items-center gap-2"
+                                    title={`Apply via ${platformName}`}
+                                >
+                                    <Briefcase size={16} />
+                                    {platformName}
+                                </Link>
+                            ))}
+
+                            {/* Custom Platform Button */}
+                            <button
+                                onClick={() => setShowCustomInput(!showCustomInput)}
+                                className="bg-white border border-gray-200 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium transition-all shadow-sm hover:shadow-md hover:bg-gray-50 flex items-center gap-2"
+                                title="Add Custom Platform"
+                            >
+                                <Plus size={16} /> Custom
+                            </button>
+
+                            {/* Custom Input */}
+                            {showCustomInput && (
+                                <div className="flex items-center gap-2 animate-in fade-in slide-in-from-left-2 duration-200">
+                                    <input
+                                        type="text"
+                                        placeholder="Platform Name..."
+                                        className="py-1.5 px-3 rounded-lg border border-gray-300 text-sm w-40 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
+                                        value={customPlatform}
+                                        onChange={(e) => setCustomPlatform(e.target.value)}
+                                        onKeyDown={async (e) => {
+                                            if (e.key === 'Enter' && customPlatform.trim()) {
+                                                const newPlatform = customPlatform.trim();
+                                                const updatedPlatforms = [...(job.custom_platforms || []), newPlatform];
+                                                try {
+                                                    await updateJob(jobId, { custom_platforms: updatedPlatforms });
+                                                    setJob(prev => ({ ...prev, custom_platforms: updatedPlatforms }));
+                                                    setCustomPlatform("");
+                                                    setShowCustomInput(false);
+                                                } catch (err) {
+                                                    console.error("Failed to add platform", err);
+                                                    alert("Failed to add platform");
+                                                }
+                                            }
+                                        }}
+                                        autoFocus
+                                    />
+                                    <button
+                                        onClick={async () => {
+                                            if (customPlatform.trim()) {
+                                                const newPlatform = customPlatform.trim();
+                                                const updatedPlatforms = [...(job.custom_platforms || []), newPlatform];
+                                                try {
+                                                    await updateJob(jobId, { custom_platforms: updatedPlatforms });
+                                                    setJob(prev => ({ ...prev, custom_platforms: updatedPlatforms }));
+                                                    setCustomPlatform("");
+                                                    setShowCustomInput(false);
+                                                } catch (err) {
+                                                    console.error("Failed to add platform", err);
+                                                    alert("Failed to add platform");
+                                                }
+                                            }
+                                        }}
+                                        disabled={!customPlatform.trim()}
+                                        className="bg-indigo-600 text-white p-1.5 rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                        title="Add"
+                                    >
+                                        <Plus size={16} />
+                                    </button>
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>
