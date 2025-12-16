@@ -6,10 +6,41 @@ import datetime
 from .models import Candidate, Application
 from jobs.models import JobPosting
 from .serializers import ApplicationSerializer, CandidateSerializer
-from screenai.services.ai_screener import AIScreener
+from screenai.services.resume_parser.parser import parse_resume
+from django.views.decorators.csrf import csrf_exempt
+from django.core.files.storage import default_storage
+from django.http import JsonResponse
+import os
+import json
 
-class ApplicationCreateView(views.APIView):
+from screenai.services.resume_parser.parser import parse_resume
+
+
+
+class ApplicationListCreateView(generics.ListAPIView):
+    # Standard ListAPIView settings
+    serializer_class = ApplicationSerializer
+    
+    # Settings from ApplicationCreateView
     parser_classes = (MultiPartParser, FormParser)
+
+    def get_queryset(self):
+        queryset = Application.objects.select_related('candidate', 'job').all().order_by('-applied_at')
+        
+        # 1. Multi-tenant Filter
+        employee_id = self.request.headers.get('X-Employee-Id')
+        if employee_id:
+            queryset = queryset.filter(job__recruiter_id=employee_id)
+            
+        job_id = self.request.query_params.get('job')
+        if job_id:
+            queryset = queryset.filter(job_id=job_id)
+        
+        status_param = self.request.query_params.get('status')
+        if status_param:
+            queryset = queryset.filter(status=status_param)
+            
+        return queryset
 
     def post(self, request, *args, **kwargs):
         # 1. Extract Candidate Data
@@ -17,7 +48,6 @@ class ApplicationCreateView(views.APIView):
             "name": request.data.get("name"),
             "email": request.data.get("email"),
             "phone": request.data.get("phone"),
-            "linkedin_url": request.data.get("linkedin_url"),
         }
         
         job_id = request.data.get("job")
@@ -35,50 +65,200 @@ class ApplicationCreateView(views.APIView):
         except JobPosting.DoesNotExist:
              return Response({"error": "Job not found."}, status=status.HTTP_404_NOT_FOUND)
 
-        application = Application.objects.create(
-            job=job,
-            candidate=candidate,
-            resume=resume_file
-        )
+        # Extract additional fields
 
-        # 4. Trigger AI Screening (Synchronous for MVP)
-        # Note: In production, offload this to Celery/background task
-        screener = AIScreener()
-        # We need the file path. After save, it's on disk (because default storage is filesystem)
-        if application.resume and hasattr(application.resume, 'path'):
-            resume_text = screener.extract_text_from_pdf(application.resume.path)
+        answers_str = request.data.get("answers")
+        answers_data = []
+        if answers_str:
+            try:
+                answers_data = json.loads(answers_str)
+            except ValueError:
+                pass
+        
+        experience_years = request.data.get("experience_years")
+        current_ctc = request.data.get("current_ctc")
+        expected_ctc = request.data.get("expected_ctc")
+        notice_period = request.data.get("notice_period")
+
+        def safe_float(val):
+            try: return float(val) if val else None
+            except: return None
+        
+        def safe_int(val):
+            try: return int(val) if val else None
+            except: return None
+
+        try:
+            application = Application.objects.create(
+                job=job,
+                candidate=candidate,
+                resume=resume_file,
+                experience_years=safe_int(experience_years),
+                current_ctc=safe_float(current_ctc),
+                expected_ctc=safe_float(expected_ctc),
+                notice_period=safe_int(notice_period),
+                answers=answers_data
+            )
+
+            # 👇 Non-blocking Parsing
+            try:
+                # 👇 FULL FILE PATH
+                parsed_data = parse_resume(application.resume.path)
+
+                # 👇 SAVE PARSED DATA
+                application.total_years_experience = parsed_data["data"]["total_years_experience"]
+                application.skills = parsed_data["data"]["skills"]
+                application.education = parsed_data["data"]["education"]
+                application.certifications = parsed_data["data"]["certifications"]
+                application.resume_text = json.dumps(parsed_data, indent=2)
+
+                application.save()
+            except Exception as e:
+                print(f"WARNING: Resume parsing failed for App ID {application.id}: {e}")
+                # We do NOT return 500 here. We proceed.
             
-            # Combine Title + Description + Questions for context
-            jd_text = f"Title: {job.title}\n\nDescription: {job.description}\n\nRequired Skills: {job.required_skills}"
-            
-            ai_results = screener.analyze_application(resume_text, jd_text)
-            
-            # 5. Update Application with AI Results
-            application.ai_match_score = ai_results.get("match_score")
-            application.ai_summary = ai_results.get("summary")
-            application.ai_missing_skills = ai_results.get("missing_skills")
-            application.status = 'SCREENED'
-            application.save()
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
 
         serializer = ApplicationSerializer(application)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
-class ApplicationListView(generics.ListAPIView):
-    queryset = Application.objects.select_related('candidate', 'job').all().order_by('-ai_match_score')
+
+class ApplicationDetailView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Application.objects.all()
     serializer_class = ApplicationSerializer
-    filterset_fields = ['status', 'job']
+
+from .models import ApplicationComment
+from .serializers import ApplicationCommentSerializer
+
+class AddCommentView(generics.CreateAPIView):
+    queryset = ApplicationComment.objects.all()
+    serializer_class = ApplicationCommentSerializer
+
+    def post(self, request, *args, **kwargs):
+        app_id = self.kwargs.get('pk')
+        try:
+            application = Application.objects.get(id=app_id)
+        except Application.DoesNotExist:
+            return Response({"error": "Application not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        # Check if comment exists
+        comment = ApplicationComment.objects.filter(application=application).first()
+        
+        if comment:
+            # Update existing
+            serializer = self.get_serializer(comment, data=request.data, partial=True)
+            if serializer.is_valid():
+                serializer.save()
+                return Response(serializer.data)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            # Create new
+            serializer = self.get_serializer(data=request.data)
+            if serializer.is_valid():
+                serializer.save(application=application)
+                return Response(serializer.data, status=status.HTTP_201_CREATED)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class ParseApplicationResumeView(views.APIView):
+    def post(self, request, pk):
+        try:
+            application = Application.objects.get(pk=pk)
+        except Application.DoesNotExist:
+            return Response({"error": "Application not found"}, status=status.HTTP_404_NOT_FOUND)
+        
+        if not application.resume:
+            return Response({"error": "No resume file to parse"}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            # Re-run parser
+            parsed_data = parse_resume(application.resume.path)
+            
+            # Update fields
+            application.total_years_experience = parsed_data["data"]["total_years_experience"]
+            application.skills = parsed_data["data"]["skills"]
+            application.education = parsed_data["data"]["education"]
+            application.certifications = parsed_data["data"]["certifications"]
+            application.resume_text = json.dumps(parsed_data, indent=2)
+            
+            application.save()
+            
+            return Response({
+                "message": "Resume parsed successfully",
+                "data": parsed_data["data"]
+            }, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 class DashboardStatsView(views.APIView):
     def get(self, request):
-        total = Application.objects.count()
-        today = Application.objects.filter(applied_at__date__gte=datetime.date.today()).count() if hasattr('datetime', 'date') else 0 
-        # Fix: need datetime import
+        employee_id = request.headers.get('X-Employee-Id')
+        
+        apps_query = Application.objects.all()
+        if employee_id:
+            apps_query = apps_query.filter(job__recruiter_id=employee_id)
+            
+        total = apps_query.count()
+        today = apps_query.filter(applied_at__date__gte=datetime.date.today()).count()
         
         # Status counts
-        status_counts = Application.objects.values('status').annotate(count=Count('status'))
+        status_counts = apps_query.values('status').annotate(count=Count('status'))
         
         return Response({
             "total_candidates": total,
             "today_candidates": today,
             "status_breakdown": status_counts
         })
+
+class PreviewResumeView(views.APIView):
+    parser_classes = (MultiPartParser, FormParser)
+
+    def post(self, request):
+        resume_file = request.FILES.get("resume")
+        if not resume_file:
+            return Response({"error": "No resume file uploaded"}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Save temporarily
+        temp_path = default_storage.save(f"temp/{resume_file.name}", resume_file)
+        full_path = default_storage.path(temp_path)
+
+        try:
+            parsed_data = parse_resume(full_path)
+            
+            # Cleanup
+            default_storage.delete(temp_path)
+            if os.path.exists(full_path):
+                os.remove(full_path)
+
+            return Response({
+                "message": "Resume parsed successfully",
+                "data": parsed_data["data"]
+            }, status=status.HTTP_200_OK)
+
+        except Exception as e:
+            # Cleanup on error
+            if os.path.exists(full_path):
+                os.remove(full_path)
+            
+            error_msg = str(e).lower()
+            if "quota" in error_msg or "429" in error_msg or "404" in error_msg:
+                 # Soft fail: Return empty data so user can enter manually
+                return Response({
+                    "message": "Autofill unavailable (Quota/Model Error). Please enter details manually.",
+                    "data": {
+                        "candidate_name": "",
+                        "email": "",
+                        "phone": "",
+                        "total_years_experience": 0,
+                        "skills": [],
+                        "education": [],
+                        "certifications": [],
+                        "work_experience": []
+                    }
+                }, status=status.HTTP_200_OK)
+
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

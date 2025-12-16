@@ -8,7 +8,6 @@ class CandidateAdmin(admin.ModelAdmin):
 
 @admin.register(Application)
 class ApplicationAdmin(admin.ModelAdmin):
-    list_display = ('candidate', 'job', 'status', 'ai_match_score', 'applied_at')
+    list_display = ('candidate', 'job', 'status', 'applied_at')
     list_filter = ('status', 'job')
     search_fields = ('candidate__name', 'candidate__email', 'job__title')
-    readonly_fields = ('ai_match_score', 'ai_summary', 'ai_missing_skills')
