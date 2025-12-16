@@ -3,7 +3,7 @@ import api from "../api/axios";
 
 export default function ApplyForm() {
   const [form, setForm] = useState({
-    full_name: "",
+    name: "",
     email: "",
     phone: "",
     years_of_experience: "",
@@ -38,13 +38,13 @@ export default function ApplyForm() {
       });
       if (resumeFile) data.append("resume", resumeFile);
 
-      const res = await api.post("applicants/", data, {
+      const res = await api.post("candidates/applications/", data, {
         headers: { "Content-Type": "multipart/form-data" },
       });
 
       setSuccess("Application submitted successfully!");
       setForm({
-        full_name: "",
+        name: "",
         email: "",
         phone: "",
         years_of_experience: "",
@@ -72,9 +72,9 @@ export default function ApplyForm() {
         <label>
           Full Name *
           <input
-            name="full_name"
+            name="name"
             required
-            value={form.full_name}
+            value={form.name}
             onChange={handleChange}
           />
         </label>

@@ -43,6 +43,13 @@ class Application(models.Model):
 
     # Screening Answers
     answers = models.JSONField(default=list, blank=True, help_text="Candidate answers to screening questions")
+
+    # 👇 parsed fields
+    total_years_experience = models.FloatField(null=True, blank=True)
+    skills = models.JSONField(default=list, blank=True)
+    education = models.JSONField(default=list, blank=True)
+    certifications = models.JSONField(default=list, blank=True)
+    resume_text = models.TextField(null=True, blank=True)
     
     def __str__(self):
         return f"{self.candidate.name} - {self.job.title}"

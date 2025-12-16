@@ -39,7 +39,7 @@ export const getJobDetail = async (id) => {
 };
 
 export const submitApplication = async (formData) => {
-    const response = await api.post('/apply/', formData, {
+    const response = await api.post('/applications/', formData, {
         headers: {
             'Content-Type': 'multipart/form-data',
         },
@@ -61,12 +61,8 @@ export const getApplications = async (params = {}) => {
 };
 
 export const getJobApplications = async (jobId) => {
-    const response = await api.get(`/jobs/${jobId}/applications/`);
-    // Note: Backend might not have this specific endpoint, we might need to filter client side or add it.
-    // Checking urls.py or views... wait, standard ViewSets usually support filtering or we use the main list.
-    // Let's assume we filter the main list for now if the backend doesn't support nested.
-    // Actually, looking at the previous analysis, we didn't check views.py for nested logic.
-    // Safest bet for now: Filter on client side if getting all, OR use query param ?job=ID
+    // API doesn't support nested /jobs/:id/applications, use filter
+    const response = await api.get(`/applications/?job=${jobId}`);
     return response.data;
 };
 
@@ -91,8 +87,22 @@ export const updateApplicationStatus = async (id, status) => {
     return response.data;
 };
 
-export const addComment = async (id, text) => {
-    const response = await api.post(`/applications/${id}/comments/`, { text });
+export const addComment = async (appId, text) => {
+    const response = await api.post(`/applications/${appId}/comments/`, { text });
+    return response.data;
+};
+
+export const reparseApplication = async (appId) => {
+    const response = await api.post(`/applications/${appId}/parse/`);
+    return response.data;
+};
+
+export const previewResume = async (formData) => {
+    const response = await api.post('/applications/preview/', formData, {
+        headers: {
+            'Content-Type': 'multipart/form-data',
+        },
+    });
     return response.data;
 };
 

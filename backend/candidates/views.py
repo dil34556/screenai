@@ -6,10 +6,41 @@ import datetime
 from .models import Candidate, Application
 from jobs.models import JobPosting
 from .serializers import ApplicationSerializer, CandidateSerializer
+from screenai.services.resume_parser.parser import parse_resume
+from django.views.decorators.csrf import csrf_exempt
+from django.core.files.storage import default_storage
+from django.http import JsonResponse
+import os
+import json
+
+from screenai.services.resume_parser.parser import parse_resume
 
 
-class ApplicationCreateView(views.APIView):
+
+class ApplicationListCreateView(generics.ListAPIView):
+    # Standard ListAPIView settings
+    serializer_class = ApplicationSerializer
+    
+    # Settings from ApplicationCreateView
     parser_classes = (MultiPartParser, FormParser)
+
+    def get_queryset(self):
+        queryset = Application.objects.select_related('candidate', 'job').all().order_by('-applied_at')
+        
+        # 1. Multi-tenant Filter
+        employee_id = self.request.headers.get('X-Employee-Id')
+        if employee_id:
+            queryset = queryset.filter(job__recruiter_id=employee_id)
+            
+        job_id = self.request.query_params.get('job')
+        if job_id:
+            queryset = queryset.filter(job_id=job_id)
+        
+        status_param = self.request.query_params.get('status')
+        if status_param:
+            queryset = queryset.filter(status=status_param)
+            
+        return queryset
 
     def post(self, request, *args, **kwargs):
         # 1. Extract Candidate Data
@@ -35,7 +66,7 @@ class ApplicationCreateView(views.APIView):
              return Response({"error": "Job not found."}, status=status.HTTP_404_NOT_FOUND)
 
         # Extract additional fields
-        import json
+
         answers_str = request.data.get("answers")
         answers_data = []
         if answers_str:
@@ -68,6 +99,24 @@ class ApplicationCreateView(views.APIView):
                 notice_period=safe_int(notice_period),
                 answers=answers_data
             )
+
+            # 👇 Non-blocking Parsing
+            try:
+                # 👇 FULL FILE PATH
+                parsed_data = parse_resume(application.resume.path)
+
+                # 👇 SAVE PARSED DATA
+                application.total_years_experience = parsed_data["data"]["total_years_experience"]
+                application.skills = parsed_data["data"]["skills"]
+                application.education = parsed_data["data"]["education"]
+                application.certifications = parsed_data["data"]["certifications"]
+                application.resume_text = json.dumps(parsed_data, indent=2)
+
+                application.save()
+            except Exception as e:
+                print(f"WARNING: Resume parsing failed for App ID {application.id}: {e}")
+                # We do NOT return 500 here. We proceed.
+            
         except Exception as e:
             import traceback
             traceback.print_exc()
@@ -77,27 +126,6 @@ class ApplicationCreateView(views.APIView):
         serializer = ApplicationSerializer(application)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
-class ApplicationListView(generics.ListAPIView):
-    serializer_class = ApplicationSerializer
-    # filterset_fields = ['status', 'job'] # Requires django-filter, manually filtering below instead
-
-    def get_queryset(self):
-        queryset = Application.objects.select_related('candidate', 'job').all().order_by('-applied_at')
-        
-        # 1. Multi-tenant Filter
-        employee_id = self.request.headers.get('X-Employee-Id')
-        if employee_id:
-            queryset = queryset.filter(job__recruiter_id=employee_id)
-            
-        job_id = self.request.query_params.get('job')
-        if job_id:
-            queryset = queryset.filter(job_id=job_id)
-        
-        status_param = self.request.query_params.get('status')
-        if status_param:
-            queryset = queryset.filter(status=status_param)
-            
-        return queryset
 
 class ApplicationDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Application.objects.all()
@@ -135,6 +163,37 @@ class AddCommentView(generics.CreateAPIView):
                 return Response(serializer.data, status=status.HTTP_201_CREATED)
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+class ParseApplicationResumeView(views.APIView):
+    def post(self, request, pk):
+        try:
+            application = Application.objects.get(pk=pk)
+        except Application.DoesNotExist:
+            return Response({"error": "Application not found"}, status=status.HTTP_404_NOT_FOUND)
+        
+        if not application.resume:
+            return Response({"error": "No resume file to parse"}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            # Re-run parser
+            parsed_data = parse_resume(application.resume.path)
+            
+            # Update fields
+            application.total_years_experience = parsed_data["data"]["total_years_experience"]
+            application.skills = parsed_data["data"]["skills"]
+            application.education = parsed_data["data"]["education"]
+            application.certifications = parsed_data["data"]["certifications"]
+            application.resume_text = json.dumps(parsed_data, indent=2)
+            
+            application.save()
+            
+            return Response({
+                "message": "Resume parsed successfully",
+                "data": parsed_data["data"]
+            }, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
 class DashboardStatsView(views.APIView):
     def get(self, request):
         employee_id = request.headers.get('X-Employee-Id')
@@ -154,3 +213,52 @@ class DashboardStatsView(views.APIView):
             "today_candidates": today,
             "status_breakdown": status_counts
         })
+
+class PreviewResumeView(views.APIView):
+    parser_classes = (MultiPartParser, FormParser)
+
+    def post(self, request):
+        resume_file = request.FILES.get("resume")
+        if not resume_file:
+            return Response({"error": "No resume file uploaded"}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Save temporarily
+        temp_path = default_storage.save(f"temp/{resume_file.name}", resume_file)
+        full_path = default_storage.path(temp_path)
+
+        try:
+            parsed_data = parse_resume(full_path)
+            
+            # Cleanup
+            default_storage.delete(temp_path)
+            if os.path.exists(full_path):
+                os.remove(full_path)
+
+            return Response({
+                "message": "Resume parsed successfully",
+                "data": parsed_data["data"]
+            }, status=status.HTTP_200_OK)
+
+        except Exception as e:
+            # Cleanup on error
+            if os.path.exists(full_path):
+                os.remove(full_path)
+            
+            error_msg = str(e).lower()
+            if "quota" in error_msg or "429" in error_msg or "404" in error_msg:
+                 # Soft fail: Return empty data so user can enter manually
+                return Response({
+                    "message": "Autofill unavailable (Quota/Model Error). Please enter details manually.",
+                    "data": {
+                        "candidate_name": "",
+                        "email": "",
+                        "phone": "",
+                        "total_years_experience": 0,
+                        "skills": [],
+                        "education": [],
+                        "certifications": [],
+                        "work_experience": []
+                    }
+                }, status=status.HTTP_200_OK)
+
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
