@@ -7,7 +7,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('appscreenai', '0001_initial'),
+       
         ('jobs', '0004_jobposting_expected_ctc_limit_and_more'),
     ]
 
