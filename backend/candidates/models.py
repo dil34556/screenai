@@ -42,13 +42,11 @@ class Application(models.Model):
 
     # 👇 parsed fields
     total_years_experience = models.FloatField(null=True, blank=True)
-    skills = models.JSONField(default=list, blank=True)
+    skills = models.TextField(blank=True, help_text="Comma-separated skills")
+
     education = models.JSONField(default=list, blank=True)
     certifications = models.JSONField(default=list, blank=True)
     resume_text = models.TextField(null=True, blank=True)
-    
-    # New Fields
-    skills = models.TextField(blank=True, help_text="Comma-separated skills")
     
     def __str__(self):
         return f"{self.candidate.name} - {self.job.title}"

@@ -1,9 +1,5 @@
 from django.urls import path
-<<<<<<< HEAD
-from .views import ApplicationListCreateView, ApplicationDetailView, AddCommentView, DashboardStatsView, ParseApplicationResumeView, PreviewResumeView
-=======
-from .views import ApplicationCreateView, ApplicationListView, DashboardStatsView, ApplicationDetailView, AddCommentView, AnalyticsView
->>>>>>> 7885fd4af6c61c3dd0271b0ca3549411252d6cfb
+from .views import ApplicationListCreateView, ApplicationDetailView, AddCommentView, DashboardStatsView, ParseApplicationResumeView, PreviewResumeView, AnalyticsView
 
 urlpatterns = [
     path('applications/', ApplicationListCreateView.as_view(), name='application-list'),
