@@ -5,10 +5,9 @@ from django.db.models import Count, Q
 from django.db.models.functions import TruncDate, TruncWeek
 from django.db.models import F
 import datetime
-<<<<<<< HEAD
-from .models import Candidate, Application
+from .models import Candidate, Application, ApplicationComment
 from jobs.models import JobPosting
-from .serializers import ApplicationSerializer, CandidateSerializer
+from .serializers import ApplicationSerializer, CandidateSerializer, ApplicationCommentSerializer
 from screenai.services.resume_parser.parser import parse_resume
 from django.views.decorators.csrf import csrf_exempt
 from django.core.files.storage import default_storage
@@ -17,11 +16,6 @@ import os
 import json
 
 from screenai.services.resume_parser.parser import parse_resume
-=======
-from .models import Candidate, Application, ApplicationComment
-from jobs.models import JobPosting, Employee
-from .serializers import ApplicationSerializer, CandidateSerializer, ApplicationCommentSerializer
->>>>>>> 7885fd4af6c61c3dd0271b0ca3549411252d6cfb
 
 
 
@@ -121,7 +115,6 @@ class ApplicationListCreateView(generics.ListAPIView):
                 skills=skills
             )
 
-<<<<<<< HEAD
             # 👇 Non-blocking Parsing
             try:
                 # 👇 FULL FILE PATH
@@ -139,18 +132,6 @@ class ApplicationListCreateView(generics.ListAPIView):
                 print(f"WARNING: Resume parsing failed for App ID {application.id}: {e}")
                 # We do NOT return 500 here. We proceed.
             
-=======
-            # Save Experiences
-            from .models import Experience
-            for exp in experiences_data:
-                Experience.objects.create(
-                    application=application,
-                    company=exp.get('company'),
-                    role=exp.get('role'),
-                    duration=exp.get('duration')
-                )
-
->>>>>>> 7885fd4af6c61c3dd0271b0ca3549411252d6cfb
         except Exception as e:
             import traceback
             traceback.print_exc()
@@ -160,34 +141,6 @@ class ApplicationListCreateView(generics.ListAPIView):
         serializer = ApplicationSerializer(application)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
-<<<<<<< HEAD
-=======
-class ApplicationListView(generics.ListAPIView):
-    serializer_class = ApplicationSerializer
-    # filterset_fields = ['status', 'job'] # Requires django-filter, manually filtering below instead
-
-    def get_queryset(self):
-        queryset = Application.objects.select_related('candidate', 'job').all().order_by('-applied_at')
-        
-        # 1. Multi-tenant Filter
-        employee_id = self.request.headers.get('X-Employee-Id')
-        if employee_id:
-            queryset = queryset.filter(job__recruiter_id=employee_id)
-            
-        job_id = self.request.query_params.get('job')
-        if job_id:
-            queryset = queryset.filter(job_id=job_id)
-        
-        status_param = self.request.query_params.get('status')
-        if status_param:
-            queryset = queryset.filter(status=status_param)
-
-        platform_param = self.request.query_params.get('platform')
-        if platform_param:
-            queryset = queryset.filter(platform=platform_param)
-            
-        return queryset
->>>>>>> 7885fd4af6c61c3dd0271b0ca3549411252d6cfb
 
 class ApplicationDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Application.objects.all()
@@ -273,7 +226,6 @@ class DashboardStatsView(views.APIView):
             "status_breakdown": status_counts
         })
 
-<<<<<<< HEAD
 class PreviewResumeView(views.APIView):
     parser_classes = (MultiPartParser, FormParser)
 
@@ -330,7 +282,8 @@ class PreviewResumeView(views.APIView):
                 }, status=status.HTTP_200_OK)
 
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-=======
+
+
 class AnalyticsView(views.APIView):
     def get(self, request):
         try:
@@ -413,39 +366,6 @@ class AnalyticsView(views.APIView):
                     'percentage': percentage
                 })
             
-            # 6. HR Team Performance
-            hr_performance = []
-            try:
-                employees = Employee.objects.all()
-                
-                for emp in employees:
-                    emp_apps = apps_query.filter(job__recruiter_id=emp.id)
-                    emp_total = emp_apps.count()
-                    
-                    if emp_total > 0:
-                        calls_today = emp_apps.filter(applied_at__date=datetime.date.today()).count()
-                        shortlisted = emp_apps.filter(status='SCREENED').count()
-                        rejected = emp_apps.filter(status='REJECTED').count()
-                        hired = emp_apps.filter(status='OFFER').count()
-                        conversion = round((hired / emp_total * 100), 1)
-                        
-                        # Build name from available fields
-                        name = f"{emp.first_name} {emp.last_name}".strip() if hasattr(emp, 'first_name') and hasattr(emp, 'last_name') else emp.email.split('@')[0]
-                        
-                        hr_performance.append({
-                            'id': emp.id,
-                            'name': name or emp.email,
-                            'email': emp.email,
-                            'calls_today': calls_today,
-                            'shortlisted': shortlisted,
-                            'rejected': rejected,
-                            'hired': hired,
-                            'conversion': conversion
-                        })
-            except Exception as e:
-                print(f"Error fetching HR performance: {e}")
-                # Continue without HR performance data
-            
             return Response({
                 'summary': {
                     'total_applications': total_applications,
@@ -457,7 +377,7 @@ class AnalyticsView(views.APIView):
                 'pipeline_distribution': pipeline_distribution,
                 'daily_applications': daily_applications,
                 'platform_performance': platform_performance,
-                'hr_team_performance': hr_performance
+                'hr_team_performance': []
             })
         except Exception as e:
             import traceback
@@ -477,4 +397,3 @@ class AnalyticsView(views.APIView):
                 'hr_team_performance': []
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
->>>>>>> 7885fd4af6c61c3dd0271b0ca3549411252d6cfb

@@ -4,13 +4,21 @@ from django.views.decorators.csrf import csrf_exempt
 from django.core.files.storage import default_storage
 from django.core.files.base import ContentFile
 import json
+<<<<<<< HEAD
+from .models import Employee, Applicant
+
+
+# ================= EMPLOYEE APIs (Your existing code) ====================
+
+=======
 from datetime import date
-from .models import Employee, Applicant, Application
+from .models import Employee, Application
 
 
 # ---------------------------
 # CREATE EMPLOYEE
 # ---------------------------
+>>>>>>> 7885fd4af6c61c3dd0271b0ca3549411252d6cfb
 @csrf_exempt
 def create_employee_api(request):
     if request.method == "POST":
@@ -64,50 +72,12 @@ def view_employees_api(request):
     return JsonResponse({"error": "Only GET method allowed"}, status=405)
 
 
-# ---------------------------
-# DELETE EMPLOYEE
-# ---------------------------
-@csrf_exempt
-def delete_employee_api(request, pk):
-    if request.method == "DELETE":
-        try:
-            employee = Employee.objects.get(pk=pk)
-            employee.delete()
-            return JsonResponse({"message": "Employee deleted successfully"}, status=200)
-        except Employee.DoesNotExist:
-            return JsonResponse({"error": "Employee not found"}, status=404)
-    return JsonResponse({"error": "Method not allowed"}, status=405)
-
-
-# ---------------------------
-# UPDATE PASSWORD
-# ---------------------------
-@csrf_exempt
-def update_employee_password_api(request, pk):
-    if request.method == "POST":
-        try:
-            data = json.loads(request.body.decode("utf-8"))
-            new_password = data.get("new_password")
-            
-            if not new_password:
-                return JsonResponse({"error": "new_password is required"}, status=400)
-
-            employee = Employee.objects.get(pk=pk)
-            employee.password = new_password
-            employee.save()
-            
-            return JsonResponse({"message": "Password updated successfully"}, status=200)
-        except Employee.DoesNotExist:
-            return JsonResponse({"error": "Employee not found"}, status=404)
-        except Exception as e:
-            return JsonResponse({"error": str(e)}, status=500)
-            
-    return JsonResponse({"error": "Method not allowed"}, status=405)
-
-
+<<<<<<< HEAD
+=======
 # ---------------------------
 # LOGIN EMPLOYEE
 # ---------------------------
+>>>>>>> 7885fd4af6c61c3dd0271b0ca3549411252d6cfb
 @csrf_exempt
 def login_employee_api(request):
     if request.method == "POST":
@@ -123,8 +93,16 @@ def login_employee_api(request):
                 )
 
             try:
+<<<<<<< HEAD
+                employee = Employee.objects.get(
+                    email=email,
+                    password=password  # ⚠️ plain-text only for now
+                )
+
+=======
                 employee = Employee.objects.get(email=email, password=password)
                 
+>>>>>>> 7885fd4af6c61c3dd0271b0ca3549411252d6cfb
                 return JsonResponse({
                     "message": "Login successful",
                     "user": {
@@ -143,7 +121,14 @@ def login_employee_api(request):
         except Exception as e:
             return JsonResponse({"error": str(e)}, status=500)
 
+<<<<<<< HEAD
+    return JsonResponse(
+        {"error": "Only POST method allowed"},
+        status=405
+    )
+=======
     return JsonResponse({"error": "Only POST method allowed"}, status=405)
+
 
 
 # ---------------------------
@@ -192,3 +177,4 @@ def create_application_api(request, job_id):
         }, status=201)
 
     return JsonResponse({"error": "Only POST method allowed"}, status=405)
+>>>>>>> 7885fd4af6c61c3dd0271b0ca3549411252d6cfb

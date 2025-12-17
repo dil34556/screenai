@@ -2,11 +2,15 @@ from django.db import models
 
 
 class Employee(models.Model):
+<<<<<<< HEAD
+    email = models.EmailField()
+    password = models.CharField(max_length=255)
+=======
     email = models.EmailField(unique=True)
     password = models.CharField(max_length=128, blank=True)
     first_name = models.CharField(max_length=50, blank=True)
     last_name = models.CharField(max_length=50, blank=True)
-    is_admin = models.BooleanField(default=False)
+>>>>>>> 7885fd4af6c61c3dd0271b0ca3549411252d6cfb
 
     def __str__(self):
         return self.email
@@ -24,8 +28,7 @@ class Applicant(models.Model):
 
     def __str__(self):
         return self.full_name
-
-
+=======
 class Application(models.Model):
     STATUS_CHOICES = [
         ("new", "New"),
@@ -74,3 +77,4 @@ class Application(models.Model):
 
     def __str__(self):
         return f"Application (Job {self.job_id}) - {self.status}"
+>>>>>>> 7885fd4af6c61c3dd0271b0ca3549411252d6cfb
