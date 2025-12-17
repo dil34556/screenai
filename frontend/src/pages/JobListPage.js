@@ -109,7 +109,7 @@ const JobListPage = () => {
     );
 
     return (
-        <div className="p-8 max-w-7xl mx-auto">
+        <div className="max-w-7xl mx-auto">
 
             {/* Header */}
             <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-8 gap-4">

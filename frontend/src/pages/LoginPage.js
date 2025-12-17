@@ -16,7 +16,7 @@ const LoginPage = () => {
             // Save user info (Basic Session Mock)
             localStorage.setItem('user', JSON.stringify(response.user));
 
-            navigate('/admin/dashboard');
+            navigate('/dashboard');
         } catch (err) {
             setError('Invalid email or password');
         }

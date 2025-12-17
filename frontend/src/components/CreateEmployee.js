@@ -34,12 +34,6 @@ function CreateEmployee({ onBack }) {
   return (
     <div className="min-h-screen bg-gray-50 p-8">
       <div className="max-w-2xl mx-auto">
-        <button
-          onClick={onBack}
-          className="mb-6 text-blue-600 hover:text-blue-700 flex items-center"
-        >
-          ← Back to Home
-        </button>
 
         <div className="bg-white rounded-lg shadow-lg p-8">
           <h1 className="text-3xl font-bold text-gray-800 mb-6">Create Employee</h1>

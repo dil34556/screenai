@@ -15,7 +15,7 @@ const HomePage = () => {
                         <span className="text-xl font-bold text-slate-900 tracking-tight">Screen<span className="text-indigo-600">AI</span></span>
                     </div>
                     <div className="flex items-center gap-4">
-                        <Link to="/admin/dashboard" className="text-sm font-medium text-slate-600 hover:text-indigo-600 transition-colors">
+                        <Link to="/login" className="text-sm font-medium text-slate-600 hover:text-indigo-600 transition-colors">
                             Sign In
                         </Link>
                         <Link to="/register" className="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-500/20 hover:shadow-indigo-500/30">
@@ -49,7 +49,7 @@ const HomePage = () => {
 
                     <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
                         <Link
-                            to="/admin/dashboard"
+                            to="/dashboard"
                             className="w-full sm:w-auto px-8 py-4 bg-indigo-600 text-white rounded-xl font-bold text-lg hover:bg-indigo-500 transition-all shadow-xl shadow-indigo-500/25 ring-4 ring-indigo-500/10 flex items-center justify-center gap-2 group"
                         >
                             <LayoutDashboard size={20} />
