@@ -17,3 +17,6 @@ node_modules/
 
 # Debug
 backend/debug_*.py
+
+# Build
+build/
