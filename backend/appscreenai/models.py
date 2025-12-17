@@ -6,6 +6,7 @@ class Employee(models.Model):
     password = models.CharField(max_length=128, blank=True)
     first_name = models.CharField(max_length=50, blank=True)
     last_name = models.CharField(max_length=50, blank=True)
+    is_admin = models.BooleanField(default=False)
 
     def __str__(self):
         return self.email

@@ -13,6 +13,8 @@ import CreateJobPage from './pages/CreateJobPage';
 import CreateEmployee from './components/CreateEmployee';
 import ViewEmployees from './components/ViewEmployees';
 import AdminLayout from './components/AdminLayout';
+import AdminHome from './components/AdminHome';
+import AdminLogin from './components/AdminLogin';
 
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
@@ -30,21 +32,31 @@ export default function App() {
         <Route path="/jobs" element={<CandidateJobBoard />} />
         <Route path="/jobs/:jobId/apply" element={<ApplyPage />} />
 
-        {/* Admin Portal (Nested Routes) */}
-        <Route path="/admin" element={<AdminLayout />}>
-          <Route index element={<DashboardPage />} /> {/* Default to Dashboard */}
-          <Route path="dashboard" element={<DashboardPage />} />
-          <Route path="applications" element={<ApplicationsPage />} />
+        {/* Admin Portal */}
+        <Route path="/admin" element={<AdminLogin />} />
+        <Route path="/admin/dashboard" element={<AdminHome />} />
 
-          <Route path="jobs" element={<JobListPage />} />
-          <Route path="jobs/create" element={<CreateJobPage />} />
-          <Route path="jobs/:jobId" element={<JobDetailsPage />} />
-
-          <Route path="employees" element={<ViewEmployeesWithNav />} />
-          <Route path="employees/create" element={<CreateEmployeeWithNav />} />
-
-          <Route path="analytics" element={<AnalyticsPage />} />
+        {/* Recruiter Portal with Sidebar Layout */}
+        <Route element={<AdminLayout />}>
+          <Route path="/dashboard" element={<DashboardPage />} />
+          <Route path="/portal/employees" element={<ViewEmployees readOnly={true} />} />
+          <Route path="/analytics" element={<AnalyticsPage />} />
+          <Route path="/admin/jobs/create" element={<CreateJobPage />} />
+          <Route path="/admin/jobs" element={<JobListPage />} />
+          <Route path="/admin/jobs/:jobId" element={<JobDetailsPage />} />
         </Route>
+
+        <Route path="/admin/users" element={<ViewEmployees onBack={() => window.location.href = '/'} />} />
+        <Route path="/admin/users/create" element={<CreateEmployee onBack={() => window.location.href = '/'} />} />
+
+        {/* Legacy/Other Routes */}
+
+        {/*
+        <Route path="/admin" element={<AdminLayout />}>
+          <Route index element={<DashboardPage />} /> 
+          ...
+        </Route>
+        */}
       </Routes>
     </Router>
   );

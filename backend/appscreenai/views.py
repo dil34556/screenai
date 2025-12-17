@@ -47,7 +47,8 @@ def create_employee_api(request):
 # ---------------------------
 def view_employees_api(request):
     if request.method == "GET":
-        employees = Employee.objects.all()
+        # Filter out admins so they don't appear in the list
+        employees = Employee.objects.filter(is_admin=False)
         data = [
             {
                 "id": emp.id,
@@ -59,6 +60,47 @@ def view_employees_api(request):
         return JsonResponse({"employees": data}, status=200)
 
     return JsonResponse({"error": "Only GET method allowed"}, status=405)
+
+
+# ---------------------------
+# DELETE EMPLOYEE
+# ---------------------------
+@csrf_exempt
+def delete_employee_api(request, pk):
+    if request.method == "DELETE":
+        try:
+            employee = Employee.objects.get(pk=pk)
+            employee.delete()
+            return JsonResponse({"message": "Employee deleted successfully"}, status=200)
+        except Employee.DoesNotExist:
+            return JsonResponse({"error": "Employee not found"}, status=404)
+    return JsonResponse({"error": "Method not allowed"}, status=405)
+
+
+# ---------------------------
+# UPDATE PASSWORD
+# ---------------------------
+@csrf_exempt
+def update_employee_password_api(request, pk):
+    if request.method == "POST":
+        try:
+            data = json.loads(request.body.decode("utf-8"))
+            new_password = data.get("new_password")
+            
+            if not new_password:
+                return JsonResponse({"error": "new_password is required"}, status=400)
+
+            employee = Employee.objects.get(pk=pk)
+            employee.password = new_password
+            employee.save()
+            
+            return JsonResponse({"message": "Password updated successfully"}, status=200)
+        except Employee.DoesNotExist:
+            return JsonResponse({"error": "Employee not found"}, status=404)
+        except Exception as e:
+            return JsonResponse({"error": str(e)}, status=500)
+            
+    return JsonResponse({"error": "Method not allowed"}, status=405)
 
 
 # ---------------------------
@@ -82,7 +124,8 @@ def login_employee_api(request):
                     "message": "Login successful",
                     "user": {
                         "id": employee.id,
-                        "email": employee.email
+                        "email": employee.email,
+                        "is_admin": employee.is_admin
                     }
                 }, status=200)
                 

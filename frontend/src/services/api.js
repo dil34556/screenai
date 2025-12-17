@@ -111,4 +111,14 @@ export const getEmployees = async () => {
     return response.data;
 };
 
+export const deleteEmployee = async (id) => {
+    const response = await api.delete(`/employees/${id}/`);
+    return response.data;
+};
+
+export const updateEmployeePassword = async (id, newPassword) => {
+    const response = await api.post(`/employees/${id}/password/`, { new_password: newPassword });
+    return response.data;
+};
+
 export default api;

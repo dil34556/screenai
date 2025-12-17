@@ -9,6 +9,10 @@ urlpatterns = [
     path('api/v1/employees/create/', views.create_employee_api),
     path('api/v1/employees/', views.view_employees_api),
     path('api/v1/auth/login/', views.login_employee_api),
+    
+    # Employee Actions
+    path('api/v1/employees/<int:pk>/', views.delete_employee_api),
+    path('api/v1/employees/<int:pk>/password/', views.update_employee_password_api),
 
     # ScreenAI V2 Routes
     path('api/v1/', include('jobs.urls')),
