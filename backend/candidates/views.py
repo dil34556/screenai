@@ -239,16 +239,24 @@ class PreviewResumeView(views.APIView):
                 "data": parsed_data["data"]
             }, status=status.HTTP_200_OK)
 
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
         except Exception as e:
             # Cleanup on error
             if os.path.exists(full_path):
-                os.remove(full_path)
+                try: os.remove(full_path)
+                except: pass
             
             error_msg = str(e).lower()
-            if "quota" in error_msg or "429" in error_msg or "404" in error_msg:
+            
+            # LOGGING
+            with open("server_error.log", "a") as f:
+                f.write(f"[{datetime.datetime.now()}] Error parsing resume: {str(e)}\n")
+
+            if "quota" in error_msg or "429" in error_msg or "404" in error_msg or "valid api key" in error_msg or "403" in error_msg or "permission" in error_msg:
                  # Soft fail: Return empty data so user can enter manually
                 return Response({
-                    "message": "Autofill unavailable (Quota/Model Error). Please enter details manually.",
+                    "message": "Autofill unavailable (API Error). Please enter details manually.",
                     "data": {
                         "candidate_name": "",
                         "email": "",
