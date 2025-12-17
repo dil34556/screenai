@@ -113,7 +113,8 @@ Extract the following fields from the resume and return JSON in EXACT FORMAT:
 - email
 - phone
 - total_years_experience (Numeric float value, e.g. 2.5)
-- work_experience (List of companies and roles)
+- total_years_experience (Numeric float value, e.g. 2.5)
+- work_experience (List of companies and roles. STRICTLY EXCLUDE Academic Projects, Thesis, University Studies, and Predictions. Only include professional employment.)
 - skills (List of strings)
 - education (List of strings)
 - certifications (List of strings)
@@ -144,11 +145,10 @@ def parse_resume(file_path):
     print(f"DEBUG: Extracted text length: {len(text)} chars")
 
     models_to_try = [
-        "gemini-2.0-flash-lite-preview-02-05", # Try Lite first (cheaper/likely available)
-        "gemini-2.0-flash-exp",                 # Experimental often free/separate quota
-        "gemini-exp-1206",                      
-        "gemini-flash-latest",
-        "gemini-2.5-flash"
+        "gemini-1.5-flash",        # <--- FASTEST & STABLE. Prioritize this.
+        "gemini-2.0-flash-exp",    # New fast model
+        "gemini-1.5-pro",          # Good fallback
+        "gemini-pro"               # Legacy
     ]
     
     # 2. Get Keys
@@ -174,6 +174,30 @@ def parse_resume(file_path):
                 llm = get_llm(model_name=model, api_key=api_key)
                 response = llm.invoke(prompt)
                 parsed = parser.parse(response.content)
+                
+                # --- POST PROCESSING FILTER ---
+                # Strictly remove academic projects that LLM might have let through
+                # Remove "system", "app" to allow real jobs
+                # Add Education terms
+                project_keywords = ["project", "study", "prediction", "thesis", "clone", "detection", "semester", "mca", "btech", "degree", "bachelor", "master", "student"]
+                filtered_exp = []
+                for exp in parsed.data.work_experience:
+                    c = (exp.company_name or "").lower()
+                    r = (exp.job_role or "").lower()
+                    
+                    is_bad = False
+                    for pk in project_keywords:
+                        # Check specific whole words or very strong signals
+                        if f" {pk} " in f" {c} " or f" {pk} " in f" {r} ":
+                             is_bad = True
+                             break
+                    
+                    if not is_bad:
+                        filtered_exp.append(exp)
+                        
+                parsed.data.work_experience = filtered_exp
+                # -------------------------------
+                
                 return parsed.dict()
                 
             except Exception as e:
@@ -267,36 +291,61 @@ def parse_resume(file_path):
                          found_skills.append(p_clean.title())
 
     # Heuristic for Work Experience
-    # Look for lines with dates (e.g., 2020 - 2022, Jan 2019 - Present)
     found_experience = []
-    # Match: (Year) ... ( - / to ) ... (Year / Present)
-    # \b(19|20)\d{2}\b : Starts with year 19xx or 20xx
-    # .*? : chars in between
-    # [-–]|to : separator
-    # .*? : chars in between
-    # \b((19|20)\d{2}|present|current|now)\b : Ends with year or present keyword
+    # Match dates like 2020 - 2022, Jan 2019 - Present, 01/2020 - 02/2021
     date_pattern = r'\b(?:19|20)\d{2}\b.*?(?:-|–|to).*?(?:\b(?:19|20)\d{2}\b|present|current|now)'
     
     lines = [line.strip() for line in text.split('\n') if line.strip()]
     for i, line in enumerate(lines):
         if re.search(date_pattern, line.lower()):
-            # If line has date, it might be "Role at Company | 2020-2022"
-            # Or the line BEFORE it might be the company
+            # CASE A: "Software Engineer | Google | 2020-2022" (All in one line)
+            # CASE B: "2020 - 2022" (Date on own line, Company above)
             
-            # Simple heuristic: Take the whole line as the 'role' or 'company'
-            # Let's try to split by some separator if possible, or just dump the line in company_name
+            company = ""
+            role = ""
             
-            # Clean up the line a bit
-            clean_line = line
+            # If line is mostly just the date (short length)
+            if len(line.split()) < 7:
+                # Look at previous 1-2 lines for company/role
+                if i > 0:
+                   prev = lines[i-1]
+                   if len(prev.split()) < 10: # Avoid capturing paragraphs
+                       company = prev
+                   if i > 1:
+                       prev2 = lines[i-2]
+                       if len(prev2.split()) < 10 and not role:
+                           # e.g. Line 1: Google, Line 2: Engineer, Line 3: Date
+                           role = prev2
+                           # Swap if needed based on keywords? (Not easy without NLP)
+            else:
+                # Line matches date but is long. Assume it contains info.
+                # "Senior Dev at Google 2020-2022"
+                company = line # Fallback: use whole line 
+                
+            # Check for "Project" keywords to exclude
+            is_project = False
+            # Remove "system", "app", "analysis" as they trigger on "Systems Engineer", "Application Dev", "Data Analyst"
+            # Add Education keywords to exclude degrees appearing as jobs
+            project_keywords = ["project", "study", "prediction", "thesis", "clone", "detection", "semester", "mca", "btech", "degree", "bachelor", "master", "student"]
             
-            # If line is short and has date, maybe previous line is company?
-            if len(line.split()) < 5 and i > 0:
-                 clean_line = f"{lines[i-1]} ({line})"
-            
-            found_experience.append({
-                "company_name": clean_line,
-                "job_role": "Extracted from Resume" 
-            })
+            # Helper to check keywords (Use word boundaries)
+            def has_keyword(text):
+                # Check for whole words only
+                for pk in project_keywords:
+                    if re.search(r'\b' + re.escape(pk) + r'\b', text.lower()):
+                        return True
+                return False
+
+            if has_keyword(company) or has_keyword(role):
+                is_project = True
+
+            if (company or role) and not is_project:
+                found_experience.append({
+                    "company_name": company if company else (role if not company else "Unknown"),
+                    # If role is missing, don't use "Extracted Role" placeholder, use empty or generic
+                    "job_role": role if role else "",
+                    "duration": line # Capture the date line as duration
+                })
 
     return {
         "data": {
@@ -309,6 +358,47 @@ def parse_resume(file_path):
             "certifications": [],
             "work_experience": found_experience
         }
+    }
+
+
+def scan_resume_regex(text):
+    """
+    Perform a quick regex-based scan for contact info and basic details.
+    Used for instant autofill before deep LLM parsing.
+    """
+    import re
+
+    # 1. Email Regex
+    email_pattern = r'[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}'
+    found_email = None
+    email_match = re.search(email_pattern, text)
+    if email_match:
+        found_email = email_match.group(0)
+
+    # 2. Phone Regex
+    phone_pattern = r'(\+\d{1,3}[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}'
+    phones = re.findall(phone_pattern, text)
+    found_phone = None
+    # Better simple fallback
+    simple_phone = re.search(r'[\+\(]?[1-9][0-9 .\-\(\)]{8,}[0-9]', text)
+    if simple_phone:
+        found_phone = simple_phone.group(0).strip()
+
+    # 3. Name Heuristic
+    candidate_name = ""
+    lines = [line.strip() for line in text.split('\n') if line.strip()]
+    if lines:
+        for i in range(min(3, len(lines))):
+            potential_name = lines[i]
+            if "resume" not in potential_name.lower() and "curriculum" not in potential_name.lower() and len(potential_name.split()) < 5:
+                if len(potential_name.split()) >= 2 and any(c.isalpha() for c in potential_name):
+                     candidate_name = potential_name
+                     break
+
+    return {
+        "candidate_name": candidate_name,
+        "email": found_email,
+        "phone": found_phone
     }
 
 
