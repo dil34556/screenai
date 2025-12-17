@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { getJobDetail, submitApplication } from '../services/api';
@@ -140,19 +141,7 @@ const ApplyPage = () => {
                                 <span className="bg-indigo-100 text-indigo-800 px-2 py-0.5 rounded text-sm">{job.job_type}</span>
                             </p>
                         </div>
-                        {platform && platform !== 'Website' && (
-                            <div className="flex flex-col items-end gap-1">
-                                <span className="text-xs text-gray-500">Applying via</span>
-                                <div className={`px-3 py-1.5 rounded-lg text-sm font-bold shadow-sm ${platform === 'LINKEDIN' ? 'bg-[#0077B5] text-white' :
-                                        platform === 'INDEED' ? 'bg-[#2164F3] text-white' :
-                                            platform === 'GLASSDOOR' ? 'bg-[#0CAA41] text-white' :
-                                                platform === 'NAUKRI' ? 'bg-[#FBD235] text-gray-900' :
-                                                    'bg-gray-200 text-gray-700'
-                                    }`}>
-                                    {platform}
-                                </div>
-                            </div>
-                        )}
+                    
                     </div>
                 </div>
 
