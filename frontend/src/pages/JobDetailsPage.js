@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+<<<<<<< HEAD
 import { useParams, Link } from 'react-router-dom';
 import { getJobDetail, getApplicationsForJob, updateApplicationStatus, addComment, reparseApplication } from '../services/api';
 import {
@@ -6,10 +7,16 @@ import {
     Linkedin, FileText, ArrowLeft,
     Briefcase, MapPin, Users, MessageSquare, Eye, SlidersHorizontal, Download, Wand2, X
 } from 'lucide-react';
+=======
+import { useParams, Link, useNavigate } from 'react-router-dom';
+import { getJobDetail, getApplicationsForJob, updateApplicationStatus, addComment, updateJob } from '../services/api';
+import { ArrowLeft, Briefcase, MapPin, Users, Linkedin, Search, Filter, ChevronDown, Download, FileText, ExternalLink, Plus, ArrowRight, MessageSquare, Eye, SlidersHorizontal } from 'lucide-react';
+>>>>>>> 7885fd4af6c61c3dd0271b0ca3549411252d6cfb
 import mammoth from 'mammoth';
 
 const JobDetailsPage = () => {
     const { jobId } = useParams();
+    const navigate = useNavigate();
     const [job, setJob] = useState(null);
     const [applications, setApplications] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -28,6 +35,10 @@ const JobDetailsPage = () => {
     const [showResumeModal, setShowResumeModal] = useState(false);
     const [newComment, setNewComment] = useState("");
     const [docxContent, setDocxContent] = useState("");
+
+    // Custom Platform State
+    const [customPlatform, setCustomPlatform] = useState('');
+    const [showCustomInput, setShowCustomInput] = useState(false);
 
     const fetchData = async () => {
         try {
@@ -164,6 +175,7 @@ const JobDetailsPage = () => {
                         <ArrowLeft size={16} className="mr-1 group-hover:-translate-x-1 transition-transform" /> Back to jobs
                     </Link>
 
+<<<<<<< HEAD
                     <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
                         <div>
                             <div className="flex items-center gap-3 mb-2">
@@ -171,6 +183,196 @@ const JobDetailsPage = () => {
                                 <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold uppercase tracking-wide border ${job.status === 'OPEN' ? 'bg-green-50 text-green-700 border-green-200' : 'bg-gray-100 text-gray-500 border-gray-200'}`}>
                                     {job.status || 'Active'}
                                 </span>
+=======
+                <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+                    <div>
+                        <h1 className="text-3xl font-bold text-gray-900 tracking-tight">{job.title}</h1>
+                        <div className="flex items-center gap-3 text-sm text-gray-500 mt-2">
+                            <span className="flex items-center gap-1"><Briefcase size={14} /> {job.department}</span>
+                            <span>•</span>
+                            <span className="flex items-center gap-1"><MapPin size={14} /> {job.location} ({job.job_type})</span>
+                            <span>•</span>
+                            <span className="flex items-center gap-1"><Users size={14} /> {applications.length} candidates</span>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Platform Application Links */}
+                <div className="mt-6 bg-gradient-to-r from-indigo-50 to-purple-50 p-4 rounded-xl border border-indigo-100">
+                    <div className="flex items-center justify-between flex-wrap gap-3">
+                        <div className="flex items-center gap-2">
+                            <span className="text-sm font-semibold text-gray-700">Apply via Platform:</span>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                            {/* Standard Platforms */}
+                            {[
+                                { name: 'LinkedIn', value: 'LINKEDIN', color: 'bg-[#0077B5] hover:bg-[#006399]', icon: <Linkedin size={16} /> },
+                                { name: 'Indeed', value: 'INDEED', color: 'bg-[#2164F3] hover:bg-[#1b52c9]', icon: <span className="font-bold">In</span> },
+                                { name: 'Glassdoor', value: 'GLASSDOOR', color: 'bg-[#0CAA41] hover:bg-[#0a8835]', icon: <span className="font-bold">Gd</span> },
+                                { name: 'Naukri', value: 'NAUKRI', color: 'bg-[#FBD235] hover:bg-[#e6be2a] text-gray-900', icon: <span className="font-bold">Nk</span> }
+                            ].map((platform) => (
+                                <Link
+                                    key={platform.value}
+                                    to={`/jobs/${jobId}/apply?platform=${platform.value}`}
+                                    className={`${platform.color} text-white px-4 py-2 rounded-lg text-sm font-medium transition-all shadow-sm hover:shadow-md flex items-center gap-2`}
+                                    title={`Apply via ${platform.name}`}
+                                >
+                                    {platform.icon}
+                                    {platform.name}
+                                </Link>
+                            ))}
+
+                            {/* Dynamically Added Custom Platforms */}
+                            {job.custom_platforms && job.custom_platforms.map((platformName, idx) => (
+                                <Link
+                                    key={`custom-${idx}`}
+                                    to={`/jobs/${jobId}/apply?platform=${encodeURIComponent(platformName)}`}
+                                    className="bg-gray-800 hover:bg-gray-900 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all shadow-sm hover:shadow-md flex items-center gap-2"
+                                    title={`Apply via ${platformName}`}
+                                >
+                                    <Briefcase size={16} />
+                                    {platformName}
+                                </Link>
+                            ))}
+
+                            {/* Custom Platform Button */}
+                            <button
+                                onClick={() => setShowCustomInput(!showCustomInput)}
+                                className="bg-white border border-gray-200 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium transition-all shadow-sm hover:shadow-md hover:bg-gray-50 flex items-center gap-2"
+                                title="Add Custom Platform"
+                            >
+                                <Plus size={16} /> Custom
+                            </button>
+
+                            {/* Custom Input */}
+                            {showCustomInput && (
+                                <div className="flex items-center gap-2 animate-in fade-in slide-in-from-left-2 duration-200">
+                                    <input
+                                        type="text"
+                                        placeholder="Platform Name..."
+                                        className="py-1.5 px-3 rounded-lg border border-gray-300 text-sm w-40 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
+                                        value={customPlatform}
+                                        onChange={(e) => setCustomPlatform(e.target.value)}
+                                        onKeyDown={async (e) => {
+                                            if (e.key === 'Enter' && customPlatform.trim()) {
+                                                const newPlatform = customPlatform.trim();
+                                                const updatedPlatforms = [...(job.custom_platforms || []), newPlatform];
+                                                try {
+                                                    await updateJob(jobId, { custom_platforms: updatedPlatforms });
+                                                    setJob(prev => ({ ...prev, custom_platforms: updatedPlatforms }));
+                                                    setCustomPlatform("");
+                                                    setShowCustomInput(false);
+                                                } catch (err) {
+                                                    console.error("Failed to add platform", err);
+                                                    alert("Failed to add platform");
+                                                }
+                                            }
+                                        }}
+                                        autoFocus
+                                    />
+                                    <button
+                                        onClick={async () => {
+                                            if (customPlatform.trim()) {
+                                                const newPlatform = customPlatform.trim();
+                                                const updatedPlatforms = [...(job.custom_platforms || []), newPlatform];
+                                                try {
+                                                    await updateJob(jobId, { custom_platforms: updatedPlatforms });
+                                                    setJob(prev => ({ ...prev, custom_platforms: updatedPlatforms }));
+                                                    setCustomPlatform("");
+                                                    setShowCustomInput(false);
+                                                } catch (err) {
+                                                    console.error("Failed to add platform", err);
+                                                    alert("Failed to add platform");
+                                                }
+                                            }
+                                        }}
+                                        disabled={!customPlatform.trim()}
+                                        className="bg-indigo-600 text-white p-1.5 rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                        title="Add"
+                                    >
+                                        <Plus size={16} />
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* Toolbar: Search & Filters */}
+            <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200 mb-6 flex flex-col gap-4">
+
+                {/* Top Row: Search + Main Filters */}
+                <div className="flex flex-col md:flex-row items-center justify-between gap-4 w-full">
+                    {/* Search */}
+                    <div className="relative w-full md:max-w-md">
+                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
+                        <input
+                            type="text"
+                            placeholder="Search candidates by name or email..."
+                            className="input-premium pl-10"
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                        />
+                    </div>
+
+                    {/* Filters & Toggles */}
+                    <div className="flex flex-wrap gap-3 w-full md:w-auto items-center">
+                        <div className="relative">
+                            <select
+                                className="input-premium appearance-none cursor-pointer pr-10"
+                                value={filterStatus}
+                                onChange={(e) => setFilterStatus(e.target.value)}
+                            >
+                                <option>All Status</option>
+                                <option value="NEW">New</option>
+                                <option value="SCREENED">Screened</option>
+                                <option value="INTERVIEW">Interview</option>
+                                <option value="OFFER">Offer</option>
+                                <option value="REJECTED">Rejected</option>
+                            </select>
+                            <Filter className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none" size={14} />
+                        </div>
+
+                        <div className="relative">
+                            <select
+                                className="input-premium appearance-none cursor-pointer pr-10"
+                                value={filterPlatform}
+                                onChange={(e) => setFilterPlatform(e.target.value)}
+                            >
+                                <option>All Platforms</option>
+                                <option value="LINKEDIN">LinkedIn</option>
+                                <option value="INDEED">Indeed</option>
+                                <option value="GLASSDOOR">Glassdoor</option>
+                                <option value="NAUKRI">Naukri</option>
+                                <option value="OTHER">Other</option>
+                            </select>
+                            <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none" size={14} />
+                        </div>
+
+                        <button
+                            onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
+                            className={`flex items-center gap-2 px-4 py-3 rounded-xl text-sm font-medium transition-all border ${showAdvancedFilters ? 'bg-indigo-50 border-indigo-200 text-indigo-700' : 'bg-gray-50 border-gray-200 text-gray-600 hover:bg-white hover:border-indigo-300'}`}
+                        >
+                            <SlidersHorizontal size={16} /> Filters
+                        </button>
+                    </div>
+                </div>
+
+                {/* Advanced Filters Panel (Collapsible) */}
+                {showAdvancedFilters && (
+                    <div className="w-full pt-4 border-t border-gray-100 grid md:grid-cols-3 gap-4 animate-in fade-in slide-in-from-top-2 duration-200">
+                        {job.screening_questions && job.screening_questions.map((q, i) => (
+                            <div key={i}>
+                                <label className="block text-xs font-semibold text-gray-500 uppercase mb-1 truncate">{q.question}</label>
+                                <input
+                                    type="text"
+                                    placeholder={`Filter by ${q.question.substring(0, 10)}...`}
+                                    className="input-premium py-2"
+                                    value={questionFilters[q.question] || ''}
+                                    onChange={(e) => setQuestionFilters(prev => ({ ...prev, [q.question]: e.target.value }))}
+                                />
+>>>>>>> 7885fd4af6c61c3dd0271b0ca3549411252d6cfb
                             </div>
                             <div className="flex items-center gap-6 text-sm text-slate-500 font-medium">
                                 <span className="flex items-center gap-1.5"><Briefcase size={16} className="text-indigo-400" /> {job.department}</span>
@@ -186,10 +388,30 @@ const JobDetailsPage = () => {
                 </div>
             </div>
 
+<<<<<<< HEAD
             <div className="max-w-7xl mx-auto px-6 -mt-8">
                 {/* Filters Bar */}
                 <div className="bg-white/80 backdrop-blur-xl p-5 rounded-2xl shadow-lg border border-white/50 mb-8 supports-[backdrop-filter]:bg-white/60">
                     <div className="flex flex-col xl:flex-row items-center justify-between gap-5">
+=======
+            {/* Candidate Table */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                <div className="overflow-x-auto">
+                    <table className="w-full text-left border-collapse">
+                        <thead>
+                            <tr className="bg-gray-50 border-b border-gray-100 text-xs uppercase tracking-wider text-gray-500 font-semibold">
+                                <th className="px-6 py-4">Candidate</th>
+                                <th className="px-6 py-4">Phone</th>
+                                <th className="px-6 py-4">Platform</th>
+                                <th className="px-6 py-4">Applied</th>
+                                <th className="px-6 py-4">Status</th>
+                                <th className="px-6 py-4">Experience</th>
+
+                                <th className="px-6 py-4">Current CTC</th>
+                                <th className="px-6 py-4">Expected CTC</th>
+                                <th className="px-6 py-4">Skills</th>
+                                <th className="px-6 py-4">Prev. Exp</th>
+>>>>>>> 7885fd4af6c61c3dd0271b0ca3549411252d6cfb
 
                         {/* Search */}
                         <div className="relative w-full xl:max-w-md group">
@@ -203,6 +425,7 @@ const JobDetailsPage = () => {
                             />
                         </div>
 
+<<<<<<< HEAD
                         {/* Filters Group */}
                         <div className="flex flex-wrap items-center gap-3 w-full xl:w-auto xl:justify-end">
                             {/* Status */}
@@ -221,6 +444,98 @@ const JobDetailsPage = () => {
                                 </select>
                                 <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400 pointer-events-none" size={16} />
                             </div>
+=======
+                                <th className="px-6 py-4 text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-100">
+                            {filteredApps.map((app) => (
+                                <tr key={app.id} className="hover:bg-gray-50/50 transition-colors group">
+                                    <td className="px-6 py-4">
+                                        <div className="flex items-center">
+                                            <div className="h-9 w-9 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center font-bold text-sm mr-3">
+                                                {app.candidate_details.name.charAt(0)}
+                                            </div>
+                                            <div>
+                                                <div className="font-medium text-gray-900">{app.candidate_details.name}</div>
+                                                <div className="text-gray-500 text-xs">{app.candidate_details.email}</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td className="px-6 py-4">
+                                        <div className="text-sm text-gray-600">
+                                            {app.candidate_details.phone || '-'}
+                                        </div>
+                                    </td>
+                                    <td className="px-6 py-4">
+                                        <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md border border-gray-200 bg-white text-xs font-medium text-gray-600">
+                                            {getPlatformIcon(app.platform)}
+                                            {app.platform || 'Other'}
+                                        </div>
+                                    </td>
+                                    <td className="px-6 py-4">
+                                        <div className="text-sm text-gray-600">{new Date(app.applied_at).toLocaleDateString()}</div>
+                                    </td>
+                                    <td className="px-6 py-4">
+                                        <div className="relative">
+                                            <select
+                                                value={app.status}
+                                                onChange={(e) => handleStatusUpdate(app.id, e.target.value)}
+                                                className={`appearance-none pl-3 pr-8 py-1 text-xs font-bold rounded-full border-0 cursor-pointer focus:ring-2 focus:ring-offset-1 transition shadow-sm ${app.status === 'NEW' ? 'bg-blue-100 text-blue-700' :
+                                                    app.status === 'SCREENED' ? 'bg-indigo-100 text-indigo-700' :
+                                                        app.status === 'INTERVIEW' ? 'bg-purple-100 text-purple-700' :
+                                                            app.status === 'OFFER' ? 'bg-green-100 text-green-700' :
+                                                                'bg-red-100 text-red-700'
+                                                    }`}
+                                            >
+                                                <option value="NEW">New</option>
+                                                <option value="SCREENED">Screened</option>
+                                                <option value="INTERVIEW">Interview</option>
+                                                <option value="OFFER">Offer</option>
+                                                <option value="REJECTED">Rejected</option>
+                                            </select>
+                                            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500">
+                                                <ChevronDown size={12} />
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td className="px-6 py-4">
+                                        <div className="text-sm text-gray-900 font-medium">
+                                            {app.experience_years ? `${app.experience_years} Yrs` : '-'}
+                                        </div>
+                                    </td>
+                                    <td className="px-6 py-4">
+                                        <div className="text-sm text-gray-900 font-medium">
+                                            {app.current_ctc ? `${app.current_ctc} L` : '-'}
+                                        </div>
+                                    </td>
+                                    <td className="px-6 py-4">
+                                        <div className="text-sm text-gray-900 font-medium">
+                                            {app.expected_ctc ? `${app.expected_ctc} L` : '-'}
+                                        </div>
+                                    </td>
+                                    <td className="px-6 py-4">
+                                        <div className="text-sm text-gray-600 max-w-xs truncate" title={app.skills}>
+                                            {app.skills || '-'}
+                                        </div>
+                                    </td>
+                                    <td className="px-6 py-4">
+                                        <div className="text-sm text-gray-600 max-w-xs overflow-hidden">
+                                            {app.experiences && app.experiences.length > 0 ? (
+                                                <div className="flex flex-col gap-1">
+                                                    {app.experiences.map((exp, idx) => (
+                                                        <div key={idx} className="truncate" title={`${exp.role} at ${exp.company} (${exp.duration})`}>
+                                                            <span className="font-medium text-gray-900">{exp.role}</span>
+                                                            <span className="text-gray-500"> @ {exp.company}</span>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            ) : (
+                                                '-'
+                                            )}
+                                        </div>
+                                    </td>
+>>>>>>> 7885fd4af6c61c3dd0271b0ca3549411252d6cfb
 
                             {/* Platform */}
                             <div className="relative">
@@ -563,19 +878,35 @@ const JobDetailsPage = () => {
                                 </div>
                             </div>
                             <div className="flex gap-2">
+<<<<<<< HEAD
                                 <a href={selectedApp.resume} download className="px-4 py-2 bg-slate-100 text-slate-700 hover:bg-slate-200 rounded-lg text-sm font-bold flex items-center gap-2 transition-colors">
                                     <Download size={16} /> Download
+=======
+                                <a href={selectedApp.resume} target="_blank" rel="noreferrer" className="text-gray-600 hover:text-gray-800 text-sm font-medium flex items-center gap-1">
+                                    <ExternalLink size={14} /> Open
+                                </a>
+                                <a href={selectedApp.resume} download className="text-indigo-600 hover:text-indigo-800 text-sm font-medium flex items-center gap-1">
+                                    <Download size={14} /> Download
+>>>>>>> 7885fd4af6c61c3dd0271b0ca3549411252d6cfb
                                 </a>
                                 <button onClick={() => setShowResumeModal(false)} className="p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-600 rounded-lg transition-colors">
                                     <X size={20} />
                                 </button>
                             </div>
                         </div>
+<<<<<<< HEAD
                         <div className="flex-1 bg-slate-100 p-6 overflow-hidden relative">
                             {selectedApp.resume.toLowerCase().endsWith('.pdf') ? (
                                 <iframe
                                     src={selectedApp.resume}
                                     className="w-full h-full rounded-xl shadow-lg border border-slate-200 bg-white"
+=======
+                        <div className="flex-1 bg-gray-200 p-4 overflow-hidden relative flex flex-col items-center justify-center">
+                            {selectedApp.resume.toLowerCase().endsWith('.pdf') ? (
+                                <iframe
+                                    src={`${selectedApp.resume}?t=${Date.now()}#view=FitH`}
+                                    className="w-full h-full rounded shadow-sm bg-white border border-gray-200"
+>>>>>>> 7885fd4af6c61c3dd0271b0ca3549411252d6cfb
                                     title="Resume Viewer"
                                 />
                             ) : selectedApp.resume.toLowerCase().endsWith('.docx') ? (

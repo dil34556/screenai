@@ -4,11 +4,21 @@ from django.views.decorators.csrf import csrf_exempt
 from django.core.files.storage import default_storage
 from django.core.files.base import ContentFile
 import json
+<<<<<<< HEAD
 from .models import Employee, Applicant
 
 
 # ================= EMPLOYEE APIs (Your existing code) ====================
 
+=======
+from datetime import date
+from .models import Employee, Application
+
+
+# ---------------------------
+# CREATE EMPLOYEE
+# ---------------------------
+>>>>>>> 7885fd4af6c61c3dd0271b0ca3549411252d6cfb
 @csrf_exempt
 def create_employee_api(request):
     if request.method == "POST":
@@ -28,7 +38,6 @@ def create_employee_api(request):
         except IntegrityError:
             return JsonResponse({"error": "Employee with this email already exists"}, status=400)
         except Exception as e:
-            # Catch other potential errors (like database connection issues)
             return JsonResponse({"error": f"An error occurred: {str(e)}"}, status=500)
 
         return JsonResponse({
@@ -43,6 +52,9 @@ def create_employee_api(request):
     return JsonResponse({"error": "Only POST method allowed"}, status=405)
 
 
+# ---------------------------
+# VIEW EMPLOYEES
+# ---------------------------
 def view_employees_api(request):
     if request.method == "GET":
         employees = Employee.objects.all()
@@ -59,6 +71,12 @@ def view_employees_api(request):
     return JsonResponse({"error": "Only GET method allowed"}, status=405)
 
 
+<<<<<<< HEAD
+=======
+# ---------------------------
+# LOGIN EMPLOYEE
+# ---------------------------
+>>>>>>> 7885fd4af6c61c3dd0271b0ca3549411252d6cfb
 @csrf_exempt
 def login_employee_api(request):
     if request.method == "POST":
@@ -74,11 +92,16 @@ def login_employee_api(request):
                 )
 
             try:
+<<<<<<< HEAD
                 employee = Employee.objects.get(
                     email=email,
                     password=password  # ⚠️ plain-text only for now
                 )
 
+=======
+                employee = Employee.objects.get(email=email, password=password)
+                
+>>>>>>> 7885fd4af6c61c3dd0271b0ca3549411252d6cfb
                 return JsonResponse({
                     "message": "Login successful",
                     "user": {
@@ -96,7 +119,60 @@ def login_employee_api(request):
         except Exception as e:
             return JsonResponse({"error": str(e)}, status=500)
 
+<<<<<<< HEAD
     return JsonResponse(
         {"error": "Only POST method allowed"},
         status=405
     )
+=======
+    return JsonResponse({"error": "Only POST method allowed"}, status=405)
+
+
+
+# ---------------------------
+# REAL-TIME ANALYTICS:
+# CREATE APPLICATION (CANDIDATE APPLY)
+# ---------------------------
+@csrf_exempt
+def create_application_api(request, job_id):
+    """
+    Called when a candidate applies for a job.
+    This automatically creates an Application record for analytics.
+    """
+    if request.method == "POST":
+        try:
+            data = json.loads(request.body.decode("utf-8"))
+        except:
+            return JsonResponse({"error": "Invalid JSON"}, status=400)
+
+        email = data.get("email")
+        first = data.get("first_name", "")
+        last = data.get("last_name", "")
+        source = data.get("source", "Website")
+
+        if not email:
+            return JsonResponse({"error": "Email required"}, status=400)
+
+        # Find or create employee
+        employee, _ = Employee.objects.get_or_create(
+            email=email,
+            defaults={"first_name": first, "last_name": last}
+        )
+
+        # Create Application entry
+        application = Application.objects.create(
+            employee=employee,
+            job_id=job_id,
+            date_applied=date.today(),
+            status="new",
+            source=source,
+            calls=0
+        )
+
+        return JsonResponse({
+            "message": "Application submitted successfully",
+            "application_id": application.id
+        }, status=201)
+
+    return JsonResponse({"error": "Only POST method allowed"}, status=405)
+>>>>>>> 7885fd4af6c61c3dd0271b0ca3549411252d6cfb

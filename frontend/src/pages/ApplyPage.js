@@ -1,20 +1,36 @@
+
 import React, { useState, useEffect } from 'react';
+<<<<<<< HEAD
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { getJobDetail, submitApplication, previewResume } from '../services/api';
 import { ArrowLeft, UploadCloud, CheckCircle2, FileText, ChevronRight, Loader2 } from 'lucide-react';
+=======
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
+import { getJobDetail, submitApplication } from '../services/api';
+>>>>>>> 7885fd4af6c61c3dd0271b0ca3549411252d6cfb
 
 const ApplyPage = () => {
     const { jobId } = useParams();
     const navigate = useNavigate();
+    const location = useLocation();
     const [job, setJob] = useState(null);
+    const [platform, setPlatform] = useState('Website');
     const [formData, setFormData] = useState({
         name: '',
         email: '',
         phone: '',
+<<<<<<< HEAD
         experience_years: 0,
         current_ctc: 0,
         expected_ctc: 0,
         notice_period: 30,
+=======
+        experience_years: '',
+        current_ctc: '',
+        expected_ctc: '',
+        skills: '',
+        experiences: [], // Array of { company, role, duration }
+>>>>>>> 7885fd4af6c61c3dd0271b0ca3549411252d6cfb
         resume: null,
     });
     const [loading, setLoading] = useState(false);
@@ -24,6 +40,13 @@ const ApplyPage = () => {
     const [answers, setAnswers] = useState({});
 
     useEffect(() => {
+        // Extract platform from URL query parameter
+        const searchParams = new URLSearchParams(location.search);
+        const platformParam = searchParams.get('platform');
+        if (platformParam) {
+            setPlatform(platformParam);
+        }
+
         const fetchJob = async () => {
             try {
                 const data = await getJobDetail(jobId);
@@ -33,7 +56,8 @@ const ApplyPage = () => {
             }
         };
         fetchJob();
-    }, [jobId]);
+    }, [jobId, location.search]);
+
 
     const handleChange = (e) => {
         const { name, value, files } = e.target;
@@ -87,6 +111,26 @@ const ApplyPage = () => {
         setAnswers(prev => ({ ...prev, [question]: value }));
     };
 
+    // Experience Handlers
+    const handleAddExperience = () => {
+        setFormData(prev => ({
+            ...prev,
+            experiences: [...prev.experiences, { company: '', role: '', duration: '' }]
+        }));
+    };
+
+    const handleExperienceChange = (index, field, value) => {
+        const newExp = [...formData.experiences];
+        newExp[index][field] = value;
+        setFormData(prev => ({ ...prev, experiences: newExp }));
+    };
+
+    const handleRemoveExperience = (index) => {
+        const newExp = [...formData.experiences];
+        newExp.splice(index, 1);
+        setFormData(prev => ({ ...prev, experiences: newExp }));
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
@@ -97,12 +141,26 @@ const ApplyPage = () => {
         data.append('name', formData.name);
         data.append('email', formData.email);
         data.append('phone', formData.phone);
+<<<<<<< HEAD
         // Explicitly format numbers if needed, but JS FormData handles typical types well
         data.append('experience_years', formData.experience_years);
         if (formData.current_ctc) data.append('current_ctc', formData.current_ctc);
         if (formData.expected_ctc) data.append('expected_ctc', formData.expected_ctc);
         data.append('notice_period', formData.notice_period);
         if (formData.resume) data.append('resume', formData.resume);
+=======
+        data.append('platform', platform); // Add platform from URL
+        if (formData.experience_years) {
+            data.append('experience_years', formData.experience_years);
+        }
+        if (formData.current_ctc) data.append('current_ctc', formData.current_ctc);
+        if (formData.expected_ctc) data.append('expected_ctc', formData.expected_ctc);
+        if (formData.skills) data.append('skills', formData.skills);
+        if (formData.experiences.length > 0) {
+            data.append('experiences', JSON.stringify(formData.experiences));
+        }
+        data.append('resume', formData.resume);
+>>>>>>> 7885fd4af6c61c3dd0271b0ca3549411252d6cfb
 
         const answersList = Object.entries(answers).map(([q, a]) => ({ question: q, answer: a }));
         data.append('answers', JSON.stringify(answersList));
@@ -117,12 +175,17 @@ const ApplyPage = () => {
         }
     };
 
+<<<<<<< HEAD
     if (!job) return (
         <div className="min-h-screen flex items-center justify-center bg-slate-950">
             <Loader2 className="animate-spin text-slate-500" size={32} />
         </div>
     );
 
+=======
+
+    if (!job) return <div className="p-8 text-center text-gray-500">Loading Job Details...</div>;
+>>>>>>> 7885fd4af6c61c3dd0271b0ca3549411252d6cfb
     if (success) return (
         <div className="min-h-screen flex items-center justify-center bg-slate-950 px-4">
             <div className="text-center max-w-md w-full">
@@ -144,6 +207,7 @@ const ApplyPage = () => {
     );
 
     return (
+<<<<<<< HEAD
         <div className="min-h-screen bg-slate-950 text-slate-200">
             <header className="border-b border-slate-800 sticky top-0 bg-slate-950/80 backdrop-blur-md z-10">
                 <div className="max-w-3xl mx-auto px-6 h-16 flex items-center justify-between">
@@ -159,6 +223,24 @@ const ApplyPage = () => {
                 <div className="mb-10">
                     <h1 className="text-3xl font-bold text-white mb-2">Complete your application</h1>
                     <p className="text-slate-400">Auto-fill is enabled. Upload your resume to start.</p>
+=======
+        <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+            <div className="max-w-2xl mx-auto bg-white rounded-xl shadow-md overflow-hidden p-8">
+                <div className="mb-8 border-b pb-6">
+                    <div className="flex items-start justify-between">
+                        <div>
+                            <h1 className="text-3xl font-bold text-gray-900 mb-2">{job.title}</h1>
+                            <p className="text-gray-600 flex items-center gap-2">
+                                <span>📍 {job.location}</span>
+                                <span>•</span>
+                                <span className="font-medium text-gray-700">{job.department || 'General'}</span>
+                                <span>•</span>
+                                <span className="bg-indigo-100 text-indigo-800 px-2 py-0.5 rounded text-sm">{job.job_type}</span>
+                            </p>
+                        </div>
+                    
+                    </div>
+>>>>>>> 7885fd4af6c61c3dd0271b0ca3549411252d6cfb
                 </div>
 
                 <form onSubmit={handleSubmit} className="space-y-12">
@@ -293,6 +375,73 @@ const ApplyPage = () => {
                                 <span>30+ Years</span>
                             </div>
                         </div>
+                        <div>
+                            <label className="block text-xs text-gray-500 uppercase font-semibold tracking-wider">Skills</label>
+                            <input
+                                type="text"
+                                name="skills"
+                                value={formData.skills || ''}
+                                onChange={handleChange}
+                                placeholder="e.g. Java, Python, React"
+                                className="input-premium"
+                            />
+                        </div>
+
+                        {/* Dynamic Experience Section */}
+                        <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                            <label className="block text-xs text-gray-500 uppercase font-semibold tracking-wider mb-3">Previous Experience</label>
+
+                            {formData.experiences.map((exp, index) => (
+                                <div key={index} className="mb-4 pb-4 border-b border-gray-200 last:border-0 last:pb-0">
+                                    <div className="flex justify-between items-center mb-2">
+                                        <span className="text-xs font-semibold text-gray-500 uppercase">Experience {index + 1}</span>
+                                        <button
+                                            type="button"
+                                            onClick={() => handleRemoveExperience(index)}
+                                            className="text-red-500 hover:text-red-700 text-xs font-semibold"
+                                        >
+                                            Remove
+                                        </button>
+                                    </div>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                        <div>
+                                            <input
+                                                placeholder="Company Name"
+                                                value={exp.company}
+                                                onChange={(e) => handleExperienceChange(index, 'company', e.target.value)}
+                                                className="input-premium text-sm"
+                                                required
+                                            />
+                                        </div>
+                                        <div>
+                                            <input
+                                                placeholder="Job Role"
+                                                value={exp.role}
+                                                onChange={(e) => handleExperienceChange(index, 'role', e.target.value)}
+                                                className="input-premium text-sm"
+                                                required
+                                            />
+                                        </div>
+                                        <div className="sm:col-span-2">
+                                            <input
+                                                placeholder="Duration (e.g. 2020-2022)"
+                                                value={exp.duration}
+                                                onChange={(e) => handleExperienceChange(index, 'duration', e.target.value)}
+                                                className="input-premium text-sm"
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+
+                            <button
+                                type="button"
+                                onClick={handleAddExperience}
+                                className="mt-2 text-sm text-indigo-600 font-medium hover:text-indigo-800 flex items-center gap-1"
+                            >
+                                + Add Experience
+                            </button>
+                        </div>
 
                         <div>
                             <div className="flex justify-between mb-2">
@@ -363,6 +512,7 @@ const ApplyPage = () => {
                         </div>
                     </div>
 
+<<<<<<< HEAD
                     {/* 4. Questions */}
                     {job.screening_questions && job.screening_questions.length > 0 && (
                         <div className="space-y-6">
@@ -396,6 +546,21 @@ const ApplyPage = () => {
                                             {q.options && q.options.map((opt, i) => <option key={i} value={opt} className="bg-slate-800 text-white">{opt}</option>)}
                                         </select>
                                     )}
+=======
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700">Resume (PDF, DOC, DOCX)</label>
+                        <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md hover:border-indigo-500 transition-colors">
+                            <div className="space-y-1 text-center">
+                                <svg className="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48">
+                                    <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                </svg>
+                                <div className="flex text-sm text-gray-600">
+                                    <label htmlFor="file-upload" className="relative cursor-pointer bg-white rounded-md font-medium text-indigo-600 hover:text-indigo-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-indigo-500">
+                                        <span>Upload a file</span>
+                                        <input id="file-upload" name="resume" type="file" accept=".pdf,.doc,.docx" required onChange={handleChange} className="sr-only" />
+                                    </label>
+                                    <p className="pl-1">or drag and drop</p>
+>>>>>>> 7885fd4af6c61c3dd0271b0ca3549411252d6cfb
                                 </div>
                             ))}
                         </div>

@@ -1,11 +1,13 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+
 import JobListPage from './pages/JobListPage';
 import DashboardPage from './pages/DashboardPage';
 import JobDetailsPage from './pages/JobDetailsPage';
 import ApplicationsPage from './pages/ApplicationsPage';
 import ApplyPage from './pages/ApplyPage';
 import HomePage from './pages/HomePage';
+import AnalyticsPage from './pages/AnalyticsPage';
 
 import CreateJobPage from './pages/CreateJobPage';
 import CreateEmployee from './components/CreateEmployee';
@@ -40,11 +42,14 @@ export default function App() {
 
           <Route path="employees" element={<ViewEmployeesWithNav />} />
           <Route path="employees/create" element={<CreateEmployeeWithNav />} />
+
+          <Route path="analytics" element={<AnalyticsPage />} />
         </Route>
       </Routes>
     </Router>
   );
 }
+
 
 // Wrappers to ensure they can navigate back using the new Router
 const CreateEmployeeWithNav = () => <CreateEmployee onBack={() => window.history.back()} />;

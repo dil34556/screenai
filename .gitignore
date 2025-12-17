@@ -1,38 +1,14 @@
 # Python
 __pycache__/
 *.pyc
+*.pyo
+*.pyd
 .env
 
 # Django
 db.sqlite3
-backend/db.sqlite3
+media/
 
 # Node
 node_modules/
-
-# OS
-.DS_Store
-
-# Environment
-.env
-
-# Media
-media/
-
-# Debug / temp files
-*.log
-*.txt
-debug_*
-check_*
-test_*
-available_models.log
-models_list.txt
-models_output.txt
-parser_debug.log
-
-# Python cache
-__pycache__/
-
-backend/db.sqlite3
-__pycache__/
-*.pyc
+dist/

@@ -15,6 +15,8 @@ const CreateJobPage = () => {
         notice_period_days: 30, // Default slider value
         job_type: 'ONSITE',
         required_skills: '',
+        previous_companies: '',
+        previous_roles: '',
         description: ''
     });
 
@@ -78,6 +80,8 @@ const CreateJobPage = () => {
             const payload = {
                 ...formData,
                 required_skills: formData.required_skills.split(',').map(s => s.trim()),
+                previous_companies: formData.previous_companies ? formData.previous_companies.split(',').map(s => s.trim()) : [],
+                previous_roles: formData.previous_roles ? formData.previous_roles.split(',').map(s => s.trim()) : [],
                 screening_questions: questions
             };
 
@@ -206,6 +210,16 @@ const CreateJobPage = () => {
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700">Required Skills</label>
                                     <input type="text" name="required_skills" placeholder="Python, React, AWS (Comma separated)" onChange={handleChange} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" />
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700">Previous Companies</label>
+                                    <input type="text" name="previous_companies" placeholder="Google, Microsoft, Amazon (Comma separated)" onChange={handleChange} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" />
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700">Previous Job Roles</label>
+                                    <input type="text" name="previous_roles" placeholder="SDE-1, Software Engineer, Backend Developer (Comma separated)" onChange={handleChange} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" />
                                 </div>
                             </div>
                         </div>

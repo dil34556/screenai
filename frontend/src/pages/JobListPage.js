@@ -2,8 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 
 import { getJobs, updateJob } from '../services/api';
-import { MoreVertical, Copy, Eye, ExternalLink, Activity, MoreHorizontal, Users } from 'lucide-react';
-import FormPreviewModal from '../components/FormPreviewModal';
+import { MoreVertical, Copy, ExternalLink, Users } from 'lucide-react';
 // Removed Headless UI import
 
 const JobListPage = () => {
@@ -13,7 +12,6 @@ const JobListPage = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState('ALL'); // ALL, ACTIVE, INACTIVE
 
-    const [previewJob, setPreviewJob] = useState(null);
     const [activeMenuId, setActiveMenuId] = useState(null); // For custom dropdown
 
     // Close menu when clicking outside
@@ -183,13 +181,6 @@ const JobListPage = () => {
                                                 onClick={(e) => e.stopPropagation()}
                                             >
                                                 <div className="p-1">
-                                                    <button
-                                                        onClick={() => { setPreviewJob(job); setActiveMenuId(null); }}
-                                                        className="group flex w-full items-center rounded-lg px-2 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-700 transition-colors"
-                                                    >
-                                                        <Eye size={16} className="mr-2" />
-                                                        View Form
-                                                    </button>
                                                     <a
                                                         href={`/jobs/${job.id}/apply`}
                                                         target="_blank"
@@ -217,8 +208,36 @@ const JobListPage = () => {
                                     </div>
                                 </div>
 
-                                {/* Divider */}
+                                {/* Stats Row */}
                                 <div className="border-t border-gray-100 my-4"></div>
+
+                                {/* Target Criteria (New) */}
+                                {(job.previous_companies?.length > 0 || job.previous_roles?.length > 0) && (
+                                    <div className="mb-4 space-y-2">
+                                        {job.previous_companies?.length > 0 && (
+                                            <div className="flex flex-wrap gap-1">
+                                                <span className="text-xs font-semibold text-gray-500 uppercase">Prev. Co:</span>
+                                                {job.previous_companies.slice(0, 3).map((co, i) => (
+                                                    <span key={i} className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-50 text-blue-700">
+                                                        {co}
+                                                    </span>
+                                                ))}
+                                                {job.previous_companies.length > 3 && <span className="text-xs text-gray-400">+{job.previous_companies.length - 3}</span>}
+                                            </div>
+                                        )}
+                                        {job.previous_roles?.length > 0 && (
+                                            <div className="flex flex-wrap gap-1">
+                                                <span className="text-xs font-semibold text-gray-500 uppercase">Prev. Roles:</span>
+                                                {job.previous_roles.slice(0, 3).map((role, i) => (
+                                                    <span key={i} className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-50 text-purple-700">
+                                                        {role}
+                                                    </span>
+                                                ))}
+                                                {job.previous_roles.length > 3 && <span className="text-xs text-gray-400">+{job.previous_roles.length - 3}</span>}
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
 
                                 {/* Stats Row */}
                                 <div className="flex items-center justify-between mb-6">
@@ -234,7 +253,7 @@ const JobListPage = () => {
                                 {/* Footer Actions */}
                                 <div className="flex items-center gap-3">
                                     <Link
-                                        to={`/admin/applications?job=${job.id}`}
+                                        to={`/admin/jobs/${job.id}`}
                                         className="flex-1 bg-white border border-gray-200 text-gray-900 hover:bg-blue-600 hover:text-white hover:border-blue-600 font-semibold py-2.5 px-4 rounded-lg text-center transition-all duration-200 shadow-sm"
                                     >
                                         View Candidates
@@ -266,9 +285,6 @@ const JobListPage = () => {
                 </ul>
             </div>
 
-
-            {/* Modal */}
-            <FormPreviewModal job={previewJob} onClose={() => setPreviewJob(null)} />
         </div >
     );
 };
