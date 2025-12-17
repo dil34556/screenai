@@ -1,14 +1,48 @@
+# =====================
 # Python
+# =====================
 __pycache__/
 *.pyc
 *.pyo
 *.pyd
 .env
 
+# =====================
 # Django
+# =====================
 db.sqlite3
 media/
+staticfiles/
 
-# Node
+# =====================
+# Logs & Debug
+# =====================
+*.log
+*.txt
+debug_*
+parser_debug.log
+server_error.log
+
+# =====================
+# Test & Temp Files
+# =====================
+test_*.pdf
+test_*.docx
+debug_*.pdf
+debug_*.docx
+repro_*.docx
+output_*.txt
+output_*.json
+
+# =====================
+# Node / Frontend
+# =====================
 node_modules/
 dist/
+build/
+
+# =====================
+# OS
+# =====================
+.DS_Store
+Thumbs.db
