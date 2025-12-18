@@ -33,22 +33,38 @@ class ApplicationSerializer(serializers.ModelSerializer):
         read_only_fields = []
 
     def get_work_experience(self, obj):
-        if not obj.resume_text:
-            return []
-        try:
-            data = json.loads(obj.resume_text)
-            # views.py saves: json.dumps(parsed_data) where parsed_data = {"data": {...}, "text": ...}
-            # So we look for data['data']['work_experience']
-            
-            # Check structure (it might vary if saved differently in versions)
-            resume_data = data.get('data', {})
-            if not resume_data and 'work_experience' in data:
-                 # Fallback if saved directly
-                 resume_data = data
-            
-            return resume_data.get('work_experience', [])
-        except:
-            return []
+        # 1. Get Manual Experience (from DB)
+        manual_experience = []
+        for exp in obj.experiences.all():
+            manual_experience.append({
+                "company_name": exp.company,
+                "job_role": exp.role,
+                "duration": exp.duration
+            })
+        
+        # 2. Get Parsed Experience (from Resume Text)
+        parsed_experience = []
+        if obj.resume_text:
+            try:
+                data = json.loads(obj.resume_text)
+                resume_data = data.get('data', {})
+                if not resume_data and 'work_experience' in data:
+                        resume_data = data
+                
+                raw_parsed = resume_data.get('work_experience', [])
+                # Normalize parsed data to match structure
+                for item in raw_parsed:
+                    # Parse returns company_name, job_role. Ensure keys match.
+                    parsed_experience.append({
+                        "company_name": item.get('company_name') or item.get('company'),
+                        "job_role": item.get('job_role') or item.get('role'),
+                        "duration": item.get('duration') or item.get('dates')
+                    })
+            except:
+                pass
+
+        # Return combined (Manual first)
+        return manual_experience + parsed_experience
 
     def to_internal_value(self, data):
         # Handle multipart/form-data where JSON fields might come as strings

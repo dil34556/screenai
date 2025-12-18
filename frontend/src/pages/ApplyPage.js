@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, useLocation, Link } from 'react-router-dom';
-import { getJobDetail, submitApplication, previewResume } from '../services/api';
+import { getJobDetail, submitApplication, previewResume, quickScanResume } from '../services/api';
 import { ArrowLeft, UploadCloud, CheckCircle2, FileText, ChevronRight, Loader2 } from 'lucide-react';
 
 const ApplyPage = () => {
@@ -68,11 +68,32 @@ const ApplyPage = () => {
         const data = new FormData();
         data.append('resume', file);
 
+        // 1. Quick Scan (Regex) - Instant Feedback for Contact Info
+        try {
+            const { quickScanResume } = require('../services/api'); // Dynamic import if needed or just use import
+            const quickResult = await quickScanResume(data);
+
+            if (quickResult && quickResult.data) {
+                const { candidate_name, email, phone } = quickResult.data;
+                console.log("Quick Scan Result:", quickResult.data);
+
+                setFormData(prev => ({
+                    ...prev,
+                    name: candidate_name || prev.name,
+                    email: email || prev.email,
+                    phone: phone || prev.phone
+                }));
+            }
+        } catch (quickErr) {
+            console.warn("Quick scan failed, falling back to full parse only", quickErr);
+        }
+
+        // 2. Full Parse (AI) - Deep Analysis for Skills & Exp
         try {
             const result = await previewResume(data);
 
             if (result && result.data) {
-                const { candidate_name, email, phone, total_years_experience } = result.data;
+                const { candidate_name, email, phone, total_years_experience, skills, work_experience } = result.data;
 
                 // Ensure experience is a number for the slider
                 let parsedExp = 0;
@@ -81,12 +102,33 @@ const ApplyPage = () => {
                     if (isNaN(parsedExp)) parsedExp = 0;
                 }
 
+                // Format Skills (ensure array -> string)
+                let skillsStr = "";
+                if (Array.isArray(skills)) {
+                    skillsStr = skills.join(", ");
+                } else if (typeof skills === 'string') {
+                    skillsStr = skills;
+                }
+
+                // Format Experience
+                let parsedExperiences = [];
+                if (Array.isArray(work_experience)) {
+                    parsedExperiences = work_experience.map(exp => ({
+                        company: exp.company_name || "",
+                        role: exp.job_role || "",
+                        duration: exp.duration || "" // Parser might return dates/duration
+                    }));
+                }
+
                 setFormData(prev => ({
                     ...prev,
-                    name: candidate_name || prev.name,
+                    // Use AI result if available and better, otherwise keep quick scan or user input
+                    name: (candidate_name && candidate_name.length > (prev.name?.length || 0)) ? candidate_name : prev.name,
                     email: email || prev.email,
                     phone: phone || prev.phone,
-                    experience_years: parsedExp || prev.experience_years
+                    experience_years: parsedExp || prev.experience_years,
+                    skills: skillsStr || prev.skills,
+                    experiences: parsedExperiences.length > 0 ? parsedExperiences : prev.experiences
                 }));
             }
         } catch (err) {
@@ -136,6 +178,11 @@ const ApplyPage = () => {
         if (formData.expected_ctc) data.append('expected_ctc', formData.expected_ctc);
         data.append('notice_period', formData.notice_period);
         if (formData.resume) data.append('resume', formData.resume);
+
+        if (formData.skills) data.append('skills', formData.skills);
+        if (formData.experiences && formData.experiences.length > 0) {
+            data.append('experiences', JSON.stringify(formData.experiences));
+        }
 
         const answersList = Object.entries(answers).map(([q, a]) => ({ question: q, answer: a }));
         data.append('answers', JSON.stringify(answersList));
@@ -326,73 +373,7 @@ const ApplyPage = () => {
                                 <span>30+ Years</span>
                             </div>
                         </div>
-                        <div>
-                            <label className="block text-xs text-gray-500 uppercase font-semibold tracking-wider">Skills</label>
-                            <input
-                                type="text"
-                                name="skills"
-                                value={formData.skills || ''}
-                                onChange={handleChange}
-                                placeholder="e.g. Java, Python, React"
-                                className="input-premium"
-                            />
-                        </div>
-
-                        {/* Dynamic Experience Section */}
-                        <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
-                            <label className="block text-xs text-gray-500 uppercase font-semibold tracking-wider mb-3">Previous Experience</label>
-
-                            {formData.experiences.map((exp, index) => (
-                                <div key={index} className="mb-4 pb-4 border-b border-gray-200 last:border-0 last:pb-0">
-                                    <div className="flex justify-between items-center mb-2">
-                                        <span className="text-xs font-semibold text-gray-500 uppercase">Experience {index + 1}</span>
-                                        <button
-                                            type="button"
-                                            onClick={() => handleRemoveExperience(index)}
-                                            className="text-red-500 hover:text-red-700 text-xs font-semibold"
-                                        >
-                                            Remove
-                                        </button>
-                                    </div>
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                        <div>
-                                            <input
-                                                placeholder="Company Name"
-                                                value={exp.company}
-                                                onChange={(e) => handleExperienceChange(index, 'company', e.target.value)}
-                                                className="input-premium text-sm"
-                                                required
-                                            />
-                                        </div>
-                                        <div>
-                                            <input
-                                                placeholder="Job Role"
-                                                value={exp.role}
-                                                onChange={(e) => handleExperienceChange(index, 'role', e.target.value)}
-                                                className="input-premium text-sm"
-                                                required
-                                            />
-                                        </div>
-                                        <div className="sm:col-span-2">
-                                            <input
-                                                placeholder="Duration (e.g. 2020-2022)"
-                                                value={exp.duration}
-                                                onChange={(e) => handleExperienceChange(index, 'duration', e.target.value)}
-                                                className="input-premium text-sm"
-                                            />
-                                        </div>
-                                    </div>
-                                </div>
-                            ))}
-
-                            <button
-                                type="button"
-                                onClick={handleAddExperience}
-                                className="mt-2 text-sm text-indigo-600 font-medium hover:text-indigo-800 flex items-center gap-1"
-                            >
-                                + Add Experience
-                            </button>
-                        </div>
+                        {/* Skills and Experience removed as per user request */}
 
                         <div>
                             <div className="flex justify-between mb-2">

@@ -93,12 +93,22 @@ class ApplicationListCreateView(generics.ListAPIView):
 
         try:
             # Extract skills and experiences
-            skills = request.data.get("skills", "")
+            skills_input = request.data.get("skills", "")
+            skills_list = []
+            if isinstance(skills_input, str):
+                if skills_input.strip():
+                     skills_list = [s.strip() for s in skills_input.split(',')]
+            elif isinstance(skills_input, list):
+                skills_list = skills_input
+
             experiences_str = request.data.get("experiences")
             experiences_data = []
             if experiences_str:
                 try:
-                    experiences_data = json.loads(experiences_str)
+                    if isinstance(experiences_str, str):
+                        experiences_data = json.loads(experiences_str)
+                    else:
+                        experiences_data = experiences_str
                 except ValueError:
                     pass
 
@@ -112,25 +122,37 @@ class ApplicationListCreateView(generics.ListAPIView):
                 expected_ctc=safe_float(expected_ctc),
                 notice_period=safe_int(notice_period),
                 answers=answers_data,
-                skills=skills
+                skills=skills_list
             )
 
-            # 👇 Non-blocking Parsing
-            try:
-                # 👇 FULL FILE PATH
-                parsed_data = parse_resume(application.resume.path)
+            # 👇 Non-blocking Parsing (Threaded)
+            def run_background_parsing(app_id, file_path):
+                import json
+                from screenai.services.resume_parser.parser import parse_resume
+                try:
+                    # Re-fetch because threads might have race conditions if we pass obj
+                    app = Application.objects.get(id=app_id)
+                    parsed_data = parse_resume(file_path)
 
-                # 👇 SAVE PARSED DATA
-                application.total_years_experience = parsed_data["data"]["total_years_experience"]
-                application.skills = parsed_data["data"]["skills"]
-                application.education = parsed_data["data"]["education"]
-                application.certifications = parsed_data["data"]["certifications"]
-                application.resume_text = json.dumps(parsed_data, indent=2)
+                    # Update fields (Merge skills)
+                    app.total_years_experience = parsed_data["data"]["total_years_experience"]
+                    
+                    # Merge existing skills with parsed skills to prevent data loss
+                    current_skills = set(app.skills or [])
+                    new_skills = set(parsed_data["data"]["skills"] or [])
+                    app.skills = list(current_skills.union(new_skills))
+                    
+                    app.education = parsed_data["data"]["education"]
+                    app.certifications = parsed_data["data"]["certifications"]
+                    app.resume_text = json.dumps(parsed_data, indent=2)
+                    app.save()
+                    print(f"Background parsing complete for App {app_id}")
+                except Exception as e:
+                    print(f"WARNING: Background parsing failed for App ID {app_id}: {e}")
 
-                application.save()
-            except Exception as e:
-                print(f"WARNING: Resume parsing failed for App ID {application.id}: {e}")
-                # We do NOT return 500 here. We proceed.
+            # Start Thread
+            import threading
+            threading.Thread(target=run_background_parsing, args=(application.id, application.resume.path)).start()
             
         except Exception as e:
             import traceback
@@ -366,6 +388,7 @@ class AnalyticsView(views.APIView):
                     'percentage': percentage
                 })
             
+            
             return Response({
                 'summary': {
                     'total_applications': total_applications,
@@ -396,4 +419,50 @@ class AnalyticsView(views.APIView):
                 'platform_performance': [],
                 'hr_team_performance': []
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class QuickScanResumeView(views.APIView):
+    def post(self, request):
+        try:
+            if 'resume' not in request.FILES:
+                return Response({"error": "No resume file provided"}, status=status.HTTP_400_BAD_REQUEST)
+            
+            resume_file = request.FILES['resume']
+            
+            # Save temporarily
+            file_name = default_storage.save(f"temp/quick_{resume_file.name}", resume_file)
+            full_path = default_storage.path(file_name)
+            
+            try:
+                # Extract Text Only
+                from screenai.services.resume_parser.parser import extract_pdf_text, extract_docx_text, scan_resume_regex
+                
+                ext = os.path.splitext(full_path)[1].lower()
+                text = ""
+                if ext == '.pdf':
+                    text = extract_pdf_text(full_path)
+                elif ext in ['.docx', '.doc']:
+                    text = extract_docx_text(full_path)
+                
+                # Regex Scan
+                data = scan_resume_regex(text)
+                
+                # Cleanup
+                default_storage.delete(file_name)
+                if os.path.exists(full_path):
+                    os.remove(full_path)
+                    
+                return Response({"data": data}, status=status.HTTP_200_OK)
+
+            except Exception as e:
+                # Cleanup
+                if os.path.exists(full_path):
+                    try: os.remove(full_path) 
+                    except: pass
+                raise e
+
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 

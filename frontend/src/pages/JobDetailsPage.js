@@ -362,18 +362,20 @@ const JobDetailsPage = () => {
                                         </td>
 
                                         <td className="px-6 py-4">
-                                            <div className="flex flex-col gap-1 max-w-[180px]">
+                                            <div className="flex flex-wrap gap-1.5 max-w-[250px]">
                                                 {app.work_experience && app.work_experience.length > 0 ? (
-                                                    app.work_experience.slice(0, 2).map((exp, idx) => (
-                                                        <div key={idx} className="flex flex-col">
-                                                            <span className="text-xs font-bold text-slate-800 truncate" title={exp.company_name}>{exp.company_name}</span>
-                                                            <span className="text-[10px] text-slate-500 truncate" title={exp.job_role}>{exp.job_role}</span>
-                                                        </div>
-                                                    ))
+                                                    app.work_experience.map((exp, idx) => {
+                                                        const label = exp.company_name && exp.job_role
+                                                            ? `${exp.job_role} @ ${exp.company_name}`
+                                                            : exp.company_name || exp.job_role || "Unknown";
+
+                                                        return (
+                                                            <span key={idx} className="px-2 py-1 rounded-md bg-white border border-slate-200 text-[10px] font-semibold text-slate-700 shadow-sm whitespace-normal leading-tight block">
+                                                                {label}
+                                                            </span>
+                                                        );
+                                                    })
                                                 ) : <span className="text-slate-300 text-xs">-</span>}
-                                                {app.work_experience && app.work_experience.length > 2 && (
-                                                    <span className="text-[10px] text-indigo-500 font-medium">+ {app.work_experience.length - 2} more</span>
-                                                )}
                                             </div>
                                         </td>
 

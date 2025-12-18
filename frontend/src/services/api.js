@@ -106,6 +106,15 @@ export const previewResume = async (formData) => {
     return response.data;
 };
 
+export const quickScanResume = async (formData) => {
+    const response = await api.post('/applications/quick-scan/', formData, {
+        headers: {
+            'Content-Type': 'multipart/form-data',
+        },
+    });
+    return response.data;
+};
+
 export const login = async (credentials) => {
     const response = await api.post('/auth/login/', credentials);
     return response.data;

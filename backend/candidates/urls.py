@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import ApplicationListCreateView, ApplicationDetailView, AddCommentView, DashboardStatsView, ParseApplicationResumeView, PreviewResumeView, AnalyticsView
+from .views import ApplicationListCreateView, ApplicationDetailView, AddCommentView, DashboardStatsView, ParseApplicationResumeView, PreviewResumeView, AnalyticsView, QuickScanResumeView
 
 urlpatterns = [
     path('applications/', ApplicationListCreateView.as_view(), name='application-list'),
@@ -7,6 +7,7 @@ urlpatterns = [
     path('applications/<int:pk>/parse/', ParseApplicationResumeView.as_view(), name='application-parse'),
     path('applications/<int:pk>/comments/', AddCommentView.as_view(), name='add-comment'),
     path('applications/preview/', PreviewResumeView.as_view(), name='resume-preview'),
+    path('applications/quick-scan/', QuickScanResumeView.as_view(), name='resume-quick-scan'),
     path('dashboard/stats/', DashboardStatsView.as_view(), name='dashboard-stats'),
     path('analytics/', AnalyticsView.as_view(), name='analytics'),
 ]

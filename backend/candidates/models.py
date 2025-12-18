@@ -42,7 +42,7 @@ class Application(models.Model):
 
     # 👇 parsed fields
     total_years_experience = models.FloatField(null=True, blank=True)
-    skills = models.TextField(blank=True, help_text="Comma-separated skills")
+    skills = models.JSONField(default=list, blank=True, help_text="List of skills")
 
     education = models.JSONField(default=list, blank=True)
     certifications = models.JSONField(default=list, blank=True)
