@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { getJobDetail, getJobApplications } from '../services/api';
+import { getJobDetail, getJobApplications, updateJob } from '../services/api';
 
 const JobCandidatesPage = () => {
     const { jobId } = useParams();
@@ -11,6 +11,14 @@ const JobCandidatesPage = () => {
     const [search, setSearch] = useState('');
     const [filterStatus, setFilterStatus] = useState('All');
     const [filterPlatform, setFilterPlatform] = useState('All');
+
+    // Custom platform modal states
+    const [showCustomPlatformModal, setShowCustomPlatformModal] = useState(false);
+    const [newPlatformName, setNewPlatformName] = useState('');
+    const [savingPlatform, setSavingPlatform] = useState(false);
+
+    // Default platforms
+    const defaultPlatforms = ['linkedin', 'indeed', 'glassdoor', 'naukri'];
 
     useEffect(() => {
         const loadData = async () => {
@@ -30,10 +38,67 @@ const JobCandidatesPage = () => {
         loadData();
     }, [jobId]);
 
+    // Get all platforms including custom ones
+    const getAllPlatforms = () => {
+        const customPlatforms = job?.custom_platforms || [];
+        return [...defaultPlatforms, ...customPlatforms];
+    };
+
     const copyLink = (platform) => {
         let link = `${window.location.origin}/jobs/${jobId}/apply?platform=${platform}`;
         navigator.clipboard.writeText(link);
         alert(`Copied ${platform} link: ` + link);
+    };
+
+    const goToJob = (platform) => {
+        const link = `${window.location.origin}/jobs/${jobId}/apply?platform=${platform}`;
+        window.open(link, '_blank');
+    };
+
+    // Add custom platform and save to DB
+    const handleAddCustomPlatform = async () => {
+        if (!newPlatformName.trim()) return;
+
+        const platformName = newPlatformName.trim().toLowerCase();
+        const currentCustomPlatforms = job?.custom_platforms || [];
+
+        // Check if platform already exists
+        if (getAllPlatforms().includes(platformName)) {
+            alert('This platform already exists!');
+            return;
+        }
+
+        setSavingPlatform(true);
+        try {
+            const updatedPlatforms = [...currentCustomPlatforms, platformName];
+            await updateJob(jobId, { custom_platforms: updatedPlatforms });
+
+            // Update local state
+            setJob(prev => ({ ...prev, custom_platforms: updatedPlatforms }));
+            setNewPlatformName('');
+            setShowCustomPlatformModal(false);
+        } catch (err) {
+            console.error('Error saving custom platform:', err);
+            alert('Failed to save custom platform. Please try again.');
+        } finally {
+            setSavingPlatform(false);
+        }
+    };
+
+    // Remove custom platform
+    const handleRemoveCustomPlatform = async (platformToRemove) => {
+        if (!window.confirm(`Remove "${platformToRemove}" platform?`)) return;
+
+        const currentCustomPlatforms = job?.custom_platforms || [];
+        const updatedPlatforms = currentCustomPlatforms.filter(p => p !== platformToRemove);
+
+        try {
+            await updateJob(jobId, { custom_platforms: updatedPlatforms });
+            setJob(prev => ({ ...prev, custom_platforms: updatedPlatforms }));
+        } catch (err) {
+            console.error('Error removing custom platform:', err);
+            alert('Failed to remove custom platform. Please try again.');
+        }
     };
 
     const filteredCandidates = candidates.filter(app => {
@@ -52,11 +117,54 @@ const JobCandidatesPage = () => {
         return 'bg-red-100 text-red-800';
     };
 
+    // Get platform button styling
+    const getPlatformStyle = (platform) => {
+        const styles = {
+            linkedin: 'bg-blue-600 hover:bg-blue-700 text-white',
+            indeed: 'bg-blue-800 hover:bg-blue-900 text-white',
+            glassdoor: 'bg-green-600 hover:bg-green-700 text-white',
+            naukri: 'bg-purple-600 hover:bg-purple-700 text-white',
+        };
+        return styles[platform] || 'bg-gray-600 hover:bg-gray-700 text-white';
+    };
+
     if (loading) return <div className="p-8 text-center text-gray-500">Loading Candidates...</div>;
     if (!job) return <div className="p-8 text-center text-red-500">Job not found</div>;
 
     return (
         <div className="min-h-screen bg-gray-50 p-8">
+            {/* Custom Platform Modal */}
+            {showCustomPlatformModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+                    <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md mx-4">
+                        <h3 className="text-lg font-bold text-gray-900 mb-4">Add Custom Platform</h3>
+                        <input
+                            type="text"
+                            placeholder="Enter platform name (e.g., Monster, CareerBuilder)"
+                            value={newPlatformName}
+                            onChange={(e) => setNewPlatformName(e.target.value)}
+                            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 mb-4"
+                            onKeyPress={(e) => e.key === 'Enter' && handleAddCustomPlatform()}
+                        />
+                        <div className="flex justify-end gap-3">
+                            <button
+                                onClick={() => { setShowCustomPlatformModal(false); setNewPlatformName(''); }}
+                                className="px-4 py-2 text-gray-600 hover:text-gray-800 font-medium"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={handleAddCustomPlatform}
+                                disabled={savingPlatform || !newPlatformName.trim()}
+                                className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 disabled:bg-gray-400 disabled:cursor-not-allowed font-medium"
+                            >
+                                {savingPlatform ? 'Saving...' : 'Add Platform'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* Header */}
             <div className="max-w-7xl mx-auto mb-8 flex items-center justify-between">
                 <div>
@@ -68,19 +176,103 @@ const JobCandidatesPage = () => {
                 </div>
             </div>
 
+            {/* Apply via Platform Section */}
+            <div className="max-w-7xl mx-auto mb-6 bg-white shadow-lg rounded-lg p-6">
+                <div className="flex items-center justify-between flex-wrap gap-4">
+                    <h3 className="text-lg font-semibold text-gray-700">Apply via Platform:</h3>
+                    <div className="flex flex-wrap gap-3 items-center">
+                        {/* Default Platform Buttons */}
+                        <button
+                            onClick={() => goToJob('linkedin')}
+                            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md font-medium flex items-center gap-2 transition-colors"
+                        >
+                            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z" /></svg>
+                            LinkedIn
+                        </button>
+                        <button
+                            onClick={() => goToJob('indeed')}
+                            className="px-4 py-2 bg-blue-800 hover:bg-blue-900 text-white rounded-md font-medium flex items-center gap-2 transition-colors"
+                        >
+                            <span className="font-bold">In</span> Indeed
+                        </button>
+                        <button
+                            onClick={() => goToJob('glassdoor')}
+                            className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-md font-medium flex items-center gap-2 transition-colors"
+                        >
+                            <span className="font-bold">Gd</span> Glassdoor
+                        </button>
+                        <button
+                            onClick={() => goToJob('naukri')}
+                            className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-md font-medium flex items-center gap-2 transition-colors"
+                        >
+                            <span className="font-bold">Nk</span> Naukri
+                        </button>
+
+                        {/* Custom Platform Buttons */}
+                        {(job?.custom_platforms || []).map((platform) => (
+                            <div key={platform} className="relative group">
+                                <button
+                                    onClick={() => goToJob(platform)}
+                                    className={`px-4 py-2 ${getPlatformStyle(platform)} rounded-md font-medium capitalize transition-colors`}
+                                >
+                                    {platform}
+                                </button>
+                                <button
+                                    onClick={() => handleRemoveCustomPlatform(platform)}
+                                    className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 text-white rounded-full text-xs opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600"
+                                    title="Remove platform"
+                                >
+                                    ×
+                                </button>
+                            </div>
+                        ))}
+
+                        {/* Add Custom Platform Button */}
+                        <button
+                            onClick={() => setShowCustomPlatformModal(true)}
+                            className="px-4 py-2 border-2 border-dashed border-gray-400 hover:border-indigo-500 text-gray-600 hover:text-indigo-600 rounded-md font-medium flex items-center gap-2 transition-colors"
+                        >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
+                            </svg>
+                            Add Custom
+                        </button>
+                    </div>
+                </div>
+            </div>
+
             {/* Candidates Table */}
             <div className="max-w-7xl mx-auto bg-white shadow-lg rounded-lg overflow-hidden">
                 <div className="px-6 py-4 border-b border-gray-200 bg-gray-50 flex flex-col gap-4">
                     <div className="flex justify-between items-center">
                         <div>
                             <h2 className="text-xl font-bold text-gray-900">{job.title}</h2>
-                            <p className="text-sm text-gray-500 mt-1">Engineering • Remote • {candidates.length} candidates</p>
+                            <p className="text-sm text-gray-500 mt-1">{job.department || 'Engineering'} • {job.location} • {candidates.length} candidates</p>
                         </div>
                         <div className="flex gap-2">
-                            <button onClick={() => copyLink('linkedin')} className="px-3 py-1.5 border border-gray-300 rounded text-sm text-gray-600 hover:bg-gray-50 flex items-center gap-2">LinkedIn</button>
-                            <button onClick={() => copyLink('indeed')} className="px-3 py-1.5 border border-gray-300 rounded text-sm text-gray-600 hover:bg-gray-50 flex items-center gap-2">Indeed</button>
-                            <button onClick={() => copyLink('glassdoor')} className="px-3 py-1.5 border border-gray-300 rounded text-sm text-gray-600 hover:bg-gray-50 flex items-center gap-2">Glassdoor</button>
-                            <button onClick={() => copyLink('naukri')} className="px-3 py-1.5 border border-gray-300 rounded text-sm text-gray-600 hover:bg-gray-50 flex items-center gap-2">Naukri</button>
+                            <button onClick={() => copyLink('linkedin')} className="px-3 py-1.5 border border-gray-300 rounded text-sm text-gray-600 hover:bg-gray-50 flex items-center gap-2" title="Copy LinkedIn link">
+                                📋 LinkedIn
+                            </button>
+                            <button onClick={() => copyLink('indeed')} className="px-3 py-1.5 border border-gray-300 rounded text-sm text-gray-600 hover:bg-gray-50 flex items-center gap-2" title="Copy Indeed link">
+                                📋 Indeed
+                            </button>
+                            <button onClick={() => copyLink('glassdoor')} className="px-3 py-1.5 border border-gray-300 rounded text-sm text-gray-600 hover:bg-gray-50 flex items-center gap-2" title="Copy Glassdoor link">
+                                📋 Glassdoor
+                            </button>
+                            <button onClick={() => copyLink('naukri')} className="px-3 py-1.5 border border-gray-300 rounded text-sm text-gray-600 hover:bg-gray-50 flex items-center gap-2" title="Copy Naukri link">
+                                📋 Naukri
+                            </button>
+                            {/* Copy links for custom platforms */}
+                            {(job?.custom_platforms || []).map((platform) => (
+                                <button
+                                    key={platform}
+                                    onClick={() => copyLink(platform)}
+                                    className="px-3 py-1.5 border border-gray-300 rounded text-sm text-gray-600 hover:bg-gray-50 flex items-center gap-2 capitalize"
+                                    title={`Copy ${platform} link`}
+                                >
+                                    📋 {platform}
+                                </button>
+                            ))}
                             <a href={`/jobs/${job.id}/apply`} target="_blank" rel="noreferrer" className="px-3 py-1.5 border border-gray-300 rounded text-sm text-gray-600 hover:bg-gray-50 flex items-center gap-2">Preview Form ↗</a>
                         </div>
                     </div>
@@ -110,6 +302,10 @@ const JobCandidatesPage = () => {
                             <option value="Naukri">Naukri</option>
                             <option value="Glassdoor">Glassdoor</option>
                             <option value="Website">Website</option>
+                            {/* Custom platforms in filter */}
+                            {(job?.custom_platforms || []).map((platform) => (
+                                <option key={platform} value={platform} className="capitalize">{platform}</option>
+                            ))}
                         </select>
                     </div>
                 </div>
@@ -164,7 +360,19 @@ const JobCandidatesPage = () => {
                                         {app.status.replace('_', ' ').toLowerCase()}
                                     </td>
                                     <td className="px-6 py-4 text-sm font-medium">
-                                        <button className="text-indigo-600 hover:text-indigo-900">View Details</button>
+                                        <div className="flex items-center gap-2">
+                                            <button className="text-indigo-600 hover:text-indigo-900">View Details</button>
+                                            <span className="text-gray-300">|</span>
+                                            <a
+                                                href={`/jobs/${jobId}/apply?platform=${app.platform || 'website'}`}
+                                                target="_blank"
+                                                rel="noreferrer"
+                                                className="text-green-600 hover:text-green-800 flex items-center gap-1"
+                                                title="Go to Job Application Form"
+                                            >
+                                                Go to Job ↗
+                                            </a>
+                                        </div>
                                     </td>
                                 </tr>
                             ))}
