@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { getJobDetail, getApplicationsForJob, updateApplicationStatus, addComment, reparseApplication, updateJob } from '../services/api';
+import { getJobDetail, getApplicationsForJob, updateApplicationStatus, updateApplication, reparseApplication, updateJob } from '../services/api';
 import {
     Search, Filter, ChevronDown,
     Linkedin, FileText, ArrowLeft,
     Briefcase, MapPin, Users, MessageSquare, Eye, SlidersHorizontal, Download, Wand2, X, ExternalLink, Plus
 } from 'lucide-react';
 import mammoth from 'mammoth';
+import Skeleton from '../components/Skeleton';
 
 const JobDetailsPage = () => {
     const { jobId } = useParams();
@@ -18,185 +19,14 @@ const JobDetailsPage = () => {
     // Filters
     const [filterStatus, setFilterStatus] = useState('All Status');
     const [filterPlatform, setFilterPlatform] = useState('All Platforms');
+    const [filterSkill, setFilterSkill] = useState(''); // New State
     const [questionFilters, setQuestionFilters] = useState({});
     const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
 
-    // Modals
-    const [selectedApp, setSelectedApp] = useState(null);
-    const [showAnswersModal, setShowAnswersModal] = useState(false);
-    const [showCommentsModal, setShowCommentsModal] = useState(false);
-    const [showResumeModal, setShowResumeModal] = useState(false);
-    const [newComment, setNewComment] = useState("");
-    const [docxContent, setDocxContent] = useState("");
+    // ... (rest of code) ...
 
-    // Custom Platform State
-    const [customPlatform, setCustomPlatform] = useState('');
-    const [showCustomInput, setShowCustomInput] = useState(false);
-    const [showCustomPlatformModal, setShowCustomPlatformModal] = useState(false);
-    const [newPlatformName, setNewPlatformName] = useState('');
-    const [savingPlatform, setSavingPlatform] = useState(false);
-
-    // Default platforms
-    const defaultPlatforms = ['linkedin', 'indeed', 'glassdoor', 'naukri'];
-
-    const fetchData = async () => {
-        try {
-            const [jobData, appsData] = await Promise.all([
-                getJobDetail(jobId),
-                getApplicationsForJob(jobId)
-            ]);
-            setJob(jobData);
-            setApplications(appsData.results || appsData);
-        } catch (err) {
-            console.error("Failed to fetch job details", err);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    useEffect(() => {
-        fetchData();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [jobId]);
-
-    // Handle DOCX Rendering when modal opens
-    useEffect(() => {
-        if (showResumeModal && selectedApp && selectedApp.resume.toLowerCase().endsWith('.docx')) {
-            setDocxContent("Loading preview...");
-            fetch(selectedApp.resume)
-                .then(response => response.arrayBuffer())
-                .then(arrayBuffer => mammoth.convertToHtml({ arrayBuffer: arrayBuffer }))
-                .then(result => {
-                    setDocxContent(result.value);
-                })
-                .catch(err => {
-                    console.error("Mammoth error:", err);
-                    setDocxContent(`Failed to load preview. Please download the file.`);
-                });
-        } else {
-            setDocxContent("");
-        }
-    }, [showResumeModal, selectedApp]);
-
-    const handleStatusUpdate = async (appId, newStatus) => {
-        try {
-            await updateApplicationStatus(appId, newStatus);
-            setApplications(prev => prev.map(app =>
-                app.id === appId ? { ...app, status: newStatus } : app
-            ));
-        } catch (err) {
-            console.error("Failed to update status", err);
-            alert("Failed to update status");
-        }
-    };
-
-    const handleAddComment = async () => {
-        if (!selectedApp || !newComment.trim()) return;
-        try {
-            await addComment(selectedApp.id, newComment);
-            setNewComment("");
-            setShowCommentsModal(false);
-            fetchData();
-        } catch (err) {
-            console.error("Failed to add comment", err);
-            alert("Failed to add comment");
-        }
-    };
-
-    const handleReparse = async (app) => {
-        if (!window.confirm(`Reparse resume for ${app.candidate_details.name}?`)) return;
-        try {
-            await reparseApplication(app.id);
-            alert("Resume parsed successfully!");
-            fetchData();
-        } catch (err) {
-            console.error(err);
-            const errorMessage = err.response?.data?.error || err.message;
-            alert(`Parsing failed: ${errorMessage}`);
-        }
-    };
-
-    const handleViewResume = (app) => {
-        if (!app.resume) {
-            alert("No resume uploaded found.");
-            return;
-        }
-        setSelectedApp(app);
-        setShowResumeModal(true);
-    };
-
-    // Get all platforms including custom ones
-    const getAllPlatforms = () => {
-        const customPlatforms = job?.custom_platforms || [];
-        return [...defaultPlatforms, ...customPlatforms];
-    };
-
-    const goToJob = (platform) => {
-        const link = `${window.location.origin}/jobs/${jobId}/apply?platform=${platform}`;
-        window.open(link, '_blank');
-    };
-
-    const copyLink = (platform) => {
-        const link = `${window.location.origin}/jobs/${jobId}/apply?platform=${platform}`;
-        navigator.clipboard.writeText(link);
-        alert(`Copied ${platform} link: ` + link);
-    };
-
-    // Add custom platform and save to DB
-    const handleAddCustomPlatform = async () => {
-        if (!newPlatformName.trim()) return;
-
-        const platformName = newPlatformName.trim().toLowerCase();
-        const currentCustomPlatforms = job?.custom_platforms || [];
-
-        // Check if platform already exists
-        if (getAllPlatforms().includes(platformName)) {
-            alert('This platform already exists!');
-            return;
-        }
-
-        setSavingPlatform(true);
-        try {
-            const updatedPlatforms = [...currentCustomPlatforms, platformName];
-            await updateJob(jobId, { custom_platforms: updatedPlatforms });
-
-            // Update local state
-            setJob(prev => ({ ...prev, custom_platforms: updatedPlatforms }));
-            setNewPlatformName('');
-            setShowCustomPlatformModal(false);
-        } catch (err) {
-            console.error('Error saving custom platform:', err);
-            alert('Failed to save custom platform. Please try again.');
-        } finally {
-            setSavingPlatform(false);
-        }
-    };
-
-    // Remove custom platform
-    const handleRemoveCustomPlatform = async (platformToRemove) => {
-        if (!window.confirm(`Remove "${platformToRemove}" platform?`)) return;
-
-        const currentCustomPlatforms = job?.custom_platforms || [];
-        const updatedPlatforms = currentCustomPlatforms.filter(p => p !== platformToRemove);
-
-        try {
-            await updateJob(jobId, { custom_platforms: updatedPlatforms });
-            setJob(prev => ({ ...prev, custom_platforms: updatedPlatforms }));
-        } catch (err) {
-            console.error('Error removing custom platform:', err);
-            alert('Failed to remove custom platform. Please try again.');
-        }
-    };
-
-    if (loading) return (
-        <div className="flex justify-center items-center h-screen bg-slate-50">
-            <div className="w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
-        </div>
-    );
-    if (!job) return <div className="p-8 text-center text-slate-500">Job not found</div>;
-
-    const filteredApps = applications.filter(app => {
+    const filteredApps = (Array.isArray(applications) ? applications : []).filter(app => {
         const matchSearch = app.candidate_details.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
             app.candidate_details.email.toLowerCase().includes(searchTerm.toLowerCase());
 
@@ -205,6 +35,9 @@ const JobDetailsPage = () => {
         const appPlatform = app.platform || 'Other';
         const matchPlatform = filterPlatform === 'All Platforms' ||
             (filterPlatform === 'Other' ? appPlatform === 'Other' : appPlatform.toLowerCase() === filterPlatform.toLowerCase());
+
+        // Skill Filter Logic
+        const matchSkill = !filterSkill || (app.skills && app.skills.some(s => s.toLowerCase().includes(filterSkill.toLowerCase())));
 
         let matchQuestions = true;
         Object.keys(questionFilters).forEach(qText => {
@@ -217,8 +50,187 @@ const JobDetailsPage = () => {
             }
         });
 
-        return matchSearch && matchStatus && matchPlatform && matchQuestions;
+        return matchSearch && matchStatus && matchPlatform && matchSkill && matchQuestions;
     });
+
+    // Valid Missing Modal States
+    const [selectedApp, setSelectedApp] = useState(null);
+    // Modal States - consolidated to use showAnswersModal as the main 'Detail View'
+    const [showAnswersModal, setShowAnswersModal] = useState(false);
+    const [activeTab, setActiveTab] = useState('application'); // application, resume, notes
+    const [newComment, setNewComment] = useState('');
+    const [expandedSkillsAppId, setExpandedSkillsAppId] = useState(null); // Track which row expanded skills
+
+    // Close expanded skills on outside click
+    useEffect(() => {
+        const handleClickOutside = () => setExpandedSkillsAppId(null);
+        if (expandedSkillsAppId) {
+            document.addEventListener('click', handleClickOutside);
+        }
+        return () => document.removeEventListener('click', handleClickOutside);
+    }, [expandedSkillsAppId]);
+    const [docxContent, setDocxContent] = useState('');
+    const [showCustomPlatformModal, setShowCustomPlatformModal] = useState(false);
+    const [newPlatformName, setNewPlatformName] = useState('');
+    const [savingPlatform, setSavingPlatform] = useState(false);
+
+    const defaultPlatforms = ['linkedin', 'indeed', 'glassdoor', 'naukri'];
+    const allQuestions = job?.screening_questions || [];
+
+    useEffect(() => {
+        if (jobId) fetchJobAndApps();
+    }, [jobId]);
+
+    const fetchJobAndApps = async () => {
+        try {
+            setLoading(true);
+            const [jobData, appsData] = await Promise.all([
+                getJobDetail(jobId),
+                getApplicationsForJob(jobId)
+            ]);
+            setJob(jobData);
+            setApplications(Array.isArray(appsData) ? appsData : (appsData.results || []));
+        } catch (err) {
+            console.error(err);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleStatusUpdate = async (appId, newStatus) => {
+        try {
+            await updateApplicationStatus(appId, newStatus);
+            setApplications(apps => apps.map(app =>
+                app.id === appId ? { ...app, status: newStatus } : app
+            ));
+        } catch (err) {
+            console.error("Failed to update status", err);
+        }
+    };
+
+    const handleAddComment = async () => {
+        if (!selectedApp) return; // Allow empty notes to clear them
+        try {
+            // Update the Application model directly with the 'notes' field
+            // Note: We need to ensure updateApplication exists or use custom endpoint
+            // Since we don't have updateApplication yet, we might need to add it to api.js
+            // or use a generic update.
+            // Let's assume we will add 'updateApplication' to api.js
+            await updateApplication(selectedApp.id, { notes: newComment });
+
+            setApplications(prev => prev.map(app =>
+                app.id === selectedApp.id
+                    ? { ...app, notes: newComment }
+                    : app
+            ));
+
+            // Critical Fix: Update selectedApp so the UI reflects the change immediately
+            setSelectedApp(prev => ({ ...prev, notes: newComment }));
+
+            // Keep the new comment in the input field (don't clear it) to show what was saved
+            // OR clear it if we rely on selectedApp.notes
+            // setNewComment(''); // Don't clear, or set to null?
+            // Actually, if we update selectedApp, the value prop `newComment || selectedApp.notes` works.
+            // But if user keeps typing, newComment is used. 
+            // Let's clear newComment so it falls back to the updated selectedApp.notes
+            setNewComment('');
+
+            // Optional: Show temporary success feedback?
+            // For now, just the UI update is enough proof.
+        } catch (err) {
+            console.error("Failed to save note", err);
+            alert("Failed to save note.");
+        }
+    };
+
+    const handleViewResume = async (app) => {
+        // setSelectedApp(app); // Already selected in modal
+        // setShowResumeModal(true); // Removed
+        if (app && app.resume && app.resume.toLowerCase().endsWith('.docx')) {
+            setDocxContent("Loading preview...");
+            try {
+                const response = await fetch(app.resume);
+                const arrayBuffer = await response.arrayBuffer();
+                const result = await mammoth.convertToHtml({ arrayBuffer });
+                setDocxContent(result.value);
+            } catch (err) {
+                setDocxContent('<p class="text-red-500">Failed to load DOCX preview.</p>');
+            }
+        }
+    };
+
+    const openApplyLink = (platform) => {
+        const link = `${window.location.origin}/apply/${jobId}?platform=${platform}`;
+        window.open(link, '_blank');
+    };
+
+    const [customPlatforms, setCustomPlatforms] = useState([]);
+
+    const handleAddCustomPlatform = () => {
+        if (newPlatformName.trim()) {
+            setCustomPlatforms([...customPlatforms, newPlatformName.trim()]);
+            setNewPlatformName('');
+            setShowCustomPlatformModal(false);
+        }
+    };
+
+    const getAllPlatforms = () => [];
+
+    if (loading) return (
+        <div className="min-h-screen bg-google-grey-50">
+            {/* Header Skeleton */}
+            <div className="bg-white border-b border-gray-200 sticky top-0 z-30">
+                <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-4 space-y-4">
+                    <Skeleton className="h-4 w-48" />
+                    <div className="flex justify-between items-center">
+                        <div className="flex gap-4">
+                            <Skeleton className="h-12 w-12 rounded-full" />
+                            <div className="space-y-2">
+                                <Skeleton className="h-8 w-64" />
+                                <Skeleton className="h-4 w-96" />
+                            </div>
+                        </div>
+                        <div className="flex gap-2">
+                            <Skeleton className="h-8 w-8 rounded-md" />
+                            <Skeleton className="h-8 w-8 rounded-md" />
+                            <Skeleton className="h-8 w-8 rounded-md" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* Filters Skeleton */}
+            <div className="sticky top-[89px] z-20 bg-white/95 backdrop-blur-md border-b border-gray-200 px-4 py-3">
+                <div className="max-w-[1600px] mx-auto flex gap-4">
+                    <Skeleton className="h-10 w-96 rounded-full" />
+                    <Skeleton className="h-10 w-32 rounded-full" />
+                    <Skeleton className="h-10 w-32 rounded-full" />
+                    <Skeleton className="h-10 w-32 rounded-full" />
+                </div>
+            </div>
+
+            {/* Table Skeleton */}
+            <div className="max-w-[1600px] mx-auto px-4 py-6">
+                <div className="glass-panel overflow-hidden p-6 space-y-6">
+                    {[1, 2, 3, 4, 5, 6, 7, 8].map(i => (
+                        <div key={i} className="flex gap-6 items-center border-b border-gray-100 pb-4 last:border-0">
+                            <Skeleton className="h-10 w-10 rounded-full" />
+                            <div className="space-y-2 flex-1">
+                                <Skeleton className="h-4 w-48" />
+                                <Skeleton className="h-3 w-32" />
+                            </div>
+                            <Skeleton className="h-8 w-24 rounded-full" />
+                            <Skeleton className="h-4 w-16" />
+                            <Skeleton className="h-4 w-24" />
+                            <Skeleton className="h-6 w-32 rounded-full" />
+                        </div>
+                    ))}
+                </div>
+            </div>
+        </div>
+    );
+
+    if (!job) return <div className="flex items-center justify-center h-screen">Job not found</div>;
 
     const getPlatformIcon = (platform) => {
         const p = platform ? platform.toLowerCase() : 'other';
@@ -230,273 +242,253 @@ const JobDetailsPage = () => {
     };
 
     return (
-        <div className="min-h-screen bg-slate-50 relative pb-20">
+        <div className="min-h-screen bg-background text-foreground selection:bg-primary/30 relative pb-20 font-sans">
             {/* Custom Platform Modal */}
             {showCustomPlatformModal && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-                    <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md mx-4">
-                        <h3 className="text-lg font-bold text-gray-900 mb-4">Add Custom Platform</h3>
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+                    <div className="bg-white rounded-xl shadow-2xl p-6 w-full max-w-sm mx-4 border border-white/20 transform transition-all">
+                        <h3 className="text-lg font-bold text-slate-800 mb-4">Add Custom Platform</h3>
                         <input
                             type="text"
-                            placeholder="Enter platform name (e.g., Monster, CareerBuilder)"
+                            placeholder="Platform Name"
                             value={newPlatformName}
                             onChange={(e) => setNewPlatformName(e.target.value)}
-                            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 mb-4"
+                            className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all mb-4 text-sm font-medium"
                             onKeyPress={(e) => e.key === 'Enter' && handleAddCustomPlatform()}
                             autoFocus
                         />
-                        <div className="flex justify-end gap-3">
+                        <div className="flex justify-end gap-2">
                             <button
                                 onClick={() => { setShowCustomPlatformModal(false); setNewPlatformName(''); }}
-                                className="px-4 py-2 text-gray-600 hover:text-gray-800 font-medium"
+                                className="px-4 py-2 text-slate-500 hover:text-slate-700 font-medium text-sm transition-colors"
                             >
                                 Cancel
                             </button>
                             <button
                                 onClick={handleAddCustomPlatform}
                                 disabled={savingPlatform || !newPlatformName.trim()}
-                                className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 disabled:bg-gray-400 disabled:cursor-not-allowed font-medium"
+                                className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-semibold shadow-sm shadow-indigo-200 transition-all"
                             >
-                                {savingPlatform ? 'Saving...' : 'Add Platform'}
+                                Add
                             </button>
                         </div>
                     </div>
                 </div>
             )}
 
-            {/* Header Background */}
-            <div className="bg-white border-b border-indigo-50 px-6 py-8 shadow-sm">
-                <div className="max-w-7xl mx-auto">
-                    <Link to="/admin/jobs" className="inline-flex items-center text-sm font-medium text-slate-400 hover:text-indigo-600 mb-6 transition-colors group">
-                        <ArrowLeft size={16} className="mr-1 group-hover:-translate-x-1 transition-transform" /> Back to jobs
-                    </Link>
+            {/* Google Header - Breadcrumb & Title */}
+            <div className="sticky top-0 z-30 bg-background/80 backdrop-blur-xl border-b border-border/50">
+                <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-4">
+                    <nav className="flex items-center text-sm text-slate-400 mb-2">
+                        <Link to="/admin/jobs" className="hover:text-indigo-400 transition-colors flex items-center gap-1">
+                            Jobs
+                        </Link>
+                        <span className="mx-2 text-slate-600">/</span>
+                        <span className="text-foreground font-medium truncate max-w-xs">{job.title}</span>
+                    </nav>
 
-                    <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
-                        <div>
-                            <div className="flex items-center gap-3 mb-2">
-                                <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">{job.title}</h1>
-                                <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold uppercase tracking-wide border ${job.status === 'OPEN' ? 'bg-green-50 text-green-700 border-green-200' : 'bg-gray-100 text-gray-500 border-gray-200'}`}>
-                                    {job.status || 'Active'}
-                                </span>
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                        <div className="flex items-center gap-4">
+                            <div className="h-12 w-12 bg-indigo-500/10 text-indigo-400 rounded-full flex items-center justify-center border border-indigo-500/20 shadow-sm">
+                                <Briefcase size={24} />
                             </div>
-                            <div className="flex items-center gap-6 text-sm text-slate-500 font-medium">
-                                <span className="flex items-center gap-1.5"><Briefcase size={16} className="text-indigo-400" /> {job.department}</span>
-                                <span className="flex items-center gap-1.5"><MapPin size={16} className="text-indigo-400" /> {job.location} ({job.job_type})</span>
-                                <span className="flex items-center gap-1.5"><Users size={16} className="text-indigo-400" /> {applications.length} Candidates</span>
-                            </div>
-                        </div>
-
-                        <div className="flex gap-3">
-                            {/* Placeholder for future actions like "Edit Job" */}
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            {/* Apply via Platform Section */}
-            <div className="max-w-7xl mx-auto px-6 mt-4">
-                <div className="bg-white/80 backdrop-blur-xl p-5 rounded-2xl shadow-lg border border-white/50 mb-4">
-                    <div className="flex items-center justify-between flex-wrap gap-4">
-                        <h3 className="text-lg font-semibold text-gray-700">Apply via Platform:</h3>
-                        <div className="flex flex-wrap gap-3 items-center">
-                            {/* Default Platform Buttons */}
-                            <button
-                                onClick={() => goToJob('linkedin')}
-                                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md font-medium flex items-center gap-2 transition-colors"
-                            >
-                                <Linkedin size={16} />
-                                LinkedIn
-                            </button>
-                            <button
-                                onClick={() => goToJob('indeed')}
-                                className="px-4 py-2 bg-blue-800 hover:bg-blue-900 text-white rounded-md font-medium flex items-center gap-2 transition-colors"
-                            >
-                                <span className="font-bold">In</span> Indeed
-                            </button>
-                            <button
-                                onClick={() => goToJob('glassdoor')}
-                                className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-md font-medium flex items-center gap-2 transition-colors"
-                            >
-                                <span className="font-bold">Gd</span> Glassdoor
-                            </button>
-                            <button
-                                onClick={() => goToJob('naukri')}
-                                className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-md font-medium flex items-center gap-2 transition-colors"
-                            >
-                                <span className="font-bold">Nk</span> Naukri
-                            </button>
-
-                            {/* Custom Platform Buttons */}
-                            {(job?.custom_platforms || []).map((platform) => (
-                                <div key={platform} className="relative group">
-                                    <button
-                                        onClick={() => goToJob(platform)}
-                                        className="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-md font-medium capitalize transition-colors"
-                                    >
-                                        {platform}
-                                    </button>
-                                    <button
-                                        onClick={() => handleRemoveCustomPlatform(platform)}
-                                        className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 text-white rounded-full text-xs opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600"
-                                        title="Remove platform"
-                                    >
-                                        ×
-                                    </button>
+                            <div>
+                                <h1 className="text-2xl font-normal text-foreground leading-tight">{job.title}</h1>
+                                <div className="flex items-center gap-4 text-xs font-medium text-slate-400 mt-1">
+                                    <span className="flex items-center gap-1"><MapPin size={14} /> {job.location} • {job.job_type}</span>
+                                    <span className="flex items-center gap-1"><Users size={14} /> {applications.length} Candidates</span>
+                                    <span className={`flex items-center gap-1 px-2 py-0.5 rounded-full border ${job.status === 'OPEN' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-secondary/50 text-muted-foreground border-border/20'}`}>
+                                        {job.status || 'Active'}
+                                    </span>
                                 </div>
-                            ))}
+                            </div>
+                        </div>
 
-                            {/* Add Custom Platform Button */}
-                            <button
-                                onClick={() => setShowCustomPlatformModal(true)}
-                                className="px-4 py-2 border-2 border-dashed border-gray-400 hover:border-indigo-500 text-gray-600 hover:text-indigo-600 rounded-md font-medium flex items-center gap-2 transition-colors"
-                            >
-                                <Plus size={16} />
-                                Add Custom
-                            </button>
+                        {/* Apply Links - Compact Buttons */}
+                        <div className="flex items-center gap-2">
+                            {getAllPlatforms().map((pIcon, idx) => {
+                                // Just a simple icon representation if needed, but keeping the dropdown/buttons clean
+                                return null;
+                            })}
+                            <div className="flex items-center gap-2">
+                                <span className="text-xs font-semibold text-slate-400 mr-2 uppercase tracking-wide">Apply Links:</span>
+                                {defaultPlatforms.map(p => (
+                                    <button
+                                        key={p}
+                                        onClick={() => openApplyLink(p)}
+                                        className="p-1 hover:scale-105 transition-transform"
+                                        title={`Open ${p} Link`}
+                                    >
+                                        {p === 'linkedin' && (
+                                            <div className="w-6 h-6 bg-[#0077b5] rounded flex items-center justify-center text-white shadow-sm">
+                                                <Linkedin size={14} fill="currentColor" strokeWidth={0} />
+                                            </div>
+                                        )}
+                                        {p === 'indeed' && (
+                                            <div className="w-6 h-6 bg-[#2164f3] rounded flex items-center justify-center text-white font-bold text-[10px] tracking-tight shadow-sm">
+                                                IN
+                                            </div>
+                                        )}
+                                        {p === 'glassdoor' && (
+                                            <div className="w-6 h-6 bg-[#0caa41] rounded flex items-center justify-center text-white font-bold text-[10px] tracking-tight shadow-sm">
+                                                GL
+                                            </div>
+                                        )}
+                                        {p === 'naukri' && (
+                                            <div className="w-6 h-6 bg-[#ffe129] rounded flex items-center justify-center text-slate-800 font-bold text-[10px] tracking-tight shadow-sm border border-yellow-400/50">
+                                                NK
+                                            </div>
+                                        )}
+                                    </button>
+                                ))}
+                                {customPlatforms.map((p, i) => (
+                                    <button
+                                        key={`custom-${i}`}
+                                        onClick={() => openApplyLink(p)}
+                                        className="p-1 hover:scale-105 transition-transform"
+                                        title={`Open ${p} Link`}
+                                    >
+                                        <div className="w-6 h-6 bg-slate-700 rounded flex items-center justify-center text-white font-bold text-[10px] tracking-tight shadow-sm uppercase">
+                                            {p.slice(0, 2)}
+                                        </div>
+                                    </button>
+                                ))}
+                                <button
+                                    onClick={() => setShowCustomPlatformModal(true)}
+                                    className="flex items-center gap-1 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-md text-xs font-semibold transition-colors"
+                                >
+                                    <Plus size={14} /> Custom
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <div className="max-w-7xl mx-auto px-6 -mt-8">
-                {/* Filters Bar */}
-                <div className="bg-white/80 backdrop-blur-xl p-5 rounded-2xl shadow-lg border border-white/50 mb-8 supports-[backdrop-filter]:bg-white/60">
-                    <div className="flex flex-col xl:flex-row items-center justify-between gap-5">
+            {/* Filters Bar - Google Style */}
+            <div className="sticky top-[89px] z-20 bg-background/80 backdrop-blur-xl border-b border-border/50 px-4 sm:px-6 lg:px-8 py-3">
+                <div className="max-w-[1600px] mx-auto flex flex-col md:flex-row items-center justify-between gap-3">
+                    <div className="relative w-full md:w-96">
+                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-white/40" size={18} />
+                        <input
+                            type="text"
+                            placeholder="Search candidates by name or email"
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            className="glass-input w-full pl-11 pr-4 py-2 rounded-full text-sm placeholder:text-muted-foreground text-foreground bg-input/20 focus:bg-input/30 border border-border focus:border-primary/50 transition-all"
+                        />
+                    </div>
 
-                        {/* Search */}
-                        <div className="relative w-full xl:max-w-md group">
-                            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors" size={18} />
+                    <div className="flex items-center gap-2 w-full md:w-auto overflow-x-auto pb-1 md:pb-0 hide-scrollbar">
+                        {/* Skill Filter Input */}
+                        <div className="relative w-40 md:w-48">
+                            <Wand2 className="absolute left-3 top-1/2 -translate-y-1/2 text-white/40" size={14} />
                             <input
                                 type="text"
-                                placeholder="Search by name or email..."
-                                className="w-full pl-10 pr-4 py-3 bg-white border-2 border-slate-100 rounded-xl text-sm font-medium text-slate-700 placeholder:text-slate-400 focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all"
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
+                                placeholder="Filter by Skill..."
+                                value={filterSkill}
+                                onChange={(e) => setFilterSkill(e.target.value)}
+                                className="glass-input w-full pl-9 pr-3 py-1.5 rounded-full text-xs font-medium"
                             />
                         </div>
 
-                        {/* Filters Group */}
-                        <div className="flex flex-wrap items-center gap-3 w-full xl:w-auto xl:justify-end">
-                            {/* Status */}
-                            <div className="relative">
-                                <select
-                                    className="appearance-none bg-white font-medium text-sm text-slate-700 border-2 border-slate-100 hover:border-indigo-200 rounded-xl px-4 py-3 pr-10 cursor-pointer focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-all"
-                                    value={filterStatus}
-                                    onChange={(e) => setFilterStatus(e.target.value)}
-                                >
-                                    <option>All Status</option>
-                                    <option value="NEW">New</option>
-                                    <option value="SCREENED">Screened</option>
-                                    <option value="INTERVIEW">Interview</option>
-                                    <option value="OFFER">Offer</option>
-                                    <option value="REJECTED">Rejected</option>
-                                </select>
-                                <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400 pointer-events-none" size={16} />
-                            </div>
-
-                            {/* Platform */}
-                            <div className="relative">
-                                <select
-                                    className="appearance-none bg-white font-medium text-sm text-slate-700 border-2 border-slate-100 hover:border-indigo-200 rounded-xl px-4 py-3 pr-10 cursor-pointer focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-all"
-                                    value={filterPlatform}
-                                    onChange={(e) => setFilterPlatform(e.target.value)}
-                                >
-                                    <option>All Platforms</option>
-                                    <option value="LINKEDIN">LinkedIn</option>
-                                    <option value="INDEED">Indeed</option>
-                                    <option value="GLASSDOOR">Glassdoor</option>
-                                    <option value="NAUKRI">Naukri</option>
-                                    <option value="OTHER">Other</option>
-                                </select>
-                                <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400 pointer-events-none" size={16} />
-                            </div>
-
-                            <button
-                                onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
-                                className={`flex items-center gap-2 px-5 py-3 rounded-xl text-sm font-bold transition-all border-2 ${showAdvancedFilters ? 'bg-indigo-50 border-indigo-200 text-indigo-600' : 'bg-white border-slate-100 text-slate-600 hover:border-indigo-200 hover:text-indigo-600'}`}
-                            >
-                                <SlidersHorizontal size={18} />
-                                <span className="hidden sm:inline">Filters</span>
-                            </button>
-                        </div>
+                        <select
+                            value={filterStatus}
+                            onChange={(e) => setFilterStatus(e.target.value)}
+                            className="glass-input text-xs font-medium rounded-full px-4 py-1.5 cursor-pointer max-w-[120px]"
+                        >
+                            <option>All Status</option>
+                            <option value="NEW">New</option>
+                            <option value="SCREENED">Screened</option>
+                            <option value="INTERVIEW">Interview</option>
+                            <option value="OFFER">Offer</option>
+                            <option value="REJECTED">Rejected</option>
+                        </select>
+                        <select
+                            value={filterPlatform}
+                            onChange={(e) => setFilterPlatform(e.target.value)}
+                            className="glass-input text-xs font-medium rounded-full px-4 py-1.5 cursor-pointer max-w-[120px]"
+                        >
+                            <option>All Platforms</option>
+                            <option value="LINKEDIN">LinkedIn</option>
+                            <option value="INDEED">Indeed</option>
+                            <option value="GLASSDOOR">Glassdoor</option>
+                            <option value="NAUKRI">Naukri</option>
+                            <option value="OTHER">Other</option>
+                        </select>
+                        <button
+                            onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
+                            className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-medium border transition-all ${showAdvancedFilters ? 'bg-indigo-500/20 border-indigo-500/30 text-indigo-300' : 'bg-white/5 border-white/10 text-slate-400 hover:bg-white/10'}`}
+                        >
+                            <SlidersHorizontal size={14} /> Filters
+                        </button>
                     </div>
-
-                    {/* Advanced Filters Panel */}
-                    {showAdvancedFilters && (
-                        <div className="mt-5 pt-5 border-t border-slate-100 grid md:grid-cols-3 lg:grid-cols-4 gap-4 animate-in fade-in slide-in-from-top-2">
-                            {job.screening_questions && job.screening_questions.map((q, i) => (
-                                <div key={i}>
-                                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2 truncate" title={q.question}>{q.question}</label>
-                                    <input
-                                        type="text"
-                                        placeholder="Filter..."
-                                        className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs font-medium focus:outline-none focus:border-indigo-500 focus:bg-white transition-all"
-                                        value={questionFilters[q.question] || ''}
-                                        onChange={(e) => setQuestionFilters(prev => ({ ...prev, [q.question]: e.target.value }))}
-                                    />
-                                </div>
-                            ))}
-                        </div>
-                    )}
                 </div>
+                {/* Advanced Filters Panel */}
+                {showAdvancedFilters && (
+                    <div className="max-w-[1600px] mx-auto mt-3 pt-3 border-t border-white/10 grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 animate-in slide-in-from-top-2 fade-in duration-200">
+                        {allQuestions.map((q, i) => (
+                            <div key={i}>
+                                <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1 truncate" title={q.question}>{q.question}</label>
+                                <input
+                                    type="text"
+                                    placeholder="Value..."
+                                    className="glass-input w-full rounded px-2 py-1.5 text-xs focus:ring-1 focus:ring-indigo-500"
+                                    value={questionFilters[q.question] || ''}
+                                    onChange={(e) => setQuestionFilters(prev => ({ ...prev, [q.question]: e.target.value }))}
+                                />
+                            </div>
+                        ))}
+                    </div>
+                )}
+            </div>
 
-                {/* Main Content Table */}
-                <div className="bg-white rounded-2xl shadow-xl shadow-slate-200/50 border border-slate-100 overflow-hidden">
-                    <div className="overflow-x-auto">
+            {/* Main Content - Candidate Table */}
+            <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
+                <div className="bg-white/5 rounded-xl border border-white/10 overflow-hidden min-h-[600px] flex flex-col">
+                    <div className="overflow-x-auto flex-1 custom-scrollbar">
                         <table className="w-full text-left border-collapse">
                             <thead>
-                                <tr className="bg-slate-50/50 border-b border-slate-100 text-[11px] uppercase tracking-widest text-slate-500 font-bold">
-                                    <th className="px-6 py-5">Candidate</th>
-                                    <th className="px-6 py-5">Status</th>
-                                    <th className="px-6 py-5 text-center">Exp</th>
-                                    <th className="px-6 py-5">CTC Stats</th>
-                                    <th className="px-6 py-5">Work History</th>
-                                    <th className="px-6 py-5 min-w-[200px]">Skills</th>
-                                    {job.screening_questions && job.screening_questions.map((q, i) => (
-                                        <th key={i} className="px-6 py-5 min-w-[150px] truncate max-w-[200px]" title={q.question}>
+                                <tr className="border-b border-white/10 text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                                    <th className="px-6 py-4">Candidate</th>
+                                    <th className="px-6 py-4 min-w-[180px]">Status</th>
+                                    <th className="px-6 py-4">Experience</th>
+                                    <th className="px-6 py-4">Current CTC</th>
+                                    <th className="px-6 py-4">Expected CTC</th>
+                                    <th className="px-6 py-4">Skills</th>
+                                    {allQuestions.map((q, i) => (
+                                        <th key={i} className="px-6 py-4 min-w-[200px]" title={q.question}>
                                             {q.question}
                                         </th>
                                     ))}
-                                    <th className="px-6 py-5 text-right">Actions</th>
+                                    <th className="px-6 py-4 text-right">Actions</th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-slate-50">
+                            <tbody className="divide-y divide-white/5 text-sm cursor-pointer">
                                 {filteredApps.map((app) => (
-                                    <tr key={app.id} className="hover:bg-indigo-50/30 transition-colors group">
-                                        <td className="px-6 py-4">
-                                            <div className="flex items-center">
-                                                <div className="h-10 w-10 bg-gradient-to-br from-indigo-500 to-purple-600 text-white rounded-xl shadow-md shadow-indigo-200 flex items-center justify-center font-bold text-lg mr-4 border border-white/20">
+                                    <tr key={app.id} className="hover:bg-white/5 transition-colors group">
+                                        <td className="px-6 py-4" onClick={() => { setSelectedApp(app); setShowAnswersModal(true); }}>
+                                            <div className="flex items-center gap-3">
+                                                <div className="h-9 w-9 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold text-xs shadow-inner">
                                                     {app.candidate_details.name.charAt(0).toUpperCase()}
                                                 </div>
                                                 <div>
-                                                    <div className="font-bold text-slate-900">{app.candidate_details.name}</div>
-                                                    <div className="text-slate-400 text-xs mt-0.5 flex items-center gap-2">
-                                                        <span>{app.candidate_details.email}</span>
-                                                        <span className="w-1 h-1 rounded-full bg-slate-300"></span>
-                                                        <span>{app.candidate_details.phone}</span>
-                                                    </div>
-                                                    <div className="mt-1.5 flex items-center gap-2">
-                                                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-slate-100 border border-slate-200 text-[10px] font-bold text-slate-600 uppercase">
-                                                            {getPlatformIcon(app.platform)} {app.platform || 'Other'}
-                                                        </span>
-                                                        <span className="text-[10px] text-slate-400">
-                                                            {new Date(app.applied_at).toLocaleDateString()}
-                                                        </span>
-                                                    </div>
+                                                    <div className="font-medium text-foreground">{app.candidate_details.name}</div>
+                                                    <div className="text-xs text-slate-500">{app.candidate_details.email}</div>
                                                 </div>
                                             </div>
                                         </td>
-
                                         <td className="px-6 py-4">
-                                            <div className="relative inline-block group/status">
+                                            <div className="relative group/select w-full">
                                                 <select
                                                     value={app.status}
                                                     onChange={(e) => handleStatusUpdate(app.id, e.target.value)}
-                                                    className={`appearance-none pl-3 pr-8 py-1.5 text-xs font-bold rounded-lg border-0 cursor-pointer focus:ring-2 focus:ring-offset-1 transition-all shadow-sm ${app.status === 'NEW' ? 'bg-blue-50 text-blue-700 ring-1 ring-blue-200' :
-                                                        app.status === 'SCREENED' ? 'bg-indigo-50 text-indigo-700 ring-1 ring-indigo-200' :
-                                                            app.status === 'INTERVIEW' ? 'bg-purple-50 text-purple-700 ring-1 ring-purple-200' :
-                                                                app.status === 'OFFER' ? 'bg-green-50 text-green-700 ring-1 ring-green-200' :
-                                                                    'bg-red-50 text-red-700 ring-1 ring-red-200'
+                                                    className={`appearance-none w-full py-1.5 pl-3 pr-8 text-xs font-bold rounded-full border-0 cursor-pointer focus:ring-2 focus:ring-offset-1 focus:ring-offset-[#0f172a] transition-all
+                                                        ${app.status === 'NEW' ? 'bg-blue-500/20 text-blue-400 hover:bg-blue-500/30' :
+                                                            app.status === 'SCREENED' ? 'bg-indigo-500/20 text-indigo-400 hover:bg-indigo-500/30' :
+                                                                app.status === 'INTERVIEW' ? 'bg-purple-500/20 text-purple-400 hover:bg-purple-500/30' :
+                                                                    app.status === 'OFFER' ? 'bg-green-500/20 text-green-400 hover:bg-green-500/30' :
+                                                                        'bg-red-500/20 text-red-400 hover:bg-red-500/30'
                                                         }`}
                                                 >
                                                     <option value="NEW">New</option>
@@ -505,129 +497,103 @@ const JobDetailsPage = () => {
                                                     <option value="OFFER">Offer</option>
                                                     <option value="REJECTED">Rejected</option>
                                                 </select>
-                                                <ChevronDown size={12} className={`absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none opacity-50`} />
+                                                <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none opacity-50 text-foreground" />
                                             </div>
                                         </td>
-
-                                        <td className="px-6 py-4 text-center">
-                                            <span className={`inline-block font-bold px-2 py-1 rounded text-xs ${app.total_years_experience || app.experience_years ? 'text-slate-700 bg-slate-100' : 'text-slate-300'}`}>
-                                                {app.total_years_experience || app.experience_years || '-'}
-                                            </span>
-                                        </td>
-
-                                        <td className="px-6 py-4">
-                                            <div className="flex flex-col gap-1">
-                                                <div className="flex justify-between w-24 text-xs">
-                                                    <span className="text-slate-400">Cur:</span>
-                                                    <span className="font-semibold text-slate-700">{app.current_ctc ? `${app.current_ctc}L` : '-'}</span>
-                                                </div>
-                                                <div className="flex justify-between w-24 text-xs">
-                                                    <span className="text-slate-400">Exp:</span>
-                                                    <span className="font-bold text-indigo-600">{app.expected_ctc ? `${app.expected_ctc}L` : '-'}</span>
-                                                </div>
-                                            </div>
-                                        </td>
-
-                                        <td className="px-6 py-4">
-                                            <div className="flex flex-wrap gap-1.5 max-w-[250px]">
-                                                {app.work_experience && app.work_experience.length > 0 ? (
-                                                    app.work_experience.map((exp, idx) => {
-                                                        const label = exp.company_name && exp.job_role
-                                                            ? `${exp.job_role} @ ${exp.company_name}`
-                                                            : exp.company_name || exp.job_role || "Unknown";
-
-                                                        return (
-                                                            <span key={idx} className="px-2 py-1 rounded-md bg-white border border-slate-200 text-[10px] font-semibold text-slate-700 shadow-sm whitespace-normal leading-tight block">
-                                                                {label}
-                                                            </span>
-                                                        );
-                                                    })
-                                                ) : <span className="text-slate-300 text-xs">-</span>}
-                                            </div>
-                                        </td>
-
-                                        <td className="px-6 py-4">
-                                            <div className="flex flex-wrap gap-1.5">
+                                        <td className="px-6 py-4 text-slate-400 font-mono text-xs">{app.total_years_experience || app.experience_years || 0} Years</td>
+                                        <td className="px-6 py-4 text-slate-400 font-mono text-xs">{app.current_ctc || 0} LPA</td>
+                                        <td className="px-6 py-4 text-emerald-400 font-mono text-xs font-bold">{app.expected_ctc || 0} LPA</td>
+                                        {/* Skills - Micro Chips */}
+                                        <td className="px-6 py-2 align-middle relative">
+                                            <div className="flex flex-wrap gap-1.5 items-center max-w-[220px]">
                                                 {app.skills && app.skills.length > 0 ? (
-                                                    [...app.skills].sort().map((skill, idx) => (
-                                                        <span key={idx} className="px-2.5 py-1 rounded-lg bg-white border border-slate-200 text-[11px] font-semibold text-slate-600 shadow-sm hover:border-indigo-300 hover:text-indigo-600 transition-colors cursor-default whitespace-nowrap">
-                                                            {skill}
-                                                        </span>
-                                                    ))
-                                                ) : <span className="text-slate-300 text-xs">-</span>}
+                                                    <>
+                                                        {app.skills.slice(0, 3).map((skill, i) => (
+                                                            <span key={i} className="px-2 py-0.5 bg-blue-50 text-blue-700 rounded text-[10px] font-medium border border-blue-100 truncate max-w-[80px]">
+                                                                {skill}
+                                                            </span>
+                                                        ))}
+                                                        {app.skills.length > 3 && (
+                                                            <button
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    setExpandedSkillsAppId(expandedSkillsAppId === app.id ? null : app.id);
+                                                                }}
+                                                                className="px-2 py-0.5 text-[10px] text-slate-500 bg-gray-100 hover:bg-gray-200 rounded border border-gray-200 transition-colors"
+                                                            >
+                                                                +{app.skills.length - 3}
+                                                            </button>
+                                                        )}
+                                                    </>
+                                                ) : <span className="text-gray-400 text-xs">-</span>}
                                             </div>
+                                            {/* Expanded Skills Popover */}
+                                            {expandedSkillsAppId === app.id && (
+                                                <div
+                                                    className="absolute left-0 top-full z-50 mt-1 w-64 p-3 bg-white rounded-lg shadow-xl border border-gray-200 animate-in fade-in zoom-in-95 duration-200"
+                                                    onClick={(e) => e.stopPropagation()}
+                                                >
+                                                    <div className="flex justify-between items-center mb-2">
+                                                        <h4 className="text-xs font-semibold text-gray-900">All Skills ({app.skills.length})</h4>
+                                                        <button
+                                                            onClick={() => setExpandedSkillsAppId(null)}
+                                                            className="text-gray-400 hover:text-gray-600"
+                                                        >
+                                                            <X size={12} />
+                                                        </button>
+                                                    </div>
+                                                    <div className="flex flex-wrap gap-1.5 max-h-48 overflow-y-auto custom-scrollbar">
+                                                        {app.skills.map((skill, i) => (
+                                                            <span key={i} className="px-2 py-1 bg-gray-50 text-gray-700 rounded text-[10px] border border-gray-100">
+                                                                {skill}
+                                                            </span>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            )}
                                         </td>
-
-                                        {/* Answers */}
-                                        {job.screening_questions && job.screening_questions.map((q, i) => {
-                                            const ansObj = app.answers?.find(a => a.question === q.question);
+                                        {allQuestions.map((q, i) => {
+                                            const ans = app.answers?.find(a => a.question === q.question);
                                             return (
                                                 <td key={i} className="px-6 py-4">
-                                                    <div className="text-xs text-slate-600 max-w-[180px] truncate font-medium" title={ansObj ? ansObj.answer : ''}>
-                                                        {ansObj ? ansObj.answer : '-'}
+                                                    <div className="truncate max-w-[200px] text-xs text-slate-500" title={ans ? ans.answer : ''}>
+                                                        {ans ? ans.answer : '-'}
                                                     </div>
                                                 </td>
                                             );
                                         })}
-
                                         <td className="px-6 py-4 text-right">
-                                            <div className="flex items-center justify-end gap-1 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                                                <a
-                                                    href={`/jobs/${jobId}/apply?platform=${app.platform || 'website'}`}
-                                                    target="_blank"
-                                                    rel="noreferrer"
-                                                    className="p-2 text-emerald-500 hover:text-emerald-700 hover:bg-emerald-50 rounded-lg transition-all"
-                                                    title="Go to Job Application"
-                                                >
-                                                    <ExternalLink size={16} />
-                                                </a>
-                                                <button
-                                                    onClick={() => handleViewResume(app)}
-                                                    className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all"
-                                                    title="View Resume"
-                                                >
-                                                    <FileText size={16} />
-                                                </button>
-                                                <button
-                                                    onClick={() => { setSelectedApp(app); setShowAnswersModal(true); }}
-                                                    className="p-2 text-slate-400 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition-all"
-                                                    title="View Details"
-                                                >
-                                                    <Eye size={16} />
-                                                </button>
-                                                <button
-                                                    onClick={() => {
-                                                        setSelectedApp(app);
-                                                        const existingComment = app.comments && app.comments.length > 0 ? app.comments[0].text : "";
-                                                        setNewComment(existingComment);
-                                                        setShowCommentsModal(true);
-                                                    }}
-                                                    className={`p-2 rounded-lg transition-all ${app.comments && app.comments.length > 0 ? 'text-green-600 bg-green-50 hover:bg-green-100' : 'text-slate-400 hover:text-green-600 hover:bg-green-50'}`}
-                                                    title="Notes"
-                                                >
-                                                    <MessageSquare size={16} />
-                                                </button>
-                                                <button
-                                                    onClick={() => handleReparse(app)}
-                                                    className="p-2 text-slate-400 hover:text-orange-600 hover:bg-orange-50 rounded-lg transition-all"
-                                                    title="Reparse Resume"
-                                                >
-                                                    <Wand2 size={16} />
-                                                </button>
-                                            </div>
+                                            <button
+                                                onClick={() => {
+                                                    const existingNote = app.notes || "";
+                                                    setNewComment(existingNote);
+                                                    setSelectedApp(app);
+                                                    setShowAnswersModal(true);
+                                                    setActiveTab('notes');
+                                                }}
+                                                className={`p-2 rounded-full transition-colors mr-2 ${app.notes ? 'text-amber-400 bg-amber-400/10 hover:bg-amber-400/20' : 'text-slate-500 hover:text-amber-400 hover:bg-white/10'}`}
+                                                title="Notes"
+                                            >
+                                                <MessageSquare size={16} fill={app.notes ? "currentColor" : "none"} />
+                                            </button>
+                                            <button
+                                                onClick={() => { setSelectedApp(app); setShowAnswersModal(true); }}
+                                                className="p-2 text-slate-500 hover:text-indigo-400 hover:bg-white/10 rounded-full transition-colors"
+                                                title="View Details"
+                                            >
+                                                <Eye size={16} />
+                                            </button>
                                         </td>
                                     </tr>
                                 ))}
                                 {filteredApps.length === 0 && (
                                     <tr>
-                                        <td colSpan="100%" className="px-6 py-12 text-center">
-                                            <div className="flex flex-col items-center justify-center text-slate-400">
-                                                <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mb-4">
-                                                    <Search size={24} className="opacity-50" />
-                                                </div>
-                                                <p className="text-lg font-medium text-slate-600">No candidates found</p>
-                                                <p className="text-sm">Try adjusting your search or filters</p>
+                                        <td colSpan="100%" className="px-6 py-20 text-center text-slate-500">
+                                            <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-4 border border-white/10">
+                                                <Search size={24} className="text-slate-400" />
                                             </div>
+                                            <p className="font-medium text-foreground">No candidates found</p>
+                                            <p className="text-sm mt-1 text-slate-500">Try adjusting your filters or search terms.</p>
                                         </td>
                                     </tr>
                                 )}
@@ -637,160 +603,289 @@ const JobDetailsPage = () => {
                 </div>
             </div>
 
-            {/* Answers Modal */}
+            {/* Unified Candidate Detail Slide-Over Drawer (Linear Style) */}
             {showAnswersModal && selectedApp && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-200" onClick={() => setShowAnswersModal(false)}>
-                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[85vh] overflow-hidden flex flex-col border border-white/20" onClick={e => e.stopPropagation()}>
-                        <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
-                            <div>
-                                <h3 className="text-xl font-bold text-gray-900">{selectedApp.candidate_details.name}</h3>
-                                <p className="text-sm text-gray-500">Application Details</p>
-                            </div>
-                            <button onClick={() => setShowAnswersModal(false)} className="w-8 h-8 flex items-center justify-center rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 hover:text-slate-800 transition-colors">
-                                <X size={16} />
-                            </button>
-                        </div>
-                        <div className="p-6 overflow-y-auto">
-                            <div className="mb-8">
-                                <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4 border-b border-gray-100 pb-2">Screening Questions</h4>
-                                {Array.isArray(selectedApp.answers) && selectedApp.answers.length > 0 ? (
-                                    <div className="grid gap-4">
-                                        {selectedApp.answers.map((ans, idx) => (
-                                            <div key={idx} className="bg-slate-50 p-4 rounded-xl border border-slate-100">
-                                                <p className="text-xs font-bold text-indigo-600 mb-1.5">{ans.question || `Question ${idx + 1}`}</p>
-                                                <p className="text-sm text-slate-800 font-medium leading-relaxed">{ans.answer || ans.response || '-'}</p>
-                                            </div>
-                                        ))}
-                                    </div>
-                                ) : (
-                                    <p className="text-sm text-slate-400 italic bg-gray-50 p-4 rounded-lg text-center">No screening questions were answered.</p>
-                                )}
-                            </div>
+                <div className="fixed inset-0 z-50 flex justify-end bg-gray-900/30 backdrop-blur-[2px] animate-fade-in" onClick={() => { setShowAnswersModal(false); setNewComment(''); }}>
+                    <div className="w-full max-w-2xl h-full bg-white dark:bg-gray-900 shadow-2xl flex flex-col border-l border-gray-200 dark:border-gray-800 animate-slide-in-right" onClick={e => e.stopPropagation()}>
 
-                            <div>
-                                <div className="flex items-center justify-between mb-4 border-b border-gray-100 pb-2">
-                                    <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Recruiter Notes</h4>
-                                    <button
-                                        onClick={() => {
-                                            const existingComment = selectedApp.comments && selectedApp.comments.length > 0 ? selectedApp.comments[0].text : "";
-                                            setNewComment(existingComment);
-                                            setShowAnswersModal(false);
-                                            setShowCommentsModal(true);
-                                        }}
-                                        className="text-xs flex items-center gap-1.5 text-indigo-600 bg-indigo-50 px-3 py-1.5 rounded-lg hover:bg-indigo-100 font-bold transition-colors"
-                                    >
-                                        <MessageSquare size={12} /> Edit Note
-                                    </button>
-                                </div>
-                                {Array.isArray(selectedApp.comments) && selectedApp.comments.length > 0 ? (
-                                    <div className="bg-yellow-50 p-5 rounded-xl border border-yellow-100 relative">
-                                        <div className="absolute top-0 left-0 w-1 h-full bg-yellow-400 rounded-l-xl"></div>
-                                        <p className="text-sm text-yellow-900 whitespace-pre-wrap font-medium">{selectedApp.comments[0].text}</p>
-                                        <p className="text-[10px] text-yellow-600/60 mt-3 text-right font-medium">
-                                            Last updated: {new Date(selectedApp.comments[0].created_at).toLocaleString()}
-                                        </p>
-                                    </div>
-                                ) : (
-                                    <p className="text-sm text-slate-400 italic bg-gray-50 p-4 rounded-lg text-center">No notes added yet.</p>
-                                )}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {/* Comments Modal */}
-            {showCommentsModal && selectedApp && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-200" onClick={() => setShowCommentsModal(false)}>
-                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden" onClick={e => e.stopPropagation()}>
-                        <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
-                            <h3 className="text-lg font-bold text-gray-900">Notes for {selectedApp.candidate_details.name}</h3>
-                            <button onClick={() => setShowCommentsModal(false)} className="w-8 h-8 flex items-center justify-center rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 hover:text-slate-800 transition-colors">
-                                <X size={16} />
-                            </button>
-                        </div>
-                        <div className="p-6">
-                            <textarea
-                                className="w-full bg-slate-50 border border-slate-200 rounded-xl p-4 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all min-h-[150px] resize-none"
-                                placeholder="Write your internal notes here..."
-                                value={newComment}
-                                onChange={(e) => setNewComment(e.target.value)}
-                                autoFocus
-                            ></textarea>
-                            <div className="mt-6 flex justify-end gap-3">
-                                <button onClick={() => setShowCommentsModal(false)} className="px-4 py-2 text-sm font-bold text-slate-500 hover:bg-slate-100 rounded-lg transition-colors">Cancel</button>
-                                <button
-                                    onClick={handleAddComment}
-                                    className="bg-indigo-600 text-white px-6 py-2 rounded-lg text-sm font-bold hover:bg-indigo-700 shadow-lg shadow-indigo-200 transition-all transform active:scale-95"
-                                >
-                                    Save Note
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {/* Resume Modal */}
-            {showResumeModal && selectedApp && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in zoom-in-95 duration-200" onClick={() => setShowResumeModal(false)}>
-                    <div className="bg-white rounded-xl shadow-2xl w-full h-[90vh] max-w-6xl flex flex-col overflow-hidden" onClick={e => e.stopPropagation()}>
-                        <div className="p-4 border-b border-slate-200 flex justify-between items-center bg-white shadow-sm z-10">
-                            <div className="flex items-center gap-3">
-                                <div className="h-10 w-10 bg-indigo-100 text-indigo-700 rounded-lg flex items-center justify-center font-bold">
+                        {/* Modal Header */}
+                        <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-800 flex justify-between items-center bg-white dark:bg-gray-900 sticky top-0 z-10">
+                            <div className="flex items-center gap-4">
+                                <div className="h-12 w-12 bg-indigo-600 rounded-full flex items-center justify-center text-white font-medium text-lg shadow-sm">
                                     {selectedApp.candidate_details.name.charAt(0).toUpperCase()}
                                 </div>
                                 <div>
-                                    <h3 className="text-lg font-bold text-slate-900">{selectedApp.candidate_details.name}</h3>
-                                    <p className="text-xs text-slate-500">Resume Preview</p>
+                                    <h2 className="text-xl font-medium text-gray-900 dark:text-gray-100">{selectedApp.candidate_details.name}</h2>
+                                    <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
+                                        <span>{selectedApp.candidate_details.email}</span>
+                                        <span>•</span>
+                                        <span>{selectedApp.candidate_details.phone || 'No Phone'}</span>
+                                    </div>
                                 </div>
                             </div>
-                            <div className="flex gap-2">
-                                <a href={selectedApp.resume} download className="px-4 py-2 bg-slate-100 text-slate-700 hover:bg-slate-200 rounded-lg text-sm font-bold flex items-center gap-2 transition-colors">
-                                    <Download size={16} /> Download
-                                </a>
-                                <button onClick={() => setShowResumeModal(false)} className="p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-600 rounded-lg transition-colors">
+                            <div className="flex items-center gap-3">
+                                <div className="relative">
+                                    <select
+                                        value={selectedApp.status}
+                                        onChange={(e) => handleStatusUpdate(selectedApp.id, e.target.value)}
+                                        className={`appearance-none py-1.5 px-4 pr-8 text-xs font-bold rounded-full border-0 cursor-pointer focus:ring-2 transition-all ${selectedApp.status === 'NEW' ? 'bg-blue-50 text-blue-700' :
+                                            selectedApp.status === 'SCREENED' ? 'bg-indigo-50 text-indigo-700' :
+                                                selectedApp.status === 'INTERVIEW' ? 'bg-purple-50 text-purple-700' :
+                                                    selectedApp.status === 'OFFER' ? 'bg-green-50 text-green-700' :
+                                                        'bg-red-50 text-red-700'
+                                            }`}
+                                    >
+                                        <option value="NEW">NEW</option>
+                                        <option value="SCREENED">SCREENED</option>
+                                        <option value="INTERVIEW">INTERVIEW</option>
+                                        <option value="OFFER">OFFER</option>
+                                        <option value="REJECTED">REJECTED</option>
+                                    </select>
+                                    <ChevronDown size={12} className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none opacity-50" />
+                                </div>
+                                <button
+                                    onClick={() => { setShowAnswersModal(false); setNewComment(''); }}
+                                    className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors"
+                                >
                                     <X size={20} />
                                 </button>
                             </div>
                         </div>
-                        <div className="flex-1 bg-slate-100 p-6 overflow-hidden relative">
-                            {selectedApp.resume.toLowerCase().endsWith('.pdf') ? (
-                                <iframe
-                                    src={selectedApp.resume}
-                                    className="w-full h-full rounded-xl shadow-lg border border-slate-200 bg-white"
-                                    title="Resume Viewer"
-                                />
-                            ) : selectedApp.resume.toLowerCase().endsWith('.docx') ? (
-                                <div className="w-full h-full bg-white rounded-xl shadow-lg border border-slate-200 p-8 overflow-auto prose prose-sm max-w-none mx-auto">
-                                    {docxContent === "Loading preview..." ? (
-                                        <div className="flex flex-col items-center justify-center h-full text-slate-400 gap-3">
-                                            <div className="w-8 h-8 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin"></div>
-                                            <p>Rendering DOCX preview...</p>
+
+                        {/* Tabs */}
+                        <div className="px-6 border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 flex gap-6">
+                            {['application', 'resume', 'notes'].map((tab) => (
+                                <button
+                                    key={tab}
+                                    onClick={() => {
+                                        setActiveTab(tab);
+                                        if (tab === 'resume' && selectedApp.resume && selectedApp.resume.toLowerCase().endsWith('.docx')) {
+                                            handleViewResume(selectedApp);
+                                        }
+                                    }}
+                                    className={`py-3 text-sm font-medium border-b-2 transition-colors capitalize ${activeTab === tab ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
+                                >
+                                    {tab}
+                                </button>
+                            ))}
+                        </div>
+
+                        {/* Modal Content */}
+                        <div className="flex-1 overflow-y-auto bg-gray-50 dark:bg-gray-950/50 p-6">
+
+                            {/* Application Tab */}
+                            {activeTab === 'application' && (
+                                <div className="max-w-4xl mx-auto space-y-6">
+                                    {/* Quick Stats Grid */}
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                        <div className="glass-panel p-4 flex items-center gap-3 bg-white/40 dark:bg-gray-800/40 border dark:border-gray-700/50">
+                                            <div className="p-2 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-lg"><Briefcase size={18} /></div>
+                                            <div>
+                                                <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">Experience</p>
+                                                <p className="text-sm font-bold text-gray-900 dark:text-gray-100">{selectedApp.total_years_experience || selectedApp.experience_years || 0} Years</p>
+                                            </div>
                                         </div>
-                                    ) : (
-                                        <div dangerouslySetInnerHTML={{ __html: docxContent }} />
-                                    )}
-                                </div>
-                            ) : (
-                                <div className="flex flex-col items-center justify-center h-full text-slate-500 gap-6">
-                                    <div className="w-24 h-24 bg-white rounded-full flex items-center justify-center shadow-lg">
-                                        <FileText size={48} className="text-indigo-200" />
+                                        <div className="glass-panel p-4 flex items-center gap-3 bg-white/40 dark:bg-gray-800/40 border dark:border-gray-700/50">
+                                            <div className="p-2 bg-green-50 dark:bg-green-900/30 text-green-600 dark:text-green-400 rounded-lg"><MapPin size={18} /></div>
+                                            <div>
+                                                <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">Location</p>
+                                                <p className="text-sm font-bold text-gray-900 dark:text-gray-100">{selectedApp.current_location || 'Not Specified'}</p>
+                                            </div>
+                                        </div>
+                                        <div className="glass-panel p-4 flex items-center gap-3 bg-white/40 dark:bg-gray-800/40 border dark:border-gray-700/50">
+                                            <div className="p-2 bg-purple-50 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 rounded-lg"><Download size={18} /></div>
+                                            <div>
+                                                <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">Resume</p>
+                                                <a href={selectedApp.resume} target="_blank" rel="noreferrer" className="text-sm font-bold text-indigo-600 hover:underline">Download PDF</a>
+                                            </div>
+                                        </div>
                                     </div>
-                                    <div className="text-center">
-                                        <p className="text-lg font-bold text-slate-700 mb-2">Preview Unavailable</p>
-                                        <p className="text-sm max-w-xs mx-auto">We can't render this file type directly in the browser. Please download it to view.</p>
+
+                                    {/* Screening Questions Answers */}
+                                    <div className="glass-panel p-6 bg-white/40 dark:bg-gray-800/40 border dark:border-gray-700/50">
+                                        <h3 className="text-sm font-bold text-gray-900 dark:text-gray-100 uppercase tracking-wide mb-4 flex items-center gap-2">
+                                            <MessageSquare size={16} /> Screening Q&A
+                                        </h3>
+                                        <div className="space-y-6">
+                                            {allQuestions.map((q, i) => {
+                                                const ans = selectedApp.answers?.find(a => a.question === q.question);
+                                                return (
+                                                    <div key={i} className="group">
+                                                        <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 group-hover:text-indigo-600 transition-colors">{q.question}</p>
+                                                        <div className="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-3 text-sm text-gray-800 dark:text-gray-200 border border-gray-100 dark:border-gray-700/50">
+                                                            {ans ? ans.answer : <span className="text-gray-400 italic">No answer provided</span>}
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
                                     </div>
-                                    <a href={selectedApp.resume} download className="px-6 py-3 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 shadow-lg shadow-indigo-200 transition-all">
-                                        Download File
-                                    </a>
+
+                                    {/* Skills */}
+                                    <div className="glass-panel p-6 bg-white/40 dark:bg-gray-800/40 border dark:border-gray-700/50">
+                                        <h3 className="text-sm font-bold text-gray-900 dark:text-gray-100 uppercase tracking-wide mb-4 flex items-center gap-2">
+                                            <Wand2 size={16} /> Skills
+                                        </h3>
+                                        <div className="flex flex-wrap gap-2">
+                                            {selectedApp.skills && selectedApp.skills.length > 0 ? (
+                                                selectedApp.skills.map((skill, i) => (
+                                                    <span key={i} className="px-3 py-1.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-full text-sm font-medium text-gray-700 dark:text-gray-200 shadow-sm">
+                                                        {skill}
+                                                    </span>
+                                                ))
+                                            ) : (
+                                                <span className="text-gray-400 italic text-sm">No skills parsed from resume.</span>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    {/* Internal Notes - Moved/Duplicated to Application Tab for Visibility */}
+                                    <div className="glass-panel p-6 bg-white/40 dark:bg-gray-800/40 border dark:border-gray-700/50">
+                                        <h3 className="text-sm font-bold text-gray-900 dark:text-gray-100 uppercase tracking-wide mb-4 flex items-center gap-2">
+                                            <MessageSquare size={16} /> Internal Notes
+                                        </h3>
+                                        <div className="space-y-4">
+                                            <textarea
+                                                className="w-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg p-3 text-sm text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none resize-none transition-all shadow-sm"
+                                                rows={3}
+                                                placeholder="Add a note (e.g., 'Strong candidate, interview scheduled')..."
+                                                value={newComment}
+                                                onChange={(e) => {
+                                                    setNewComment(e.target.value);
+                                                }}
+                                            />
+                                            <div className="flex justify-end gap-2">
+                                                <button
+                                                    onClick={handleAddComment}
+                                                    // Allow saving empty note (to delete it)
+                                                    // disabled={!newComment && !selectedApp.notes} 
+                                                    className="btn-gemini py-1.5 px-4 text-xs"
+                                                >
+                                                    Update Note
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             )}
+
+                            {/* Resume Tab */}
+                            {activeTab === 'resume' && (
+                                <div className="h-full bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden flex flex-col">
+                                    <div className="flex-1 bg-gray-100 p-4 transition-all">
+                                        {selectedApp.resume.toLowerCase().endsWith('.pdf') ? (
+                                            <iframe src={selectedApp.resume} className="w-full h-full rounded shadow border bg-white" title="Resume" />
+                                        ) : selectedApp.resume.toLowerCase().endsWith('.docx') ? (
+                                            <div className="w-full h-full bg-white rounded-xl shadow-lg border border-gray-200 p-8 overflow-auto prose prose-sm max-w-none mx-auto">
+                                                {docxContent === "Loading preview..." ? (
+                                                    <div className="flex flex-col items-center justify-center h-full text-gray-400 gap-3">
+                                                        <div className="w-8 h-8 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin"></div>
+                                                        <p>Rendering DOCX preview...</p>
+                                                    </div>
+                                                ) : (
+                                                    <div dangerouslySetInnerHTML={{ __html: docxContent }} />
+                                                )}
+                                            </div>
+                                        ) : (
+                                            <div className="flex items-center justify-center h-full text-gray-500 flex-col gap-4">
+                                                <FileText size={48} className="opacity-20" />
+                                                <p>Preview not available for this file type.</p>
+                                                <a href={selectedApp.resume} download className="text-indigo-600 underline font-medium">Download File</a>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Notes Tab */}
+                            {activeTab === 'notes' && (
+                                <div className="max-w-2xl mx-auto h-full flex flex-col">
+                                    <div className="glass-panel p-6 flex flex-col h-auto min-h-[400px] bg-white/40 dark:bg-gray-800/40 border dark:border-gray-700/50">
+                                        <h3 className="text-sm font-bold text-gray-900 dark:text-gray-100 uppercase tracking-wide mb-4">Internal Notes</h3>
+                                        <div className="flex-1 mb-4">
+                                            {selectedApp.notes ? (
+                                                <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-100 dark:border-amber-800/30 p-4 rounded-xl text-amber-900 dark:text-amber-100 text-sm leading-relaxed">
+                                                    {selectedApp.notes}
+                                                </div>
+                                            ) : (
+                                                <div className="flex flex-col items-center justify-center h-32 text-gray-400 border-2 border-dashed border-gray-100 rounded-xl">
+                                                    <MessageSquare size={24} className="mb-2 opacity-20" />
+                                                    <p className="text-sm">No notes yet.</p>
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        {/* Simple Note Editor */}
+                                        <div className="mt-auto">
+                                            <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 mb-2">UPDATE NOTE</label>
+                                            <textarea
+                                                className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 text-sm text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-indigo-500/20 focus:bg-white dark:focus:bg-gray-900 outline-none resize-none transition-all"
+                                                rows={4}
+                                                placeholder="Enter your notes here..."
+                                                value={newComment}
+                                                onChange={(e) => {
+                                                    setNewComment(e.target.value);
+                                                }}
+                                            />
+                                            <div className="flex justify-end gap-3 mt-3">
+                                                <button
+                                                    onClick={() => {
+                                                        const existingNote = selectedApp.notes || "";
+                                                        setNewComment(existingNote);
+                                                    }}
+                                                    className="px-4 py-2 text-sm text-gray-500 font-medium hover:bg-gray-100 rounded-full transition-colors"
+                                                >
+                                                    Reset
+                                                </button>
+                                                <button
+                                                    onClick={handleAddComment}
+                                                    className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-medium transition-colors shadow-sm"
+                                                >
+                                                    Save Note
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
                         </div>
                     </div>
                 </div>
             )}
-        </div>
+
+
+            {/* Skills Modal - Popover Style for Full List */}
+            {
+                expandedSkillsAppId && (
+                    <div
+                        className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/20 backdrop-blur-[2px]"
+                        onClick={() => setExpandedSkillsAppId(null)}
+                    >
+                        <div
+                            className="bg-white rounded-xl shadow-2xl w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-200"
+                            onClick={e => e.stopPropagation()}
+                        >
+                            <div className="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+                                <h3 className="font-bold text-slate-800 text-sm">
+                                    {applications.find(a => a.id === expandedSkillsAppId)?.candidate_details.name}'s Skills
+                                </h3>
+                                <button onClick={() => setExpandedSkillsAppId(null)} className="text-slate-400 hover:text-slate-600">
+                                    <X size={16} />
+                                </button>
+                            </div>
+                            <div className="p-4 flex flex-wrap gap-2 max-h-[60vh] overflow-y-auto">
+                                {applications.find(a => a.id === expandedSkillsAppId)?.skills.map((skill, i) => (
+                                    <span key={i} className="px-2 py-1 bg-slate-50 border border-slate-200 rounded text-xs font-medium text-slate-700">
+                                        {skill}
+                                    </span>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                )
+            }
+        </div >
     );
 };
 

@@ -28,6 +28,7 @@ class Application(models.Model):
     # Source & Metadata
     # Source & Metadata
     platform = models.CharField(max_length=50, default='Website', help_text="Source platform (e.g. LinkedIn, Indeed, Custom)")
+    notes = models.TextField(blank=True, default='', help_text="Internal notes for recruiters")
     experience_years = models.IntegerField(null=True, blank=True, help_text="Years of professional experience")
     current_ctc = models.FloatField(null=True, blank=True, help_text="Current CTC in Lakhs (e.g. 11.5)")
     expected_ctc = models.FloatField(null=True, blank=True, help_text="Expected CTC in Lakhs")

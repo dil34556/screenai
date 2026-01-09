@@ -132,7 +132,7 @@ const JobCandidatesPage = () => {
     if (!job) return <div className="p-8 text-center text-red-500">Job not found</div>;
 
     return (
-        <div className="min-h-screen bg-gray-50 p-8">
+        <div className="min-h-screen bg-background p-8">
             {/* Custom Platform Modal */}
             {showCustomPlatformModal && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
@@ -169,17 +169,17 @@ const JobCandidatesPage = () => {
             <div className="max-w-7xl mx-auto mb-8 flex items-center justify-between">
                 <div>
                     <div className="flex items-center gap-4">
-                        <Link to="/admin/jobs" className="text-gray-500 hover:text-gray-700">← Back to Jobs</Link>
-                        <h1 className="text-3xl font-bold text-gray-900">{job.title}</h1>
+                        <Link to="/admin/jobs" className="text-muted-foreground hover:text-foreground">← Back to Jobs</Link>
+                        <h1 className="text-3xl font-bold text-foreground">{job.title}</h1>
                     </div>
-                    <p className="mt-2 text-gray-600 ml-24">Candidates & Platform Analytics</p>
+                    <p className="mt-2 text-muted-foreground ml-24">Candidates & Platform Analytics</p>
                 </div>
             </div>
 
             {/* Apply via Platform Section */}
-            <div className="max-w-7xl mx-auto mb-6 bg-white shadow-lg rounded-lg p-6">
+            <div className="max-w-7xl mx-auto mb-6 bg-card shadow-lg rounded-lg p-6">
                 <div className="flex items-center justify-between flex-wrap gap-4">
-                    <h3 className="text-lg font-semibold text-gray-700">Apply via Platform:</h3>
+                    <h3 className="text-lg font-semibold text-foreground">Apply via Platform:</h3>
                     <div className="flex flex-wrap gap-3 items-center">
                         {/* Default Platform Buttons */}
                         <button
@@ -242,12 +242,12 @@ const JobCandidatesPage = () => {
             </div>
 
             {/* Candidates Table */}
-            <div className="max-w-7xl mx-auto bg-white shadow-lg rounded-lg overflow-hidden">
-                <div className="px-6 py-4 border-b border-gray-200 bg-gray-50 flex flex-col gap-4">
+            <div className="max-w-7xl mx-auto bg-card shadow-lg rounded-lg overflow-hidden">
+                <div className="px-6 py-4 border-b border-border bg-secondary/20 flex flex-col gap-4">
                     <div className="flex justify-between items-center">
                         <div>
-                            <h2 className="text-xl font-bold text-gray-900">{job.title}</h2>
-                            <p className="text-sm text-gray-500 mt-1">{job.department || 'Engineering'} • {job.location} • {candidates.length} candidates</p>
+                            <h2 className="text-xl font-bold text-foreground">{job.title}</h2>
+                            <p className="text-sm text-muted-foreground mt-1">{job.department || 'Engineering'} • {job.location} • {candidates.length} candidates</p>
                         </div>
                         <div className="flex gap-2">
                             <button onClick={() => copyLink('linkedin')} className="px-3 py-1.5 border border-gray-300 rounded text-sm text-gray-600 hover:bg-gray-50 flex items-center gap-2" title="Copy LinkedIn link">
@@ -312,27 +312,27 @@ const JobCandidatesPage = () => {
 
                 <div className="overflow-x-auto">
                     <table className="w-full whitespace-nowrap">
-                        <thead className="bg-gray-100">
+                        <thead className="bg-secondary/50">
                             <tr>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Candidate</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Applied Date</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Platform</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">AI Score</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Candidate</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Applied Date</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Platform</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">AI Score</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Status</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Actions</th>
                             </tr>
                         </thead>
-                        <tbody className="bg-white divide-y divide-gray-200">
+                        <tbody className="bg-card divide-y divide-border/10">
                             {filteredCandidates.map((app) => (
-                                <tr key={app.id} className="hover:bg-gray-50 transition">
+                                <tr key={app.id} className="hover:bg-secondary/20 transition">
                                     <td className="px-6 py-4">
                                         <div className="flex items-center">
-                                            <div className="flex-shrink-0 h-10 w-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold">
+                                            <div className="flex-shrink-0 h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold">
                                                 {app.candidate_details.name.charAt(0)}
                                             </div>
                                             <div className="ml-4">
-                                                <div className="text-sm font-medium text-gray-900">{app.candidate_details.name}</div>
-                                                <div className="text-sm text-gray-500">{app.candidate_details.email}</div>
+                                                <div className="text-sm font-medium text-foreground">{app.candidate_details.name}</div>
+                                                <div className="text-sm text-muted-foreground">{app.candidate_details.email}</div>
                                             </div>
                                         </div>
                                     </td>

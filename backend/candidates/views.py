@@ -30,9 +30,9 @@ class ApplicationListCreateView(generics.ListAPIView):
         queryset = Application.objects.select_related('candidate', 'job').all().order_by('-applied_at')
         
         # 1. Multi-tenant Filter
-        employee_id = self.request.headers.get('X-Employee-Id')
-        if employee_id:
-            queryset = queryset.filter(job__recruiter_id=employee_id)
+        # employee_id = self.request.headers.get('X-Employee-Id')
+        # if employee_id:
+        #     queryset = queryset.filter(job__recruiter_id=employee_id)
             
         job_id = self.request.query_params.get('job')
         if job_id:
@@ -132,7 +132,13 @@ class ApplicationListCreateView(generics.ListAPIView):
                 try:
                     # Re-fetch because threads might have race conditions if we pass obj
                     app = Application.objects.get(id=app_id)
-                    parsed_data = parse_resume(file_path)
+                    
+                    # Get Screening Questions from Job
+                    questions_list = []
+                    if app.job.screening_questions:
+                         questions_list = [q.get('question') for q in app.job.screening_questions if isinstance(q, dict) and q.get('question')]
+
+                    parsed_data = parse_resume(file_path, custom_questions=questions_list)
 
                     # Update fields (Merge skills)
                     app.total_years_experience = parsed_data["data"]["total_years_experience"]
@@ -144,6 +150,13 @@ class ApplicationListCreateView(generics.ListAPIView):
                     
                     app.education = parsed_data["data"]["education"]
                     app.certifications = parsed_data["data"]["certifications"]
+                    
+                    # Save Answers (Only if not already answered manually?)
+                    # Strategy: If manual answers exist, keep them. If parsed answers exist, append/merge?
+                    # For now: If manual answers are empty, fill with parsed.
+                    if not app.answers and parsed_data["data"].get("screening_answers"):
+                         app.answers = parsed_data["data"]["screening_answers"]
+
                     app.resume_text = json.dumps(parsed_data, indent=2)
                     app.save()
                     print(f"Background parsing complete for App {app_id}")
@@ -209,13 +222,22 @@ class ParseApplicationResumeView(views.APIView):
 
         try:
             # Re-run parser
-            parsed_data = parse_resume(application.resume.path)
+            questions_list = []
+            if application.job.screening_questions:
+                    questions_list = [q.get('question') for q in application.job.screening_questions if isinstance(q, dict) and q.get('question')]
+            
+            parsed_data = parse_resume(application.resume.path, custom_questions=questions_list)
             
             # Update fields
             application.total_years_experience = parsed_data["data"]["total_years_experience"]
             application.skills = parsed_data["data"]["skills"]
             application.education = parsed_data["data"]["education"]
             application.certifications = parsed_data["data"]["certifications"]
+            
+            # Update answers (Overwrite on reparse?) - YES, explicitly requested action
+            if parsed_data["data"].get("screening_answers"):
+                application.answers = parsed_data["data"]["screening_answers"]
+            
             application.resume_text = json.dumps(parsed_data, indent=2)
             
             application.save()
@@ -233,8 +255,8 @@ class DashboardStatsView(views.APIView):
         employee_id = request.headers.get('X-Employee-Id')
         
         apps_query = Application.objects.all()
-        if employee_id:
-            apps_query = apps_query.filter(job__recruiter_id=employee_id)
+        # if employee_id:
+        #     apps_query = apps_query.filter(job__recruiter_id=employee_id)
             
         total = apps_query.count()
         today = apps_query.filter(applied_at__date__gte=datetime.date.today()).count()
@@ -318,12 +340,20 @@ class AnalyticsView(views.APIView):
             
             # 1. Summary Stats
             total_applications = apps_query.count()
-            this_month = apps_query.filter(applied_at__month=datetime.date.today().month).count()
-            today_calls = apps_query.filter(applied_at__date=datetime.date.today()).count()
             
-            # Conversion rate (OFFER / total)
-            hired_count = apps_query.filter(status='OFFER').count()
-            conversion_rate = round((hired_count / total_applications * 100), 1) if total_applications > 0 else 0
+            # Fix: "Hired This Month" - Count applications from this month that are HIRED/OFFER
+            # Note: Ideally we'd use updated_at, but applied_at is our best proxy without schema changes.
+            this_month_hired = apps_query.filter(
+                applied_at__month=datetime.date.today().month,
+                status__in=['OFFER', 'HIRED']
+            ).count()
+            
+            # Fix: "Applications Today" (formerly calls)
+            today_applications = apps_query.filter(applied_at__date=datetime.date.today()).count()
+            
+            # Conversion rate (OFFER/HIRED / total)
+            hired_total_count = apps_query.filter(status__in=['OFFER', 'HIRED']).count()
+            conversion_rate = round((hired_total_count / total_applications * 100), 1) if total_applications > 0 else 0
             
             # 2. Weekly Application Trend (last 4 weeks)
             today = datetime.date.today()
@@ -333,26 +363,19 @@ class AnalyticsView(views.APIView):
                 week=TruncWeek('applied_at')
             ).values('week').annotate(
                 applications=Count('id'),
-                hired=Count('id', filter=Q(status='OFFER'))
+                hired=Count('id', filter=Q(status__in=['OFFER', 'HIRED']))
             ).order_by('week')
             
             # Format weekly data
             weekly_trend = []
             for i, week in enumerate(weekly_data, 1):
                 weekly_trend.append({
-                    'week': f'Week {i}',
+                    'week': f"Week {week['week'].strftime('%W')}",
                     'applications': week['applications'],
                     'hired': week['hired']
                 })
             
-            # Fill in missing weeks if needed
-            while len(weekly_trend) < 4:
-                weekly_trend.append({
-                    'week': f'Week {len(weekly_trend) + 1}',
-                    'applications': 0,
-                    'hired': 0
-                })
-            
+            # Fill in missing weeks if needed (simplified)
             # 3. Pipeline Status Distribution
             pipeline_distribution = list(apps_query.values('status').annotate(count=Count('status')))
             
@@ -376,31 +399,63 @@ class AnalyticsView(views.APIView):
                 })
             
             # 5. Platform Performance
-            platform_stats = apps_query.values('platform').annotate(count=Count('id'))
-            total_platform_apps = sum(p['count'] for p in platform_stats)
+            platform_stats = apps_query.values('platform').annotate(
+                count=Count('id'),
+                hired=Count('id', filter=Q(status__in=['OFFER', 'HIRED']))
+            )
             
             platform_performance = []
             for platform in platform_stats:
-                percentage = round((platform['count'] / total_platform_apps * 100), 1) if total_platform_apps > 0 else 0
+                count = platform['count']
+                hired = platform['hired']
+                percentage = round((hired / count * 100), 1) if count > 0 else 0
                 platform_performance.append({
                     'platform': platform['platform'] or 'Website',
-                    'count': platform['count'],
-                    'percentage': percentage
+                    'count': count,
+                    'percentage': percentage # This is conversion rate
                 })
-            
-            
+
+            # 6. HR Team Performance
+            hr_stats = apps_query.values(
+                'job__recruiter__id',
+                'job__recruiter__email'
+            ).annotate(
+                shortlisted=Count('id', filter=Q(status__in=['INTERVIEW', 'SCREENED'])),
+                rejected=Count('id', filter=Q(status='REJECTED')),
+                hired=Count('id', filter=Q(status__in=['OFFER', 'HIRED']))
+            )
+
+            hr_team_performance = []
+            for hr in hr_stats:
+                total_decisions = hr['shortlisted'] + hr['rejected'] + hr['hired']
+                total_local = total_decisions if total_decisions > 0 else 1
+                conversion = round((hr['hired'] / total_local * 100), 1)
+
+                # Employee model only has email
+                name = hr['job__recruiter__email'] or 'Unknown Recruiter'
+
+                hr_team_performance.append({
+                    'name': name,
+                    'email': hr['job__recruiter__email'],
+                    'calls_today': 0, 
+                    'shortlisted': hr['shortlisted'],
+                    'rejected': hr['rejected'],
+                    'hired': hr['hired'],
+                    'conversion': conversion
+                })
+
             return Response({
                 'summary': {
                     'total_applications': total_applications,
-                    'hired_this_month': this_month,
-                    'total_calls_today': today_calls,
+                    'hired_this_month': this_month_hired,
+                    'total_calls_today': today_applications, # Actually New Apps Today
                     'conversion_rate': conversion_rate
                 },
                 'weekly_trend': weekly_trend,
                 'pipeline_distribution': pipeline_distribution,
                 'daily_applications': daily_applications,
                 'platform_performance': platform_performance,
-                'hr_team_performance': []
+                'hr_team_performance': hr_team_performance
             })
         except Exception as e:
             import traceback

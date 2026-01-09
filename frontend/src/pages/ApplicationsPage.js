@@ -94,25 +94,26 @@ const ApplicationsPage = () => {
     };
 
     return (
-        <div className="min-h-screen bg-gray-50 py-8">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="min-h-screen bg-background p-6 md:p-8 font-sans text-foreground pb-20">
+            <div className="max-w-7xl mx-auto space-y-8">
 
-                <div className="sm:flex sm:items-center justify-between mb-8">
+                {/* Header */}
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 animate-fade-in">
                     <div>
-                        <h1 className="text-3xl font-bold text-gray-900">
+                        <h1 className="text-3xl font-bold tracking-tight text-foreground">
                             {jobDetails ? `Candidates for ${jobDetails.title}` : 'All Applications'}
                         </h1>
-                        <p className="mt-2 text-sm text-gray-700">
+                        <p className="mt-1 text-muted-foreground">
                             {jobDetails
                                 ? `Viewing applicants for ${jobDetails.title} (${jobDetails.location})`
-                                : 'Manage candidates across all job postings.'}
+                                : 'Manage and screen candidates across all active job postings.'}
                         </p>
                     </div>
-                    <div className="mt-4 sm:mt-0 flex gap-4">
+                    <div className="flex items-center gap-3">
                         <select
                             value={currentStatus}
                             onChange={handleStatusChange}
-                            className="block rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border"
+                            className="glass-input max-w-xs"
                         >
                             <option value="">All Statuses</option>
                             <option value="NEW">New</option>
@@ -124,116 +125,114 @@ const ApplicationsPage = () => {
                     </div>
                 </div>
 
-                <div className="bg-white shadow overflow-hidden sm:rounded-lg">
+                {/* Applications Table Card */}
+                <div className="card-standard overflow-hidden animate-slide-up stagger-1">
                     {loading ? (
-                        <div className="p-12 text-center text-gray-500">Loading applications...</div>
-                    ) : applications.length === 0 ? (
-                        <div className="p-12 text-center text-gray-500">No applications found matching filters.</div>
-                    ) : (
-                        <table className="min-w-full divide-y divide-gray-200">
-                            <thead className="bg-gray-50">
-                                <tr>
-                                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Candidate</th>
-                                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Job</th>
-                                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Applied</th>
-                                    <th scope="col" className="relative px-6 py-3">
-                                        <span className="sr-only">View</span>
-                                    </th>
-                                </tr>
-                            </thead>
-                            <tbody className="bg-white divide-y divide-gray-200">
-                                {applications.map((app) => (
-                                    <tr key={app.id} className="hover:bg-gray-50">
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            <div className="flex items-center">
-                                                <div className="flex-shrink-0 h-10 w-10 bg-indigo-500 rounded-full flex items-center justify-center text-white font-bold">
-                                                    {app.candidate_details.name.charAt(0)}
-                                                </div>
-                                                <div className="ml-4">
-                                                    <div className="text-sm font-medium text-gray-900">{app.candidate_details.name}</div>
-                                                    <div className="text-sm text-gray-500">{app.candidate_details.email}</div>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            <div className="text-sm text-gray-900">{app.job_title}</div>
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusBadge(app.status)}`}>
-                                                {app.status}
-                                            </span>
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            {new Date(app.applied_at).toLocaleDateString()}
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                            {/* We link to the specific job details page, expanding the candidate list is the current "View" mode. 
-                                                Ideally we'd have a candidate detail modal or page. 
-                                                For now, let's link to Job Details? Or just a placeholder action.
-                                                Actually, the prompt asked for "Detailed Candidate Review". 
-                                                Let's make a "View Details" button that opens a simple modal or alert for now,
-                                                or link to the job page where they are listed.
-                                            */}
-                                            <a href={`/admin/jobs/${app.job}`} className="text-indigo-600 hover:text-indigo-900">
-                                                Go to Job
-                                            </a>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    )}
-                </div>
-
-                {/* Pagination Controls */}
-                <div className="flex items-center justify-between border-t border-gray-200 bg-white px-4 py-3 sm:px-6 mt-4 rounded-lg shadow">
-                    <div className="flex flex-1 justify-between sm:hidden">
-                        <button
-                            onClick={() => loadApplications(prevPage)}
-                            disabled={!prevPage}
-                            className={`relative inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 ${!prevPage ? 'opacity-50 cursor-not-allowed' : ''}`}
-                        >
-                            Previous
-                        </button>
-                        <button
-                            onClick={() => loadApplications(nextPage)}
-                            disabled={!nextPage}
-                            className={`relative ml-3 inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 ${!nextPage ? 'opacity-50 cursor-not-allowed' : ''}`}
-                        >
-                            Next
-                        </button>
-                    </div>
-                    <div className="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
-                        <div>
-                            <p className="text-sm text-gray-700">
-                                Showing results
-                            </p>
+                        <div className="p-20 text-center">
+                            <div className="w-8 h-8 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                            <p className="text-muted-foreground font-medium">Loading applications...</p>
                         </div>
-                        <div>
-                            <nav className="isolate inline-flex -space-x-px rounded-md shadow-sm" aria-label="Pagination">
-                                <button
-                                    onClick={() => loadApplications(prevPage)}
-                                    disabled={!prevPage}
-                                    className={`relative inline-flex items-center rounded-l-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 ${!prevPage ? 'opacity-50 cursor-not-allowed' : ''}`}
-                                >
-                                    <span className="sr-only">Previous</span>
-                                    Previous
-                                </button>
-                                <button
-                                    onClick={() => loadApplications(nextPage)}
-                                    disabled={!nextPage}
-                                    className={`relative inline-flex items-center rounded-r-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 ${!nextPage ? 'opacity-50 cursor-not-allowed' : ''}`}
-                                >
-                                    <span className="sr-only">Next</span>
-                                    Next
-                                </button>
-                            </nav>
+                    ) : applications.length === 0 ? (
+                        <div className="p-20 text-center">
+                            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <span className="text-3xl text-gray-400">∅</span>
+                            </div>
+                            <h3 className="text-lg font-bold text-foreground">No applications found</h3>
+                            <p className="text-muted-foreground mt-1">Try adjusting your filters or check back later.</p>
+                        </div>
+                    ) : (
+                        <div className="gemini-grid-container custom-scrollbar max-h-[700px] overflow-y-auto">
+                            <table className="w-full text-left border-collapse">
+                                <thead className="gemini-grid-header">
+                                    <tr>
+                                        <th className="py-4 px-6">Candidate</th>
+                                        <th className="py-4 px-6">Job Role</th>
+                                        <th className="py-4 px-6">Status</th>
+                                        <th className="py-4 px-6">Applied Date</th>
+                                        <th className="py-4 px-6 text-right">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-border/10">
+                                    {applications.map((app) => (
+                                        <tr key={app.id} className="gemini-grid-row group">
+                                            <td className="gemini-grid-cell">
+                                                <div className="flex items-center">
+                                                    <div className="flex-shrink-0 h-10 w-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold shadow-sm">
+                                                        {app.candidate_details.name.charAt(0)}
+                                                    </div>
+                                                    <div className="ml-4">
+                                                        <div className="text-sm font-medium text-foreground">{app.candidate_details.name}</div>
+                                                        <div className="text-xs text-muted-foreground">{app.candidate_details.email}</div>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td className="gemini-grid-cell">
+                                                <div className="text-sm font-medium text-foreground">{app.job_title}</div>
+                                                <div className="text-xs text-muted-foreground font-mono">ID: #{app.job}</div>
+                                            </td>
+                                            <td className="gemini-grid-cell">
+                                                <span className={`gemini-grid-chip ${app.status === 'NEW' ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' :
+                                                    app.status === 'SCREENED' ? 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20' :
+                                                        app.status === 'INTERVIEW' ? 'bg-purple-500/10 text-purple-400 border-purple-500/20' :
+                                                            app.status === 'OFFER' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' :
+                                                                'bg-red-500/10 text-red-400 border-red-500/20'
+                                                    }`}>
+                                                    <div className={`w-1.5 h-1.5 rounded-full ${app.status === 'OFFER' ? 'bg-emerald-500' :
+                                                        app.status === 'REJECTED' ? 'bg-red-500' :
+                                                            'bg-current'
+                                                        }`} />
+                                                    {app.status}
+                                                </span>
+                                            </td>
+                                            <td className="gemini-grid-cell text-muted-foreground font-mono text-xs">
+                                                {new Date(app.applied_at).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })}
+                                            </td>
+                                            <td className="gemini-grid-cell text-right">
+                                                <a
+                                                    href={`/admin/jobs/${app.job}`}
+                                                    className="inline-flex items-center justify-center px-4 py-1.5 border border-border/10 shadow-sm text-xs font-medium rounded-full text-muted-foreground bg-secondary/50 hover:bg-secondary hover:text-foreground transition-colors"
+                                                >
+                                                    View Details
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    )}
+
+                    {/* Pagination Controls */}
+                    <div className="border-t border-border/10 bg-card/20 backdrop-blur-sm px-4 py-3 flex items-center justify-between sm:px-6 rounded-b-[16px]">
+                        <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                            <div>
+                                <p className="text-sm text-muted-foreground">
+                                    Displaying results
+                                </p>
+                            </div>
+                            <div>
+                                <nav className="isolate inline-flex -space-x-px rounded-md shadow-sm" aria-label="Pagination">
+                                    <button
+                                        onClick={() => loadApplications(prevPage)}
+                                        disabled={!prevPage}
+                                        className={`relative inline-flex items-center rounded-l-xl px-3 py-2 text-sm font-medium text-muted-foreground ring-1 ring-inset ring-border/20 hover:bg-secondary/50 focus:z-20 focus:outline-offset-0 ${!prevPage ? 'opacity-30 cursor-not-allowed' : ''}`}
+                                    >
+                                        Previous
+                                    </button>
+                                    <button
+                                        onClick={() => loadApplications(nextPage)}
+                                        disabled={!nextPage}
+                                        className={`relative inline-flex items-center rounded-r-xl px-3 py-2 text-sm font-medium text-muted-foreground ring-1 ring-inset ring-border/20 hover:bg-secondary/50 focus:z-20 focus:outline-offset-0 ${!nextPage ? 'opacity-30 cursor-not-allowed' : ''}`}
+                                    >
+                                        Next
+                                    </button>
+                                </nav>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
+        </div >
     );
 };
 

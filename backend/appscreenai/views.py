@@ -115,10 +115,12 @@ def delete_employee_api(request, pk):
 
 @csrf_exempt
 def update_employee_password_api(request, pk):
-    if request.method == "PUT":
+    if request.method == "POST" or request.method == "PUT":
         try:
             data = json.loads(request.body.decode("utf-8"))
-            new_password = data.get("password")
+            # Frontend sends "new_password", so checking both for compatibility
+            new_password = data.get("new_password") or data.get("password")
+            
             if not new_password:
                 return JsonResponse({"error": "Password required"}, status=400)
 
@@ -131,4 +133,4 @@ def update_employee_password_api(request, pk):
             return JsonResponse({"error": "Employee not found"}, status=404)
         except Exception as e:
             return JsonResponse({"error": str(e)}, status=500)
-    return JsonResponse({"error": "Only PUT method allowed"}, status=405)
+    return JsonResponse({"error": "Only POST or PUT method allowed"}, status=405)

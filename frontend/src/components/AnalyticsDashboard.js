@@ -1,245 +1,211 @@
 import React, { useEffect, useState } from "react";
-import axios from "axios";
+import { useNavigate } from 'react-router-dom';
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  BarChart, Bar, PieChart, Pie, Cell
+  BarChart, Bar, PieChart, Pie, Cell, AreaChart, Area
 } from "recharts";
+import {
+  Users,
+  Briefcase,
+  CheckCircle2,
+  Phone,
+  TrendingUp,
+  TrendingDown,
+  Calendar,
+  Target,
+  Award
+} from "lucide-react";
+import { getAnalyticsData } from "../services/api";
 
-const API_BASE = "http://127.0.0.1:8000/api";
+// Google Data Viz Colors
+const COLORS = ["#4285F4", "#DB4437", "#F4B400", "#0F9D58", "#AB47BC", "#00ACC1"];
+
+
+// ... imports remain the same, ensuring Lucide icons are imported ...
+function KPICard({ title, value, icon: Icon, trend, trendUp, color, onClick }) {
+  const iconColors = {
+    indigo: "text-[#4B90FF]",
+    green: "text-[#00E676]",
+    blue: "text-[#4B90FF]",
+    purple: "text-[#D946EF]",
+  };
+
+  const bgColors = {
+    indigo: "bg-[#4B90FF]/10 border-[#4B90FF]/20",
+    green: "bg-[#00E676]/10 border-[#00E676]/20",
+    blue: "bg-[#4B90FF]/10 border-[#4B90FF]/20",
+    purple: "bg-[#D946EF]/10 border-[#D946EF]/20",
+  };
+
+  return (
+    <div
+      onClick={onClick}
+      className={`glass-panel p-6 flex flex-col justify-between h-[150px] group hover:bg-card/90 transition-all duration-300 hover:-translate-y-1 hover:shadow-glow relative overflow-hidden rounded-[24px] ${onClick ? 'cursor-pointer' : ''}`}
+    >
+      {/* Glow Effect */}
+      <div className={`absolute top-0 right-0 w-24 h-24 rounded-full blur-[50px] opacity-0 group-hover:opacity-20 transition-opacity bg-primary/20`} />
+
+      <div className="flex justify-between items-start relative z-10">
+        <div className={`flex items-center justify-center w-12 h-12 rounded-2xl bg-secondary/30 backdrop-blur-md`}>
+          <Icon size={22} className={iconColors[color]} strokeWidth={2} />
+        </div>
+        {trend && (
+          <span className={`text-xs font-bold px-3 py-1 rounded-full border ${trendUp ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-muted/10 text-muted-foreground border-border/10'}`}>
+            {trend}
+          </span>
+        )}
+      </div>
+      <div className="relative z-10">
+        <h3 className="text-4xl font-heading font-light text-foreground tracking-tight mb-1">{value}</h3>
+        <p className="text-sm font-medium text-muted-foreground">{title}</p>
+      </div>
+    </div>
+  );
+}
 
 export default function AnalyticsDashboard() {
-  const [overview, setOverview] = useState({});
-  const [weekly, setWeekly] = useState([]);
-  const [pipeline, setPipeline] = useState([]);
-  const [daily, setDaily] = useState([]);
-  const [platforms, setPlatforms] = useState([]);
-  const [hrTeam, setHrTeam] = useState([]);
+  const navigate = useNavigate();
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
-    fetchAll();
+    fetchAnalytics();
   }, []);
 
-  const fetchAll = async () => {
+  const fetchAnalytics = async () => {
     try {
-      const [
-        ov,
-        wk,
-        pipelineRes,
-        dailyRes,
-        platformRes,
-        hrRes,
-      ] = await Promise.all([
-        axios.get(`${API_BASE}/analytics/overview/`),
-        axios.get(`${API_BASE}/analytics/weekly/`),
-        axios.get(`${API_BASE}/analytics/pipeline/`),
-        axios.get(`${API_BASE}/analytics/daily/`),
-        axios.get(`${API_BASE}/analytics/platforms/`),
-        axios.get(`${API_BASE}/analytics/hr_team/`),
-      ]);
-
-      setOverview(ov.data);
-      setWeekly(wk.data);
-
-      setPipeline(
-        Object.keys(pipelineRes.data).map((key) => ({
-          name: key,
-          value: pipelineRes.data[key],
-        }))
-      );
-
-      setDaily(dailyRes.data);
-      setPlatforms(platformRes.data);
-      setHrTeam(hrRes.data);
+      const result = await getAnalyticsData();
+      setData(result);
     } catch (err) {
       console.error("Error fetching analytics:", err);
+      setError("Failed to load analytics data.");
+    } finally {
+      setLoading(false);
     }
   };
 
-  const colors = [
-    "#2563EB", "#0EA5E9", "#10B981", "#F59E0B",
-    "#EF4444", "#6366F1", "#8B5CF6"
-  ];
+  if (loading) return (
+    <div className="flex justify-center items-center h-screen bg-background">
+      <div className="w-12 h-12 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+    </div>
+  );
+
+  if (error) return (
+    <div className="flex flex-col justify-center items-center h-screen bg-background text-muted-foreground">
+      <p className="mb-4 text-lg font-medium">{error}</p>
+      <button
+        onClick={fetchAnalytics}
+        className="px-6 py-2 bg-indigo-600 text-white rounded-full hover:bg-indigo-500 transition"
+      >
+        Retry
+      </button>
+    </div>
+  );
+
+  const { summary, weekly_trend, pipeline_distribution, platform_performance, hr_team_performance } = data || {};
+
+  // Google Data Viz Colors (Neon Adjusted)
+  const COLORS = ["#4B90FF", "#FF55D2", "#F4B400", "#00E676", "#D946EF", "#00ACC1"];
 
   return (
-    <div style={{ padding: "30px" }}>
-      {/* ANALYTICS HEADER */}
-      <h2 style={{ marginBottom: "5px" }}>Analytics</h2>
-      <p style={{ color: "gray", marginBottom: "20px" }}>
-        Detailed recruitment metrics and insights
-      </p>
-
-      {/* KPI CARDS */}
-      <div style={{
-        display: "grid",
-        gridTemplateColumns: "repeat(4, 1fr)",
-        gap: "20px",
-      }}>
-        <KPI title="Total Applications" value={overview.total_applications} subtitle="+23% vs last month" />
-        <KPI title="Hired This Month" value={overview.hired_this_month} subtitle="On track" />
-        <KPI title="Total Calls Today" value={overview.total_calls_today} />
-        <KPI title="Conversion Rate" value={`${overview.conversion_rate}%`} subtitle="+2% improvement" />
+    <div className="min-h-screen bg-background p-6 md:p-8 font-sans text-foreground pb-20 selection:bg-primary/30 selection:text-primary">
+      {/* Header */}
+      <div className="max-w-7xl mx-auto mb-10">
+        <h1 className="text-4xl font-heading font-light text-foreground tracking-tight">Analytics Overview</h1>
+        <p className="text-muted-foreground mt-2 font-light text-lg">Real-time insights into your recruitment pipeline and team performance.</p>
       </div>
 
-      <br />
+      <div className="max-w-7xl mx-auto space-y-8">
+        {/* KPI Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
+          <KPICard
+            title="Total Applications"
+            value={summary?.total_applications || 0}
+            icon={Users}
+            trend="+12%"
+            trendUp={true}
+            color="indigo"
+            onClick={() => navigate('/admin/applications')}
+          />
+          <KPICard
+            title="Hired This Month"
+            value={summary?.hired_this_month || 0}
+            icon={Award}
+            trend="On Track"
+            trendUp={true}
+            color="green"
+            onClick={() => navigate('/admin/applications?status=OFFER')}
+          />
 
-      {/* WEEKLY TREND + PIPELINE ROW */}
-      <div style={{ display: "flex", gap: "20px" }}>
-        {/* WEEKLY TREND */}
-        <div style={cardStyle}>
-          <h4>Weekly Application Trend</h4>
-          <ResponsiveContainer width="100%" height={250}>
-            <LineChart data={weekly}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="week" />
-              <YAxis />
-              <Tooltip />
-              <Line type="monotone" dataKey="count" stroke="#2563EB" strokeWidth={2} />
-            </LineChart>
-          </ResponsiveContainer>
         </div>
 
-        {/* PIPELINE STATUS */}
-        <div style={cardStyle}>
-          <h4>Pipeline Status Distribution</h4>
-          <ResponsiveContainer width="100%" height={250}>
-            <BarChart data={pipeline} layout="vertical" margin={{ left: 40 }}>
-              <CartesianGrid vertical={false} />
-              <XAxis type="number" />
-              <YAxis dataKey="name" type="category" />
-              <Tooltip />
-              <Bar dataKey="value" fill="#2563EB" />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
+        {/* Charts Row */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Weekly Trend */}
+          <div className="glass-panel p-8 rounded-[24px]">
+            <div className="flex items-center justify-between mb-8">
+              <h3 className="text-lg font-bold text-foreground">Application Trend</h3>
+              <div className="flex items-center gap-2 text-xs font-bold text-muted-foreground bg-secondary/50 px-4 py-2 rounded-full border border-border/10">
+                <Calendar size={14} /> Last 4 Weeks
+              </div>
+            </div>
+            <div className="h-[300px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={weekly_trend}>
+                  <defs>
+                    <linearGradient id="colorApps" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#4B90FF" stopOpacity={0.3} />
+                      <stop offset="95%" stopColor="#4B90FF" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" opacity={0.3} />
+                  <XAxis dataKey="week" axisLine={false} tickLine={false} tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }} dy={10} />
+                  <YAxis axisLine={false} tickLine={false} tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }} />
+                  <Tooltip
+                    contentStyle={{ backgroundColor: 'var(--card)', border: '1px solid var(--border)', borderRadius: '12px', color: 'var(--foreground)', boxShadow: '0 4px 20px rgba(0,0,0,0.1)' }}
+                    itemStyle={{ color: 'var(--foreground)' }}
+                    cursor={{ stroke: '#4B90FF', strokeWidth: 1, strokeDasharray: '4 4' }}
+                  />
+                  <Area type="monotone" dataKey="applications" stroke="#4B90FF" strokeWidth={3} fillOpacity={1} fill="url(#colorApps)" />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
 
-      <br />
-
-      {/* DAILY APPLICATIONS + PLATFORM PERFORMANCE */}
-      <div style={{ display: "flex", gap: "20px" }}>
-        {/* DAILY APPLICATIONS */}
-        <div style={cardStyle}>
-          <h4>Daily Applications</h4>
-          <ResponsiveContainer width="100%" height={250}>
-            <BarChart data={daily}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="day" />
-              <YAxis />
-              <Tooltip />
-              <Bar dataKey="count" fill="#2563EB" />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-
-        {/* PLATFORM PERFORMANCE */}
-        <div style={cardStyle}>
-          <h4>Platform Performance</h4>
-
-          <div style={{ display: "flex", justifyContent: "space-between" }}>
-            <ResponsiveContainer width="60%" height={250}>
-              <PieChart>
-                <Pie
-                  data={platforms}
-                  dataKey="count"
-                  nameKey="platform"
-                  innerRadius={40}
-                  outerRadius={80}
-                >
-                  {platforms.map((_, i) => (
-                    <Cell key={i} fill={colors[i % colors.length]} />
-                  ))}
-                </Pie>
-              </PieChart>
-            </ResponsiveContainer>
-
-            <div>
-              {platforms.map((p, i) => (
-                <div key={i} style={{ marginBottom: "10px" }}>
-                  <span
-                    style={{
-                      width: "12px",
-                      height: "12px",
-                      display: "inline-block",
-                      background: colors[i % colors.length],
-                      marginRight: "10px",
-                    }}
-                  ></span>
-                  {p.platform} — <strong>{p.count}</strong> ({p.conversion}% conv)
-                </div>
-              ))}
+          {/* Pipeline Status */}
+          <div className="glass-panel p-8 rounded-[24px]">
+            <h3 className="text-lg font-bold text-foreground mb-8">Pipeline Distribution</h3>
+            <div className="h-[300px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={pipeline_distribution} layout="vertical" margin={{ left: 0, right: 30 }}>
+                  <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="var(--border)" opacity={0.3} />
+                  <XAxis type="number" hide />
+                  <YAxis
+                    dataKey="status"
+                    type="category"
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12, fontWeight: 500 }}
+                    width={100}
+                  />
+                  <Tooltip
+                    cursor={{ fill: 'rgba(255,255,255,0.02)' }}
+                    contentStyle={{ backgroundColor: 'var(--card)', border: '1px solid var(--border)', borderRadius: '12px', color: 'var(--foreground)' }}
+                  />
+                  <Bar dataKey="count" radius={[0, 4, 4, 0]} barSize={20}>
+                    {pipeline_distribution?.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
             </div>
           </div>
         </div>
-      </div>
 
-      <br />
 
-      {/* HR TEAM PERFORMANCE */}
-      <div style={cardStyle}>
-        <h4>HR Team Performance</h4>
-
-        <table className="analytics-table">
-          <thead>
-            <tr>
-              <th>HR Name</th>
-              <th>Calls Today</th>
-              <th>Shortlisted</th>
-              <th>Rejected</th>
-              <th>Hired</th>
-              <th>Conversion</th>
-            </tr>
-          </thead>
-
-          <tbody>
-            {hrTeam.map((hr, i) => (
-              <tr key={i}>
-                <td>{hr.name}</td>
-                <td>{hr.calls_today}</td>
-                <td><Badge color="orange">{hr.shortlisted}</Badge></td>
-                <td><Badge color="red">{hr.rejected}</Badge></td>
-                <td><Badge color="green">{hr.hired}</Badge></td>
-                <td>{hr.conversion}%</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
       </div>
     </div>
   );
 }
-
-/* ---------------- COMPONENTS ---------------- */
-
-function KPI({ title, value, subtitle }) {
-  return (
-    <div style={cardStyle}>
-      <p style={{ color: "gray", marginBottom: "5px" }}>{title}</p>
-      <h2>{value}</h2>
-      <p style={{ color: "#10B981" }}>{subtitle}</p>
-    </div>
-  );
-}
-
-function Badge({ children, color }) {
-  return (
-    <span
-      style={{
-        background: color,
-        padding: "5px 12px",
-        color: "white",
-        borderRadius: "12px",
-        fontWeight: 600,
-      }}
-    >
-      {children}
-    </span>
-  );
-}
-
-const cardStyle = {
-  background: "white",
-  padding: "20px",
-  borderRadius: "12px",
-  boxShadow: "0 4px 20px rgba(0,0,0,0.07)",
-  flex: 1,
-};

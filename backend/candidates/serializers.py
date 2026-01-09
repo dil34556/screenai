@@ -47,20 +47,33 @@ class ApplicationSerializer(serializers.ModelSerializer):
         if obj.resume_text:
             try:
                 data = json.loads(obj.resume_text)
-                resume_data = data.get('data', {})
-                if not resume_data and 'work_experience' in data:
-                        resume_data = data
+                # Helper to handle both nested 'data' key or direct dict
+                resume_data = data.get('data', data) if isinstance(data, dict) else {}
                 
                 raw_parsed = resume_data.get('work_experience', [])
+                if not isinstance(raw_parsed, list):
+                    raw_parsed = []
+
                 # Normalize parsed data to match structure
                 for item in raw_parsed:
+                    if not isinstance(item, dict):
+                        continue
+                        
                     # Parse returns company_name, job_role. Ensure keys match.
+                    # We use safe .get() and ensure we don't crash on missing keys
+                    # We also fallback to empty strings instead of None to help frontend
+                    company = item.get('company_name') or item.get('company') or "Unknown Company"
+                    role = item.get('job_role') or item.get('role') or "Unknown Role"
+                    duration = item.get('duration') or item.get('dates') or ""
+                    
                     parsed_experience.append({
-                        "company_name": item.get('company_name') or item.get('company'),
-                        "job_role": item.get('job_role') or item.get('role'),
-                        "duration": item.get('duration') or item.get('dates')
+                        "company_name": str(company),
+                        "job_role": str(role),
+                        "duration": str(duration)
                     })
-            except:
+            except Exception as e:
+                print(f"Error parsing work experience for App ID {obj.id}: {e}")
+                # Don't crash, just return what we have (or empty parsed)
                 pass
 
         # Return combined (Manual first)

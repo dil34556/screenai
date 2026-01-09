@@ -82,8 +82,18 @@ export const updateJob = async (id, jobData) => {
     return response.data;
 };
 
+export const deleteJob = async (id) => {
+    const response = await api.delete(`/jobs/${id}/`);
+    return response.data;
+};
+
 export const updateApplicationStatus = async (id, status) => {
     const response = await api.patch(`/applications/${id}/`, { status });
+    return response.data;
+};
+
+export const updateApplication = async (id, data) => {
+    const response = await api.patch(`/applications/${id}/`, data);
     return response.data;
 };
 
@@ -137,6 +147,11 @@ export const deleteEmployee = async (id) => {
 
 export const updateEmployeePassword = async (id, newPassword) => {
     const response = await api.post(`/employees/${id}/password/`, { new_password: newPassword });
+    return response.data;
+};
+
+export const getAnalyticsData = async () => {
+    const response = await api.get('/analytics/');
     return response.data;
 };
 

@@ -1,18 +1,21 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { createJob } from '../services/api';
+import { ArrowLeft, Sparkles, Plus, Trash2, CheckCircle2, AlertCircle, LayoutDashboard, GripVertical, ChevronRight } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 const CreateJobPage = () => {
     const navigate = useNavigate();
+    const [activeSection, setActiveSection] = useState('basic'); // basic, details, questions
     const [formData, setFormData] = useState({
         title: '',
         department: '',
-        location: '',
+        location: 'Not Specified',
         salary_range: '',
-        offered_ctc: 12, // Default slider value
-        expected_ctc_limit: 20, // Default slider value
-        min_experience: 1, // Default slider value
-        notice_period_days: 30, // Default slider value
+        offered_ctc: 12,
+        expected_ctc_limit: 20,
+        min_experience: 1,
+        notice_period_days: 30,
         job_type: 'ONSITE',
         required_skills: '',
         previous_companies: '',
@@ -25,14 +28,13 @@ const CreateJobPage = () => {
     // Detailed Question State
     const [currentQ, setCurrentQ] = useState({
         question: '',
-        type: 'long_text', // Changed default to long_text
-        options: [], // For dropdown/multiple_choice
-        min: 0, // For numerical
-        max: 10, // For numerical
+        type: 'long_text',
+        options: [],
+        min: 0,
+        max: 10,
         required: false
     });
 
-    // Temp state for adding an option to the current question
     const [newOption, setNewOption] = useState('');
 
     const handleChange = (e) => {
@@ -52,20 +54,17 @@ const CreateJobPage = () => {
     const handleAddQuestion = () => {
         if (!currentQ.question.trim()) return;
 
-        // Validation: Options required for certain types
         if (['dropdown', 'multiple_choice'].includes(currentQ.type) && currentQ.options.length === 0) {
             alert('Please add at least one option for this question type.');
             return;
         }
 
-        // Validation: Min/Max for numerical
         if (currentQ.type === 'numerical' && (Number(currentQ.min) >= Number(currentQ.max))) {
             alert('Min value must be less than Max value.');
             return;
         }
 
         setQuestions([...questions, { ...currentQ, id: Date.now() }]);
-        // Reset
         setCurrentQ({ question: '', type: 'long_text', options: [], min: 0, max: 10, required: false });
         setNewOption('');
     };
@@ -86,7 +85,6 @@ const CreateJobPage = () => {
             };
 
             await createJob(payload);
-            alert('Job Posted Successfully!');
             navigate('/admin/jobs');
         } catch (error) {
             console.error(error);
@@ -95,311 +93,230 @@ const CreateJobPage = () => {
     };
 
     return (
-        <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-            <div className="max-w-4xl mx-auto">
-                <h1 className="text-3xl font-extrabold text-gray-900 mb-8 border-b pb-4">Create Job Posting</h1>
+        <div className="min-h-screen bg-background text-foreground selection:bg-primary/20 selection:text-primary">
+            {/* Header */}
+            <header className="fixed top-0 w-full z-40 bg-background/80 backdrop-blur-md border-b border-border/10">
+                <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                        <Link to="/admin/jobs" className="p-2 hover:bg-secondary/50 rounded-full transition-colors text-muted-foreground hover:text-foreground">
+                            <ArrowLeft size={20} />
+                        </Link>
+                        <div className="h-6 w-px bg-border/20"></div>
+                        <h1 className="text-sm font-bold text-foreground uppercase tracking-wider">Create New Role</h1>
+                    </div>
+                    <div className="flex items-center gap-3">
+                        <span className="text-xs font-semibold text-muted-foreground hidden sm:block">Draft - Unsaved</span>
+                    </div>
+                </div>
+            </header>
 
-                <form className="space-y-8" onSubmit={handleSubmit}>
+            <div className="max-w-7xl mx-auto px-6 py-28 pb-32 flex gap-12">
+                {/* Left: Navigation Steps */}
+                <div className="hidden lg:block w-64 fixed h-[calc(100vh-120px)] overflow-y-auto">
+                    <nav className="space-y-1">
+                        {[
+                            { id: 'basic', label: 'Basic Info', desc: 'Title, Location, Salary' },
+                            { id: 'details', label: 'Job Details', desc: 'Description, Requirements' },
+                            { id: 'questions', label: 'Screening', desc: 'Custom Questions' }
+                        ].map((step) => (
+                            <button
+                                key={step.id}
+                                onClick={() => setActiveSection(step.id)}
+                                className={`w-full text-left p-4 rounded-xl transition-all border ${activeSection === step.id ? 'bg-secondary/50 border-border/20 shadow-lg' : 'border-transparent hover:bg-secondary/20'}`}
+                            >
+                                <div className={`text-sm font-bold mb-0.5 ${activeSection === step.id ? 'text-foreground' : 'text-muted-foreground'}`}>{step.label}</div>
+                                <div className="text-xs text-muted-foreground/60 font-medium">{step.desc}</div>
+                            </button>
+                        ))}
+                    </nav>
+                </div>
 
-                    {/* Section 1: Basic Information */}
-                    <div className="bg-white shadow px-4 py-5 sm:rounded-lg sm:p-6">
-                        <div className="md:grid md:grid-cols-3 md:gap-6">
-                            <div className="md:col-span-1">
-                                <h3 className="text-lg font-medium leading-6 text-gray-900">Basic Information</h3>
-                                <p className="mt-1 text-sm text-gray-500">Key details about the role.</p>
+                {/* Right: Form Area */}
+                <div className="flex-1 lg:ml-72 space-y-8 max-w-3xl">
+
+                    {/* Basic Info Section */}
+                    {activeSection === 'basic' && (
+                        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="glass-panel p-8 rounded-[24px]">
+                            <div className="flex items-center gap-3 mb-6 pb-6 border-b border-white/5">
+                                <div className="h-10 w-10 bg-indigo-500/10 rounded-lg flex items-center justify-center text-indigo-400 border border-indigo-500/20">
+                                    <LayoutDashboard size={20} />
+                                </div>
+                                <div>
+                                    <h2 className="text-2xl font-heading font-light text-foreground">Basic Information</h2>
+                                    <p className="text-sm text-muted-foreground">Core details for the position.</p>
+                                </div>
                             </div>
-                            <div className="mt-5 md:mt-0 md:col-span-2 space-y-6">
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700">Job Title *</label>
-                                    <input type="text" name="title" required onChange={handleChange} placeholder="e.g. Senior Frontend Developer" className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" />
-                                </div>
 
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700">Department *</label>
-                                    <input type="text" name="department" required onChange={handleChange} placeholder="Select department (e.g. Engineering)" className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" />
-                                </div>
-
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700">Location *</label>
-                                        <input type="text" name="location" required onChange={handleChange} placeholder="e.g. Remote, New York" className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" />
+                            <div className="space-y-6">
+                                <div className="grid grid-cols-2 gap-6">
+                                    <div className="col-span-2">
+                                        <label className="block text-xs font-bold text-muted-foreground uppercase tracking-wide mb-2">Job Title</label>
+                                        <input type="text" name="title" required onChange={handleChange} placeholder="e.g. Senior Product Designer" className="glass-input w-full rounded-2xl px-4 py-3" autoFocus />
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-medium text-gray-700">Job Type *</label>
-                                        <select name="job_type" onChange={handleChange} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-                                            <option value="ONSITE">On-site</option>
-                                            <option value="REMOTE">Remote</option>
-                                            <option value="HYBRID">Hybrid</option>
+                                        <label className="block text-xs font-bold text-muted-foreground uppercase tracking-wide mb-2">Department</label>
+                                        <input type="text" name="department" required onChange={handleChange} placeholder="e.g. Design" className="glass-input w-full rounded-2xl px-4 py-3" />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-bold text-muted-foreground uppercase tracking-wide mb-2">Job Type</label>
+                                        <select name="job_type" value={formData.job_type} onChange={handleChange} className="glass-input w-full rounded-xl px-4 py-3 text-foreground">
+                                            <option value="ONSITE" className="text-foreground bg-card">On-site</option>
+                                            <option value="REMOTE" className="text-foreground bg-card">Remote</option>
+                                            <option value="HYBRID" className="text-foreground bg-card">Hybrid</option>
                                         </select>
                                     </div>
-                                    <div className="col-span-2 space-y-5 pt-2">
-                                        {/* Slider 1: Offered CTC */}
-                                        <div>
-                                            <div className="flex justify-between items-center mb-1">
-                                                <label className="text-sm font-medium text-gray-700">Salary Range (Offered CTC)</label>
-                                                <span className="text-sm font-bold text-gray-900">{formData.offered_ctc} Lakhs</span>
-                                            </div>
-                                            <input
-                                                type="range"
-                                                min="0"
-                                                max="50"
-                                                step="0.5"
-                                                name="offered_ctc"
-                                                value={formData.offered_ctc}
-                                                onChange={handleChange}
-                                                className="w-full h-2 bg-indigo-100 rounded-lg appearance-none cursor-pointer accent-green-600"
-                                            />
-                                        </div>
-
-                                        {/* Slider 2: Target Expected CTC */}
-                                        <div>
-                                            <div className="flex justify-between items-center mb-1">
-                                                <label className="text-sm font-medium text-gray-700">Expected CTC Limit</label>
-                                                <span className="text-sm font-bold text-gray-900">{formData.expected_ctc_limit} Lakhs</span>
-                                            </div>
-                                            <input
-                                                type="range"
-                                                min="0"
-                                                max="100"
-                                                step="0.5"
-                                                name="expected_ctc_limit"
-                                                value={formData.expected_ctc_limit}
-                                                onChange={handleChange}
-                                                className="w-full h-2 bg-indigo-100 rounded-lg appearance-none cursor-pointer accent-green-600"
-                                            />
-                                        </div>
-
-                                        {/* Slider 3: Notice Period */}
-                                        <div>
-                                            <div className="flex justify-between items-center mb-1">
-                                                <label className="text-sm font-medium text-gray-700">Max Notice Period</label>
-                                                <span className="text-sm font-bold text-gray-900">{formData.notice_period_days} days</span>
-                                            </div>
-                                            <input
-                                                type="range"
-                                                min="0"
-                                                max="90"
-                                                step="15"
-                                                name="notice_period_days"
-                                                value={formData.notice_period_days}
-                                                onChange={handleChange}
-                                                className="w-full h-2 bg-indigo-100 rounded-lg appearance-none cursor-pointer accent-green-600"
-                                            />
-                                        </div>
-
-                                        {/* Slider 4: Experience */}
-                                        <div>
-                                            <div className="flex justify-between items-center mb-1">
-                                                <label className="text-sm font-medium text-gray-700">Min Experience Required</label>
-                                                <span className="text-sm font-bold text-gray-900">{formData.min_experience} Years</span>
-                                            </div>
-                                            <input
-                                                type="range"
-                                                min="0"
-                                                max="20"
-                                                step="1"
-                                                name="min_experience"
-                                                value={formData.min_experience}
-                                                onChange={handleChange}
-                                                className="w-full h-2 bg-indigo-100 rounded-lg appearance-none cursor-pointer accent-green-600"
-                                            />
-                                        </div>
-                                    </div>
                                 </div>
-
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700">Required Skills</label>
-                                    <input type="text" name="required_skills" placeholder="Python, React, AWS (Comma separated)" onChange={handleChange} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" />
-                                </div>
-
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700">Previous Companies</label>
-                                    <input type="text" name="previous_companies" placeholder="Google, Microsoft, Amazon (Comma separated)" onChange={handleChange} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" />
-                                </div>
-
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700">Previous Job Roles</label>
-                                    <input type="text" name="previous_roles" placeholder="SDE-1, Software Engineer, Backend Developer (Comma separated)" onChange={handleChange} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" />
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Section 2: Job Description */}
-                    <div className="bg-white shadow px-4 py-5 sm:rounded-lg sm:p-6">
-                        <div className="md:grid md:grid-cols-3 md:gap-6">
-                            <div className="md:col-span-1">
-                                <h3 className="text-lg font-medium leading-6 text-gray-900">Job Description</h3>
-                                <p className="mt-1 text-sm text-gray-500">Describe the role, responsibilities, and requirements.</p>
-                            </div>
-                            <div className="mt-5 md:mt-0 md:col-span-2">
-                                <textarea name="description" rows={8} required onChange={handleChange} className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border border-gray-300 rounded-md p-3" placeholder="Enter full job description..." />
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Section 3: Application Questions */}
-                    <div className="bg-white shadow px-4 py-5 sm:rounded-lg sm:p-6">
-                        <div className="md:grid md:grid-cols-3 md:gap-6">
-                            <div className="md:col-span-1">
-                                <h3 className="text-lg font-medium leading-6 text-gray-900">Application Questions</h3>
-                                <p className="mt-1 text-sm text-gray-500">Add custom questions for candidates to answer.</p>
-                            </div>
-                            <div className="mt-5 md:mt-0 md:col-span-2 space-y-6">
-
-                                {/* List of Added Questions */}
-                                {questions.length > 0 ? (
-                                    <ul className="space-y-3">
-                                        {questions.map((q, idx) => (
-                                            <li key={idx} className="bg-gray-50 p-4 rounded-md border border-gray-200 relative">
-                                                <div className="pr-10">
-                                                    <p className="font-bold text-gray-900">{q.question} {q.required && <span className="text-red-500">*</span>}</p>
-                                                    <p className="text-xs text-gray-500 uppercase mt-1">{q.type.replace('_', ' ')}</p>
-
-                                                    {['dropdown', 'multiple_choice'].includes(q.type) && (
-                                                        <ul className="mt-2 pl-4 list-disc text-sm text-gray-600">
-                                                            {q.options.map((opt, i) => <li key={i}>{opt}</li>)}
-                                                        </ul>
-                                                    )}
-
-                                                    {q.type === 'numerical' && (
-                                                        <p className="text-xs text-gray-500 italic mt-1">Range: {q.min} - {q.max}</p>
-                                                    )}
-                                                </div>
-                                                <button type="button" onClick={() => handleRemoveQuestion(idx)} className="absolute top-4 right-4 text-red-600 hover:text-red-800 text-sm font-medium">
-                                                    Remove
-                                                </button>
-                                            </li>
-                                        ))}
-                                    </ul>
-                                ) : (
-                                    <div className="text-center py-6 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
-                                        <p className="text-gray-500">No custom questions created yet.</p>
+                                {['ONSITE', 'HYBRID'].includes(formData.job_type) && (
+                                    <div className="animate-fade-in">
+                                        <label className="block text-xs font-bold text-muted-foreground uppercase tracking-wide mb-2">Location</label>
+                                        <input type="text" name="location" required onChange={handleChange} placeholder="e.g. San Francisco, CA" className="glass-input w-full rounded-xl px-4 py-3" />
                                     </div>
                                 )}
+                            </div>
 
-                                {/* Question Builder */}
-                                <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
-                                    <h4 className="text-sm font-bold text-gray-700 uppercase mb-3">Add New Question</h4>
+                            <div className="flex justify-end mt-8">
+                                <button type="button" onClick={() => setActiveSection('details')} className="bg-secondary/50 hover:bg-secondary/80 text-foreground border border-border/10 px-8 py-3 rounded-full transition-all flex items-center shadow-lg hover:shadow-glow">
+                                    Next Step <ChevronRight size={14} className="ml-1" />
+                                </button>
+                            </div>
+                        </motion.div>
+                    )}
 
-                                    <div className="space-y-4">
-                                        <div>
-                                            <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Question Text</label>
-                                            <input
-                                                type="text"
-                                                value={currentQ.question}
-                                                onChange={(e) => setCurrentQ({ ...currentQ, question: e.target.value })}
-                                                placeholder="e.g. What is your expected salary?"
-                                                className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                                            />
-                                        </div>
-
-                                        <div className="flex gap-4">
-                                            <div className="w-1/2">
-                                                <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Type</label>
-                                                <select
-                                                    value={currentQ.type}
-                                                    onChange={(e) => setCurrentQ({ ...currentQ, type: e.target.value, options: [] })}
-                                                    className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                                                >
-                                                    <option value="long_text">Long Text</option>
-                                                    <option value="numerical">Numerical (Slider)</option>
-                                                    <option value="dropdown">Dropdown</option>
-                                                    <option value="multiple_choice">Multiple Choice</option>
-                                                </select>
-                                            </div>
-                                            <div className="w-1/2 flex items-center pt-6">
-                                                <label className="flex items-center space-x-2 cursor-pointer">
-                                                    <input
-                                                        type="checkbox"
-                                                        checked={currentQ.required}
-                                                        onChange={(e) => setCurrentQ({ ...currentQ, required: e.target.checked })}
-                                                        className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
-                                                    />
-                                                    <span className="text-sm text-gray-900">Required Field</span>
-                                                </label>
-                                            </div>
-                                        </div>
-
-                                        {/* Min/Max for Numerical */}
-                                        {currentQ.type === 'numerical' && (
-                                            <div className="flex gap-4">
-                                                <div className="w-1/2">
-                                                    <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Min Value</label>
-                                                    <input
-                                                        type="number"
-                                                        value={currentQ.min}
-                                                        onChange={(e) => setCurrentQ({ ...currentQ, min: e.target.value })}
-                                                        className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                                                    />
-                                                </div>
-                                                <div className="w-1/2">
-                                                    <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Max Value</label>
-                                                    <input
-                                                        type="number"
-                                                        value={currentQ.max}
-                                                        onChange={(e) => setCurrentQ({ ...currentQ, max: e.target.value })}
-                                                        className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                                                    />
-                                                </div>
-                                            </div>
-                                        )}
-
-                                        {/* Options Builder for Choice Types */}
-                                        {['dropdown', 'multiple_choice'].includes(currentQ.type) && (
-                                            <div className="bg-white p-3 rounded border border-gray-200">
-                                                <label className="block text-xs font-semibold text-gray-500 uppercase mb-2">Options</label>
-
-                                                <ul className="mb-2 space-y-1">
-                                                    {currentQ.options.map((opt, i) => (
-                                                        <li key={i} className="flex justify-between items-center text-sm bg-gray-100 px-2 py-1 rounded">
-                                                            <span>{opt}</span>
-                                                            <button type="button" onClick={() => removeOptionRaw(i)} className="text-red-500 hover:text-red-700">×</button>
-                                                        </li>
-                                                    ))}
-                                                </ul>
-
-                                                <div className="flex gap-2">
-                                                    <input
-                                                        type="text"
-                                                        value={newOption}
-                                                        onChange={(e) => setNewOption(e.target.value)}
-                                                        placeholder="Add an option (e.g. Remote)"
-                                                        className="flex-1 border border-gray-300 rounded-md py-1 px-2 text-sm"
-                                                    />
-                                                    <button
-                                                        type="button"
-                                                        onClick={addOptionRaw}
-                                                        className="bg-gray-200 hover:bg-gray-300 text-gray-700 px-3 py-1 rounded text-sm"
-                                                    >
-                                                        Add
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        )}
-
-                                        <button
-                                            type="button"
-                                            onClick={handleAddQuestion}
-                                            className="w-full inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-gray-800 hover:bg-gray-900 focus:outline-none"
-                                        >
-                                            Add Question
-                                        </button>
-                                    </div>
+                    {/* Details Section */}
+                    {activeSection === 'details' && (
+                        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="glass-panel p-8 rounded-[24px]">
+                            <div className="flex items-center gap-3 mb-6 pb-6 border-b border-white/5">
+                                <div className="h-10 w-10 bg-purple-500/10 rounded-lg flex items-center justify-center text-purple-400 border border-purple-500/20">
+                                    <Sparkles size={20} />
+                                </div>
+                                <div>
+                                    <h2 className="text-lg font-bold text-foreground">Job Details</h2>
+                                    <p className="text-sm text-muted-foreground">Describe the role and requirements.</p>
                                 </div>
                             </div>
-                        </div>
-                    </div>
 
-                    <div className="flex justify-end">
-                        <button type="button" onClick={() => navigate('/admin/jobs')} className="bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 mr-3">
-                            Cancel
-                        </button>
-                        <button type="submit" className="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                            Create Job Posting
-                        </button>
-                    </div>
-                </form>
+                            <div className="space-y-6">
+                                <div>
+                                    <label className="block text-xs font-bold text-muted-foreground uppercase tracking-wide mb-2">Description</label>
+                                    <textarea name="description" rows={12} required onChange={handleChange} className="glass-input w-full rounded-xl px-4 py-3 leading-relaxed" placeholder="Describe the role responsibilities..." />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-bold text-muted-foreground uppercase tracking-wide mb-2">Required Skills (Comma separated)</label>
+                                    <input type="text" name="required_skills" onChange={handleChange} placeholder="React, Node.js, TypeScript" className="glass-input w-full rounded-xl px-4 py-3" />
+                                </div>
+                            </div>
+
+                            <div className="flex justify-end mt-8 gap-3">
+                                <button type="button" onClick={() => setActiveSection('basic')} className="px-4 py-2 text-sm font-semibold text-muted-foreground hover:text-foreground transition-colors">Back</button>
+                                <button type="button" onClick={() => setActiveSection('questions')} className="bg-secondary/50 hover:bg-secondary/80 text-foreground border border-border/10 px-6 py-2 rounded-xl transition-all flex items-center shadow-lg">
+                                    Next Step <ChevronRight size={14} className="ml-1" />
+                                </button>
+                            </div>
+                        </motion.div>
+                    )}
+
+                    {/* Questions Section */}
+                    {activeSection === 'questions' && (
+                        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="glass-panel p-8 rounded-[24px]">
+                            <div className="flex items-center gap-3 mb-6 pb-6 border-b border-white/5">
+                                <div className="h-10 w-10 bg-emerald-500/10 rounded-lg flex items-center justify-center text-emerald-400 border border-emerald-500/20">
+                                    <CheckCircle2 size={20} />
+                                </div>
+                                <div>
+                                    <h2 className="text-lg font-bold text-foreground">Screening Questions</h2>
+                                    <p className="text-sm text-muted-foreground">Add questions to filter candidates.</p>
+                                </div>
+                            </div>
+
+                            {/* Added Questions List */}
+                            {questions.length > 0 && (
+                                <div className="space-y-3 mb-8">
+                                    {questions.map((q, idx) => (
+                                        <div key={idx} className="group flex items-start justify-between bg-card/20 border border-border/10 p-4 rounded-xl hover:border-indigo-500/30 transition-colors">
+                                            <div>
+                                                <p className="font-bold text-foreground text-sm mb-1">{q.question}</p>
+                                                <div className="flex gap-2">
+                                                    <span className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground bg-secondary/20 border border-border/10 px-1.5 py-0.5 rounded">{q.type}</span>
+                                                    {q.required && <span className="text-[10px] font-bold uppercase tracking-wide text-amber-500 bg-amber-500/10 border border-amber-500/20 px-1.5 py-0.5 rounded">Required</span>}
+                                                </div>
+                                            </div>
+                                            <button onClick={() => handleRemoveQuestion(idx)} className="text-muted-foreground/50 hover:text-destructive p-1 rounded-md hover:bg-destructive/10 transition-colors">
+                                                <Trash2 size={16} />
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+
+                            {/* Question Builder */}
+                            <div className="bg-card/10 rounded-xl p-6 border border-border/10">
+                                <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-wide mb-4">New Question</h3>
+                                <div className="space-y-4">
+                                    <input
+                                        type="text"
+                                        value={currentQ.question}
+                                        onChange={(e) => setCurrentQ({ ...currentQ, question: e.target.value })}
+                                        placeholder="e.g. How many years of experience?"
+                                        className="glass-input w-full rounded-xl px-4 py-3"
+                                    />
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <select
+                                            value={currentQ.type}
+                                            onChange={(e) => setCurrentQ({ ...currentQ, type: e.target.value, options: [] })}
+                                            className="glass-input w-full rounded-xl px-4 py-3 text-foreground"
+                                        >
+                                            <option value="long_text" className="text-foreground bg-card">Text Answer</option>
+                                            <option value="numerical" className="text-foreground bg-card">Numerical</option>
+                                            <option value="dropdown" className="text-foreground bg-card">Dropdown</option>
+                                            <option value="multiple_choice" className="text-foreground bg-card">Multiple Choice</option>
+                                        </select>
+                                        <div className="flex items-center gap-2">
+                                            <input
+                                                type="checkbox"
+                                                id="req"
+                                                checked={currentQ.required}
+                                                onChange={(e) => setCurrentQ({ ...currentQ, required: e.target.checked })}
+                                                className="w-4 h-4 rounded border-border/20 bg-input/10 text-primary focus:ring-primary/50"
+                                            />
+                                            <label htmlFor="req" className="text-sm font-medium text-muted-foreground">Required</label>
+                                        </div>
+                                    </div>
+
+                                    {['dropdown', 'multiple_choice'].includes(currentQ.type) && (
+                                        <div className="bg-secondary/10 p-4 rounded-xl border border-border/10 space-y-3">
+                                            <div className="flex gap-2">
+                                                <input value={newOption} onChange={e => setNewOption(e.target.value)} placeholder="Add Option" className="glass-input flex-1 py-1.5 px-3 text-sm rounded-lg" />
+                                                <button onClick={addOptionRaw} type="button" className="text-xs font-bold bg-primary/10 text-primary px-3 py-1.5 rounded-lg border border-primary/20 hover:bg-primary/20">Add</button>
+                                            </div>
+                                            <div className="flex flex-wrap gap-2">
+                                                {currentQ.options.map((opt, i) => (
+                                                    <span key={i} className="inline-flex items-center gap-1 px-2 py-1 bg-secondary/20 text-foreground text-xs rounded-md font-medium border border-border/10">
+                                                        {opt} <button type="button" onClick={() => removeOptionRaw(i)} className="hover:text-destructive transition-colors">×</button>
+                                                    </span>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    <button onClick={handleAddQuestion} type="button" className="w-full py-2.5 rounded-xl border-2 border-dashed border-border/20 text-muted-foreground font-bold text-sm hover:bg-secondary/20 hover:text-foreground hover:border-border/30 transition-all flex items-center justify-center gap-2">
+                                        <Plus size={16} /> Add to List
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div className="flex justify-end mt-8 gap-3">
+                                <button type="button" onClick={() => setActiveSection('details')} className="px-4 py-2 text-sm font-semibold text-muted-foreground hover:text-foreground transition-colors">Back</button>
+                                <button
+                                    onClick={handleSubmit}
+                                    className="bg-gradient-to-r from-primary/20 to-secondary/20 text-primary text-xs font-bold px-6 py-2.5 rounded-full hover:from-primary/30 hover:to-secondary/30 hover:text-foreground hover:shadow-glow transition-all border border-border/10"
+                                >
+                                    Publish Job
+                                </button>
+                            </div>
+                        </motion.div>
+                    )}
+
+                </div>
             </div>
         </div>
     );

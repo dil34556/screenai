@@ -1,59 +1,138 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
-  body {
-    @apply font-sans text-slate-800 antialiased bg-slate-50;
+  :root {
+    /* Gemini Pearl (Light Mode) */
+    --background: 0 0% 100%;
+    /* #FFFFFF */
+    --foreground: 220 29% 6%;
+    /* #0B0E14 */
+
+    --card: 0 0% 98%;
+    /* #FAFAFA */
+    --card-foreground: 220 29% 6%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 220 29% 6%;
+
+    --primary: 217 100% 50%;
+    /* #0066FF - Darker Blue for Light Mode */
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 240 5% 96%;
+    --secondary-foreground: 220 29% 6%;
+
+    --muted: 240 5% 96%;
+    --muted-foreground: 220 10% 45%;
+
+    --accent: 280 100% 67%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 220 13% 91%;
+    /* #E5E7EB */
+    --input: 220 13% 91%;
+    --ring: 217 100% 50%;
+
+    --radius: 1.5rem;
   }
 
-  h1,
-  h2,
-  h3,
-  h4,
-  h5,
-  h6 {
-    @apply font-heading text-slate-900;
+  .dark {
+    /* Gemini Obsidian (Dark Mode) */
+    --background: 220 29% 6%;
+    /* #0B0E14 */
+    --foreground: 0 0% 100%;
+    /* #FFFFFF */
+
+    --card: 230 9% 13%;
+    /* #1E1F24 */
+    --card-foreground: 0 0% 100%;
+
+    --popover: 230 9% 13%;
+    --popover-foreground: 0 0% 100%;
+
+    --primary: 217 100% 65%;
+    /* #4B90FF */
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 240 4% 16%;
+    --secondary-foreground: 0 0% 100%;
+
+    --muted: 240 4% 16%;
+    --muted-foreground: 240 5% 65%;
+
+    --accent: 280 100% 67%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 240 4% 16%;
+    --input: 240 4% 16%;
+    --ring: 217 100% 65%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground tracking-tight scroll-smooth antialiased selection:bg-primary/20 selection:text-primary transition-colors duration-300;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   }
 }
 
 @layer components {
-  .input-premium {
-    @apply w-full border border-gray-200 rounded-xl px-4 py-3 text-sm text-slate-800 transition-all duration-200 outline-none hover:border-indigo-300 hover:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 focus:bg-white placeholder:text-gray-400 bg-gray-50/50;
+  .glass-panel {
+    @apply backdrop-blur-2xl bg-card/85 border border-border/50 shadow-glass;
   }
 
-  .btn-primary {
-    @apply bg-indigo-600 text-white px-5 py-2.5 rounded-xl text-sm font-semibold hover:bg-indigo-700 active:bg-indigo-800 transition-all shadow-sm hover:shadow-md hover:shadow-indigo-600/20;
+  .glass-panel-hover {
+    @apply hover:border-white/20 hover:-translate-y-1 transition-all duration-300 ease-out;
+  }
+
+  .glass-panel-hover:hover {
+    box-shadow: 0 0 30px rgba(75, 144, 255, 0.15);
+  }
+
+  .glass-input {
+    @apply bg-input/20 border-border focus:border-primary/50 focus:shadow-glow focus:ring-0 text-foreground placeholder:text-muted-foreground outline-none;
+  }
+
+  /* Gemini Data Grid System */
+  .gemini-grid-container {
+    @apply w-full overflow-hidden rounded-[16px] border border-border/20 bg-card/40 backdrop-blur-xl relative;
+  }
+
+  .gemini-grid-header {
+    @apply sticky top-0 z-10 bg-background/95 backdrop-blur-md text-muted-foreground text-xs font-medium uppercase tracking-wider border-b border-border/10;
+  }
+
+  .gemini-grid-row {
+    @apply border-b border-border/10 transition-colors duration-200 hover:bg-muted/50 cursor-pointer;
+  }
+
+  .gemini-grid-cell {
+    @apply px-6 py-4 text-sm whitespace-nowrap align-middle text-foreground;
+  }
+
+  .gemini-grid-chip {
+    @apply inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border;
   }
 }
 
-/* Custom Range Slider */
-.premium-range {
-  @apply appearance-none w-full h-2 bg-gray-200 rounded-lg outline-none cursor-pointer;
-  background: linear-gradient(to right, #4f46e5 0%, #a5b4fc 50%, #e2e8f0 50%, #e2e8f0 100%);
-}
-
-.premium-range::-webkit-slider-thumb {
-  @apply appearance-none w-6 h-6 rounded-full bg-indigo-600 border-4 border-white shadow-md transition-transform duration-100 ease-out;
-  margin-top: -8px;
-  /* Center thumb */
-}
-
-.premium-range::-webkit-slider-thumb:hover {
-  transform: scale(1.1);
-}
-
-.premium-range::-moz-range-thumb {
-  @apply w-6 h-6 rounded-full bg-indigo-600 border-4 border-white shadow-md transition-transform duration-100 ease-out;
-  border: none;
-}
-
-/* Scrollbar refinement */
+/* Custom Scrollbar */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-track {
@@ -61,5 +140,5 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  @apply bg-slate-300 rounded-full hover:bg-slate-400;
+  @apply rounded-full bg-muted-foreground/20 hover:bg-muted-foreground/30 transition-colors border-2 border-transparent bg-clip-content;
 }

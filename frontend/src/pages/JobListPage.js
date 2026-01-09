@@ -1,9 +1,23 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-
+import { Link, useNavigate } from 'react-router-dom';
 import { getJobs, updateJob } from '../services/api';
-import { MoreVertical, Copy, ExternalLink, Users } from 'lucide-react';
-// Removed Headless UI import
+import {
+    MoreVertical,
+    Copy,
+    ExternalLink,
+    Users,
+    Search,
+    Filter,
+    Plus,
+    Briefcase,
+    MapPin,
+    FileX2,
+    Calendar,
+    ArrowUpRight,
+    Check
+} from 'lucide-react';
+import Skeleton from '../components/Skeleton';
+import EmptyState from '../components/EmptyState';
 
 const JobListPage = () => {
     const [jobs, setJobs] = useState([]);
@@ -11,29 +25,24 @@ const JobListPage = () => {
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState('ALL'); // ALL, ACTIVE, INACTIVE
+    const [activeMenuId, setActiveMenuId] = useState(null);
+    const [copiedId, setCopiedId] = useState(null);
+    const navigate = useNavigate();
 
-    const [activeMenuId, setActiveMenuId] = useState(null); // For custom dropdown
-
-    // Close menu when clicking outside
+    // Close active menu when clicking outside
     useEffect(() => {
         const handleClickOutside = () => setActiveMenuId(null);
         document.addEventListener('click', handleClickOutside);
         return () => document.removeEventListener('click', handleClickOutside);
     }, []);
 
-    // Feedback state for copy buttons
-    const [copiedId, setCopiedId] = useState(null);
-
     useEffect(() => {
         const fetchJobs = async () => {
             try {
-                // Fetch ALL jobs, including closed ones
-                // Fetch ALL jobs, including closed ones
                 const data = await getJobs({ include_closed: 'true' });
-                // Handle pagination
-                const jobsList = data.results || data;
-                setJobs(jobsList);
-                setFilteredJobs(jobsList);
+                const jobList = Array.isArray(data) ? data : (data.results || []);
+                setJobs(jobList);
+                setFilteredJobs(jobList);
             } catch (err) {
                 console.error("Failed to fetch jobs", err);
             } finally {
@@ -45,21 +54,16 @@ const JobListPage = () => {
 
     useEffect(() => {
         let result = jobs;
-
-        // 1. Search Filter
         if (searchTerm) {
             result = result.filter(job =>
                 job.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                 job.location.toLowerCase().includes(searchTerm.toLowerCase())
             );
         }
-
-        // 2. Status Filter
         if (statusFilter !== 'ALL') {
             const isActive = statusFilter === 'ACTIVE';
             result = result.filter(job => job.is_active === isActive);
         }
-
         setFilteredJobs(result);
     }, [searchTerm, statusFilter, jobs]);
 
@@ -68,224 +72,219 @@ const JobListPage = () => {
         const link = `${window.location.origin}/jobs/${id}/apply`;
         navigator.clipboard.writeText(link);
         setCopiedId(id);
-        setTimeout(() => setCopiedId(null), 2000); // Reset after 2s
+        setTimeout(() => setCopiedId(null), 2000);
     };
 
-    const handleToggleStatus = async (job) => {
+    const handleToggleStatus = async (e, job) => {
+        e.stopPropagation();
         const newStatus = !job.is_active;
-        try {
-            // Optimistic update
-            const updatedJobs = jobs.map(j => j.id === job.id ? { ...j, is_active: newStatus } : j);
-            setJobs(updatedJobs);
 
-            // Persist
+        // Optimistic update
+        const updatedJobs = jobs.map(j => j.id === job.id ? { ...j, is_active: newStatus } : j);
+        setJobs(updatedJobs);
+
+        try {
             await updateJob(job.id, { is_active: newStatus });
         } catch (err) {
             console.error("Failed to update status", err);
-            // Revert on error
-            alert("Failed to update job status.");
-            setJobs(jobs);
+            // Revert on failure
+            setJobs(prevJobs => prevJobs.map(j => j.id === job.id ? { ...j, is_active: !newStatus } : j));
         }
     };
 
-    const getJobTypeBadgeClass = (type) => {
-        switch (type?.toUpperCase()) {
-            case 'REMOTE':
-                return 'bg-blue-100 text-blue-800 border border-blue-200';
-            case 'HYBRID':
-                return 'bg-amber-100 text-amber-800 border border-amber-200';
-            case 'ONSITE':
-                return 'bg-purple-100 text-purple-800 border border-purple-200';
-            default:
-                return 'bg-gray-100 text-gray-800 border border-gray-200';
-        }
+    const getJobTypeBadge = (type) => {
+        const badgeStyles = {
+            'REMOTE': 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300',
+            'HYBRID': 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300',
+            'ONSITE': 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300',
+        };
+        return (
+            <span className={`px-2 py-0.5 rounded text-[10px] uppercase font-bold tracking-wide ${badgeStyles[type?.toUpperCase()] || 'bg-secondary text-secondary-foreground'}`}>
+                {type}
+            </span>
+        );
     };
-
-    if (loading) return (
-        <div className="flex justify-center items-center h-64 text-gray-500">
-            <svg className="animate-spin h-5 w-5 mr-3 text-indigo-500" viewBox="0 0 24 24"></svg>
-            Loading Jobs...
-        </div>
-    );
 
     return (
-        <div className="max-w-7xl mx-auto">
+        <div className="min-h-screen bg-background text-foreground animate-fade-in pb-20 px-4 md:px-8 pt-8">
+            <div className="max-w-7xl mx-auto space-y-6">
 
-            {/* Header */}
-            <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-8 gap-4">
-                <div>
-                    <h1 className="text-3xl font-bold text-gray-900">Manage Jobs</h1>
-                    <p className="mt-1 text-sm text-gray-600">Overview of all current job postings</p>
+                {/* Header */}
+                <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
+                    <div>
+                        <h1 className="text-3xl font-heading font-bold tracking-tight">Manage Jobs</h1>
+                        <p className="mt-1 text-sm text-muted-foreground">Manage your open positions and hiring pipelines.</p>
+                    </div>
+                    <Link to="/admin/jobs/create" className="h-10 px-4 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors flex items-center justify-center gap-2 shadow-sm">
+                        <Plus size={18} />
+                        <span>Create Job</span>
+                    </Link>
                 </div>
-                <Link to="/admin/jobs/create" className="btn-primary flex items-center justify-center gap-2">
-                    <span>+</span> Post New Job
-                </Link>
-            </div>
 
-            {/* Controls */}
-            <div className="bg-white p-4 rounded-lg shadow-sm mb-6 flex flex-col md:flex-row gap-4 border border-gray-100">
-                <div className="flex-1">
-                    <input
-                        type="text"
-                        placeholder="Search by title or location..."
-                        className="input-premium"
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                    />
+                {/* Controls - Flat Bar */}
+                <div className="flex flex-col md:flex-row gap-4 items-center bg-card border border-border p-2 rounded-lg sticky top-4 z-20 shadow-sm">
+                    <div className="flex-1 relative w-full">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={16} />
+                        <input
+                            type="text"
+                            placeholder="Filter by title or location..."
+                            className="w-full bg-transparent border-none focus:ring-0 text-sm placeholder:text-muted-foreground py-2 pl-9 pr-4"
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                        />
+                    </div>
+                    <div className="h-6 w-px bg-border hidden md:block"></div>
+                    <div className="relative w-full md:w-48 group">
+                        <Filter className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" size={16} />
+                        <select
+                            className="w-full appearance-none bg-transparent font-medium text-sm text-foreground py-2 pl-9 pr-8 focus:outline-none cursor-pointer hover:bg-muted/50 rounded-md transition-colors"
+                            value={statusFilter}
+                            onChange={(e) => setStatusFilter(e.target.value)}
+                        >
+                            <option value="ALL">All Status</option>
+                            <option value="ACTIVE">Active</option>
+                            <option value="INACTIVE">Closed</option>
+                        </select>
+                    </div>
                 </div>
-                <div className="w-full md:w-48">
-                    <select
-                        className="input-premium appearance-none cursor-pointer"
-                        value={statusFilter}
-                        onChange={(e) => setStatusFilter(e.target.value)}
-                    >
-                        <option value="ALL">All Status</option>
-                        <option value="ACTIVE">Active</option>
-                        <option value="INACTIVE">Closed</option>
-                    </select>
-                </div>
-            </div>
 
-            {/* List */}
-            <div className="bg-transparent">
-                <ul className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {filteredJobs.map((job) => (
-                        <li key={job.id} className="bg-white hover:shadow-md transition-shadow duration-200 border border-gray-100 rounded-xl mb-4 mx-4 mt-4 overflow-hidden">
-                            <div className="p-5">
-                                {/* Header Row: Badge & Menu */}
-                                <div className="flex justify-between items-start mb-3">
+                {/* List Grid - Dense System Style */}
+                {loading ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {[1, 2, 3, 4, 5, 6].map((i) => (
+                            <Skeleton key={i} className="h-48 w-full rounded-xl" />
+                        ))}
+                    </div>
+                ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {filteredJobs.map((job) => (
+                            <div
+                                key={job.id}
+                                onClick={() => navigate(`/admin/jobs/${job.id}`)}
+                                className="group relative bg-card/50 backdrop-blur-sm border border-border/50 hover:border-primary/50 rounded-2xl p-6 transition-all duration-300 hover:shadow-[0_8px_30px_rgb(0,0,0,0.06)] hover:-translate-y-1 flex flex-col h-full cursor-pointer overflow-hidden"
+                            >
+                                {/* Glow Effect on Hover */}
+                                <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
+
+                                {/* Top Row: Status & Actions */}
+                                <div className="relative flex justify-between items-start mb-5">
                                     <button
-                                        onClick={() => handleToggleStatus(job)}
-                                        className={`px-3 py-1 inline-flex text-xs font-semibold rounded-full cursor-pointer transition-colors ${job.is_active ? 'bg-green-100 text-green-800 hover:bg-green-200' : 'bg-red-100 text-red-800 hover:bg-red-200'}`}
-                                        title="Click to toggle status"
+                                        onClick={(e) => handleToggleStatus(e, job)}
+                                        className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-[11px] font-bold uppercase tracking-wider border transition-all duration-300 ${job.is_active
+                                            ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20 hover:bg-emerald-500/20'
+                                            : 'bg-secondary text-muted-foreground border-border hover:bg-secondary/80'
+                                            }`}
                                     >
+                                        <div className={`w-1.5 h-1.5 rounded-full shadow-[0_0_8px_currentColor] ${job.is_active ? 'bg-emerald-500 animate-pulse' : 'bg-gray-400'}`}></div>
                                         {job.is_active ? 'Active' : 'Closed'}
                                     </button>
 
-                                    {/* Actions Menu */}
-                                    <div className="relative">
+                                    <div className="relative z-20">
                                         <button
                                             onClick={(e) => {
                                                 e.stopPropagation();
                                                 setActiveMenuId(activeMenuId === job.id ? null : job.id);
                                             }}
-                                            className="p-1 rounded-full hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition"
+                                            className="p-2 rounded-lg text-muted-foreground/50 hover:bg-secondary/50 hover:text-foreground transition-all duration-200"
                                         >
-                                            <MoreVertical size={18} />
+                                            <MoreVertical size={16} />
                                         </button>
-
-                                        {/* Dropdown */}
                                         {activeMenuId === job.id && (
-                                            <div
-                                                className="absolute right-0 mt-2 w-48 origin-top-right divide-y divide-gray-100 rounded-xl bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none z-20 animate-in fade-in zoom-in-95 duration-100"
-                                                onClick={(e) => e.stopPropagation()}
+                                            <div className="absolute right-0 mt-2 w-48 bg-popover/90 backdrop-blur-xl border border-border/50 rounded-xl shadow-xl z-30 py-1 animate-in fade-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
+                                                <button
+                                                    onClick={(e) => { e.stopPropagation(); copyApplyLink(job.id); }}
+                                                    className="w-full text-left px-4 py-2.5 text-sm hover:bg-primary/10 hover:text-primary transition-colors flex items-center gap-2.5 font-medium"
+                                                >
+                                                    {copiedId === job.id ? <Check size={14} className="text-emerald-500" /> : <Copy size={14} />}
+                                                    {copiedId === job.id ? <span className="text-emerald-500">Copied!</span> : 'Copy Link'}
+                                                </button>
+                                                <Link
+                                                    to={`/jobs/${job.id}/apply`}
+                                                    target="_blank"
+                                                    onClick={e => e.stopPropagation()}
+                                                    className="w-full text-left px-4 py-2.5 text-sm hover:bg-primary/10 hover:text-primary transition-colors flex items-center gap-2.5 font-medium"
+                                                >
+                                                    <ExternalLink size={14} /> View Live
+                                                </Link>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {/* Content */}
+                                <div className="flex-1 mb-8 relative z-10">
+                                    <h3 className="text-xl font-heading font-semibold tracking-tight mb-2 group-hover:text-primary transition-colors duration-300 line-clamp-1" title={job.title}>
+                                        {job.title}
+                                    </h3>
+                                    <div className="flex flex-col gap-2">
+                                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                            <Briefcase size={14} className="text-primary/60" />
+                                            <span>{job.department || 'General'}</span>
+                                        </div>
+                                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                            <MapPin size={14} className="text-primary/60" />
+                                            <span>{job.location || 'Remote'}</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Footer Stats */}
+                                <div className="pt-5 border-t border-border/50 mt-auto relative z-10">
+                                    <div className="flex items-center justify-between mb-5">
+                                        <div className="flex items-center gap-2.5">
+                                            <div className="p-1.5 rounded-md bg-primary/10 text-primary">
+                                                <Users size={14} />
+                                            </div>
+                                            <div className="flex flex-col leading-none">
+                                                <span className="text-sm font-bold text-foreground">{job.application_count || 0}</span>
+                                                <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-wide">Applicants</span>
+                                            </div>
+                                        </div>
+                                        {getJobTypeBadge(job.job_type)}
+                                    </div>
+
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <div onClick={(e) => e.stopPropagation()}>
+                                            <Link
+                                                to={`/admin/jobs/${job.id}`}
+                                                className="w-full h-10 rounded-lg bg-secondary/50 hover:bg-secondary border border-border/50 hover:border-border text-xs font-semibold transition-all flex items-center justify-center"
                                             >
-                                                <div className="p-1">
-                                                    <a
-                                                        href={`/jobs/${job.id}/apply`}
-                                                        target="_blank"
-                                                        rel="noreferrer"
-                                                        className="group flex w-full items-center rounded-lg px-2 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-700 transition-colors"
-                                                    >
-                                                        <ExternalLink size={16} className="mr-2" />
-                                                        Open Form
-                                                    </a>
-                                                </div>
-                                            </div>
-                                        )}
+                                                Manage
+                                            </Link>
+                                        </div>
+                                        <a
+                                            href={`/jobs/${job.id}/apply`}
+                                            target="_blank"
+                                            rel="noreferrer"
+                                            onClick={(e) => e.stopPropagation()}
+                                            className="w-full h-10 px-4 rounded-lg border border-primary/20 hover:bg-primary hover:text-primary-foreground text-primary/80 hover:border-primary text-xs font-semibold transition-all duration-300 flex items-center justify-center gap-2 group/btn"
+                                        >
+                                            Open Form
+                                            <ArrowUpRight size={14} className="transition-transform group-hover/btn:-translate-y-0.5 group-hover/btn:translate-x-0.5" />
+                                        </a>
                                     </div>
-                                </div>
-
-                                {/* Title & Subtitle */}
-                                <div className="mb-4">
-                                    <Link to={`/admin/jobs/${job.id}`} className="block">
-                                        <h3 className="text-xl font-bold text-gray-900 mb-1 hover:text-indigo-600 transition-colors">{job.title}</h3>
-                                    </Link>
-                                    <div className="text-sm text-gray-500 font-medium flex items-center gap-2">
-                                        <span>{job.department}</span>
-                                        <span className="text-gray-300">•</span>
-                                        <span>{job.location}</span>
-                                    </div>
-                                </div>
-
-                                {/* Stats Row */}
-                                <div className="border-t border-gray-100 my-4"></div>
-
-                                {/* Target Criteria (New) */}
-                                {(job.previous_companies?.length > 0 || job.previous_roles?.length > 0) && (
-                                    <div className="mb-4 space-y-2">
-                                        {job.previous_companies?.length > 0 && (
-                                            <div className="flex flex-wrap gap-1">
-                                                <span className="text-xs font-semibold text-gray-500 uppercase">Prev. Co:</span>
-                                                {job.previous_companies.slice(0, 3).map((co, i) => (
-                                                    <span key={i} className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-50 text-blue-700">
-                                                        {co}
-                                                    </span>
-                                                ))}
-                                                {job.previous_companies.length > 3 && <span className="text-xs text-gray-400">+{job.previous_companies.length - 3}</span>}
-                                            </div>
-                                        )}
-                                        {job.previous_roles?.length > 0 && (
-                                            <div className="flex flex-wrap gap-1">
-                                                <span className="text-xs font-semibold text-gray-500 uppercase">Prev. Roles:</span>
-                                                {job.previous_roles.slice(0, 3).map((role, i) => (
-                                                    <span key={i} className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-50 text-purple-700">
-                                                        {role}
-                                                    </span>
-                                                ))}
-                                                {job.previous_roles.length > 3 && <span className="text-xs text-gray-400">+{job.previous_roles.length - 3}</span>}
-                                            </div>
-                                        )}
-                                    </div>
-                                )}
-
-                                {/* Stats Row */}
-                                <div className="flex items-center justify-between mb-6">
-                                    <div className="flex items-center text-gray-600 font-medium">
-                                        <Users size={18} className="mr-2 text-gray-400" />
-                                        <span>{job.application_count || 0} applicants</span>
-                                    </div>
-                                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getJobTypeBadgeClass(job.job_type)}`}>
-                                        {job.job_type}
-                                    </span>
-                                </div>
-
-                                {/* Footer Actions */}
-                                <div className="flex items-center gap-3">
-                                    <Link
-                                        to={`/admin/jobs/${job.id}`}
-                                        className="flex-1 bg-white border border-gray-200 text-gray-900 hover:bg-blue-600 hover:text-white hover:border-blue-600 font-semibold py-2.5 px-4 rounded-lg text-center transition-all duration-200 shadow-sm"
-                                    >
-                                        View Candidates
-                                    </Link>
-                                    <button
-                                        onClick={() => copyApplyLink(job.id)}
-                                        className={`flex items-center justify-center w-11 h-11 rounded-lg border transition-all duration-200 ${copiedId === job.id
-                                            ? 'bg-green-50 text-green-600 border-green-200'
-                                            : 'bg-gray-50 text-gray-500 border-gray-200 hover:bg-gray-100 hover:text-gray-700'
-                                            }`}
-                                        title="Copy Application Link"
-                                    >
-                                        <Copy size={20} />
-                                    </button>
                                 </div>
                             </div>
-                        </li>
-                    ))}
+                        ))}
 
-                    {filteredJobs.length === 0 && (
-                        <li className="px-4 py-12 text-center">
-                            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-indigo-100 mb-4">
-                                <span className="text-xl">🔍</span>
+                        {filteredJobs.length === 0 && (
+                            <div className="col-span-full">
+                                <EmptyState
+                                    icon={FileX2}
+                                    title="No jobs found"
+                                    description="Adjust filters or create a new job posting."
+                                    action={
+                                        <button onClick={() => { setSearchTerm(''); setStatusFilter('ALL'); }} className="btn-secondary">
+                                            Clear Filters
+                                        </button>
+                                    }
+                                />
                             </div>
-                            <h3 className="text-sm font-medium text-gray-900">No jobs found</h3>
-                            <p className="mt-1 text-sm text-gray-500">Try adjusting your search or filters.</p>
-                        </li>
-                    )}
-                </ul>
+                        )}
+                    </div>
+                )}
             </div>
-
-        </div >
+        </div>
     );
 };
 

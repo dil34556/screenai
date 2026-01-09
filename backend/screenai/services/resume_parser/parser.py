@@ -36,6 +36,10 @@ class WorkExperience(BaseModel):
     company_name: Optional[str] = None
     job_role: Optional[str] = None
 
+class ScreeningAnswer(BaseModel):
+    question: str
+    answer: str
+
 class ResumeData(BaseModel):
     candidate_name: Optional[str] = None
     email: Optional[str] = None
@@ -44,7 +48,9 @@ class ResumeData(BaseModel):
     skills: List[str] = []
     education: List[str] = []
     certifications: List[str] = []
+    certifications: List[str] = []
     work_experience: List[WorkExperience] = []
+    screening_answers: List[ScreeningAnswer] = []
 
 class FinalOutput(BaseModel):
     data: ResumeData
@@ -114,7 +120,7 @@ Extract the following fields from the resume and return JSON in EXACT FORMAT:
 - phone
 - total_years_experience (Numeric float value, e.g. 2.5)
 - total_years_experience (Numeric float value, e.g. 2.5)
-- work_experience (List of companies and roles. STRICTLY EXCLUDE Academic Projects, Thesis, University Studies, and Predictions. Only include professional employment.)
+- work_experience (List of companies and roles. STRICTLY EXCLUDE Academic Projects, Thesis, University Studies, Predictions, and any Entry related to education like 'Student at XYZ University', 'School', 'College'. Only include professional employment.)
 - skills (List of strings)
 - education (List of strings)
 - certifications (List of strings)
@@ -129,7 +135,7 @@ Resume Text:
 )
 
 # ------------ PARSER FUNCTION ------------
-def parse_resume(file_path):
+def parse_resume(file_path, custom_questions: List[str] = None):
     ext = os.path.splitext(file_path)[1].lower()
     
     if ext == '.pdf':
@@ -141,7 +147,22 @@ def parse_resume(file_path):
     else:
         raise ValueError(f"Unsupported file format: {ext}")
 
-    prompt = parse_prompt.format(resume_text=text)
+    # Inject Custom Questions if provided
+    questions_section = ""
+    if custom_questions and len(custom_questions) > 0:
+        questions_section = "\nAlso answer these specific screening questions based on the resume content:\n"
+        for q in custom_questions:
+            questions_section += f"- {q}\n"
+
+    final_prompt = parse_prompt.template.replace("{resume_text}", f"{{resume_text}}\n{questions_section}")
+    # Re-create prompt object with injection
+    active_prompt = PromptTemplate(
+        template=final_prompt,
+        input_variables=["resume_text"],
+        partial_variables={"format_instructions": parser.get_format_instructions()}
+    )
+
+    prompt = active_prompt.format(resume_text=text)
     print(f"DEBUG: Extracted text length: {len(text)} chars")
 
     models_to_try = [
@@ -179,7 +200,7 @@ def parse_resume(file_path):
                 # Strictly remove academic projects that LLM might have let through
                 # Remove "system", "app" to allow real jobs
                 # Add Education terms
-                project_keywords = ["project", "study", "prediction", "thesis", "clone", "detection", "semester", "mca", "btech", "degree", "bachelor", "master", "student"]
+                project_keywords = ["project", "study", "prediction", "thesis", "clone", "detection", "semester", "mca", "btech", "degree", "bachelor", "master", "student", "class", "course", "college", "school", "university", "campus"]
                 filtered_exp = []
                 for exp in parsed.data.work_experience:
                     c = (exp.company_name or "").lower()
@@ -326,7 +347,7 @@ def parse_resume(file_path):
             is_project = False
             # Remove "system", "app", "analysis" as they trigger on "Systems Engineer", "Application Dev", "Data Analyst"
             # Add Education keywords to exclude degrees appearing as jobs
-            project_keywords = ["project", "study", "prediction", "thesis", "clone", "detection", "semester", "mca", "btech", "degree", "bachelor", "master", "student"]
+            project_keywords = ["project", "study", "prediction", "thesis", "clone", "detection", "semester", "mca", "btech", "degree", "bachelor", "master", "student", "class", "course", "college", "school", "university", "campus"]
             
             # Helper to check keywords (Use word boundaries)
             def has_keyword(text):

@@ -53,7 +53,10 @@ def weekly_trend(request):
         .filter(applied_at__gte=start)
         .annotate(week=TruncWeek("applied_at"))
         .values("week")
-        .annotate(count=Count("id"))
+        .annotate(
+            count=Count("id"),
+            hired=Count("id", filter=Q(status="OFFER") | Q(status="HIRED"))
+        )
         .order_by("week")
     )
 
@@ -65,7 +68,8 @@ def weekly_trend(request):
 
         result.append({
             "week": f"Week {i + 1}",
-            "count": match["count"] if match else 0
+            "applications": match["count"] if match else 0,
+            "hired": match["hired"] if match else 0
         })
 
     return Response(result)
@@ -90,7 +94,6 @@ def daily_applications(request):
 
     for i in range(6, -1, -1):
         d = today - timedelta(days=i)
-        # Using __date to compare datetime field with date object
         count = CandidateApplication.objects.filter(applied_at__date=d).count()
         output.append({
             "day": d.strftime("%a"),
@@ -105,17 +108,26 @@ def daily_applications(request):
 # ===========================
 @api_view(["GET"])
 def platform_performance(request):
-    qs = CandidateApplication.objects.values("platform").annotate(count=Count("id"))
-    total = CandidateApplication.objects.count() or 1
+    qs = (
+        CandidateApplication.objects
+        .values("platform")
+        .annotate(
+            count=Count("id"),
+            hired=Count("id", filter=Q(status="OFFER") | Q(status="HIRED"))
+        )
+    )
 
-    result = [
-        {
+    result = []
+    for x in qs:
+        count = x["count"] or 0
+        hired = x["hired"] or 0
+        conversion = round((hired / count) * 100, 1) if count > 0 else 0
+
+        result.append({
             "platform": x["platform"] or "Unknown",
-            "count": x["count"],
-            "conversion": round((x["count"] / total) * 100, 1),
-        }
-        for x in qs
-    ]
+            "count": count,
+            "conversion": conversion,
+        })
 
     return Response(result)
 
@@ -125,33 +137,42 @@ def platform_performance(request):
 # ===========================
 @api_view(["GET"])
 def hr_team_performance(request):
+    # Using CandidateApplication linked to JobPosting -> Recruiter (Employee)
     queryset = (
-        Application.objects.values(
-            "employee__id",
-            "employee__first_name",
-            "employee__last_name",
+        CandidateApplication.objects
+        .values(
+            "job__recruiter__id",
+            "job__recruiter__first_name",
+            "job__recruiter__last_name",
+            "job__recruiter__email"
         )
         .annotate(
-            calls=Sum("calls"),
-            shortlisted=Count("id", filter=Q(status="shortlisted")),
-            rejected=Count("id", filter=Q(status="rejected")),
-            hired=Count("id", filter=Q(status="hired")),
+            shortlisted=Count("id", filter=Q(status__in=["INTERVIEW", "SCREENED"])),
+            rejected=Count("id", filter=Q(status="REJECTED")),
+            hired=Count("id", filter=Q(status__in=["OFFER", "HIRED"])),
         )
     )
 
     result = []
     for row in queryset:
-        total = (row["shortlisted"] + row["rejected"] + row["hired"]) or 1
+        # Avoid division by zero
+        total_decisions = row["shortlisted"] + row["rejected"] + row["hired"]
+        total = total_decisions if total_decisions > 0 else 1
+        
         conversion = round((row["hired"] / total) * 100, 1)
 
-        name = f"{row['employee__first_name'] or ''} {row['employee__last_name'] or ''}".strip()
+        first_name = row['job__recruiter__first_name'] or ''
+        last_name = row['job__recruiter__last_name'] or ''
+        name = f"{first_name} {last_name}".strip()
+        
         if not name:
-            name = "—"
+            name = row['job__recruiter__email'] or "Unknown Recruiter"
 
         result.append({
-            "hr_id": row["employee__id"],
+            "hr_id": row["job__recruiter__id"],
             "name": name,
-            "calls_today": row["calls"] or 0,
+            "email": row["job__recruiter__email"],
+            "calls_today": 0, # Metric not currently tracked
             "shortlisted": row["shortlisted"],
             "rejected": row["rejected"],
             "hired": row["hired"],

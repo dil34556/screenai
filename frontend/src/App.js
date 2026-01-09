@@ -8,6 +8,7 @@ import ApplicationsPage from './pages/ApplicationsPage';
 import ApplyPage from './pages/ApplyPage';
 import HomePage from './pages/HomePage';
 import AnalyticsPage from './pages/AnalyticsPage';
+import SettingsPage from './pages/SettingsPage';
 
 import CreateJobPage from './pages/CreateJobPage';
 import CreateEmployee from './components/CreateEmployee';
@@ -19,6 +20,7 @@ import AdminLogin from './components/AdminLogin';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import CandidateJobBoard from './pages/CandidateJobBoard';
+import OverlayApp from './OverlayApp';
 
 export default function App() {
   return (
@@ -43,7 +45,9 @@ export default function App() {
           <Route path="/analytics" element={<AnalyticsPage />} />
           <Route path="/admin/jobs/create" element={<CreateJobPage />} />
           <Route path="/admin/jobs" element={<JobListPage />} />
+          <Route path="/admin/applications" element={<ApplicationsPage />} />
           <Route path="/admin/jobs/:jobId" element={<JobDetailsPage />} />
+          <Route path="/settings" element={<SettingsPage />} />
         </Route>
 
         <Route path="/admin/users" element={<ViewEmployees onBack={() => window.location.href = '/'} />} />
@@ -57,6 +61,7 @@ export default function App() {
           ...
         </Route>
         */}
+        <Route path="/overlay" element={<OverlayApp />} />
       </Routes>
     </Router>
   );
@@ -64,5 +69,5 @@ export default function App() {
 
 
 // Wrappers to ensure they can navigate back using the new Router
-const CreateEmployeeWithNav = () => <CreateEmployee onBack={() => window.history.back()} />;
-const ViewEmployeesWithNav = () => <ViewEmployees onBack={() => window.history.back()} />;
+// const CreateEmployeeWithNav = () => <CreateEmployee onBack={() => window.history.back()} />;
+// const ViewEmployeesWithNav = () => <ViewEmployees onBack={() => window.history.back()} />;
