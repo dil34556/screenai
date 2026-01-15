@@ -150,8 +150,11 @@ export const updateEmployeePassword = async (id, newPassword) => {
     return response.data;
 };
 
-export const getAnalyticsData = async () => {
-    const response = await api.get('/analytics/');
+export const getAnalyticsData = async (params = {}) => {
+    // Convert object to query string
+    const queryString = new URLSearchParams(params).toString();
+    const url = queryString ? `/analytics/?${queryString}` : '/analytics/';
+    const response = await api.get(url);
     return response.data;
 };
 

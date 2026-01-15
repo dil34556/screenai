@@ -88,112 +88,295 @@ const ApplicationsPage = () => {
             'SCREENED': 'bg-indigo-100 text-indigo-800',
             'INTERVIEW': 'bg-purple-100 text-purple-800',
             'OFFER': 'bg-green-100 text-green-800',
+            'HIRED': 'bg-green-600 text-white',
             'REJECTED': 'bg-red-100 text-red-800',
         };
         return colors[status] || 'bg-gray-100 text-gray-800';
     };
 
-    return (
-        <div className="min-h-screen bg-background p-6 md:p-8 font-sans text-foreground pb-20">
-            <div className="max-w-7xl mx-auto space-y-8">
+    const [searchQuery, setSearchQuery] = useState('');
 
-                {/* Header */}
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 animate-fade-in">
-                    <div>
-                        <h1 className="text-3xl font-bold tracking-tight text-foreground">
-                            {jobDetails ? `Candidates for ${jobDetails.title}` : 'All Applications'}
-                        </h1>
-                        <p className="mt-1 text-muted-foreground">
-                            {jobDetails
-                                ? `Viewing applicants for ${jobDetails.title} (${jobDetails.location})`
-                                : 'Manage and screen candidates across all active job postings.'}
-                        </p>
+    const handleSearch = (e) => {
+        setSearchQuery(e.target.value);
+    };
+
+    const getStatusChipStyles = (status) => {
+        const styles = {
+            'NEW': 'bg-blue-50 text-blue-700',
+            'SCREENED': 'bg-indigo-50 text-indigo-700',
+            'INTERVIEW': 'bg-purple-50 text-purple-700',
+            'OFFER': 'bg-green-50 text-green-700',
+            'HIRED': 'bg-green-600/10 text-green-700',
+            'REJECTED': 'bg-red-50 text-red-700',
+        };
+        return styles[status] || 'bg-gray-100 text-gray-700';
+    };
+
+    // Filter applications based on search
+    const filteredApps = applications.filter(app =>
+        app.candidate_details.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        app.candidate_details.email.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+
+
+
+    // Rejection Reason Modal State
+    const [showRejectModal, setShowRejectModal] = useState(false);
+    const [rejectReason, setRejectReason] = useState('');
+    const [selectedAppForReject, setSelectedAppForReject] = useState(null);
+    const [viewReasonModal, setViewReasonModal] = useState(null); // For viewing reason
+
+    const updateStatus = async (id, newStatus, reason = null) => {
+        try {
+            await fetch(`http://localhost:8000/api/applications/${id}/`, {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    status: newStatus,
+                    rejection_reason: reason
+                }),
+            });
+            loadApplications(); // Refresh list
+        } catch (error) {
+            console.error("Failed to update status", error);
+        }
+    };
+
+    const handleStatusBadgeClick = (app) => {
+        if (app.status === 'REJECTED' && app.rejection_reason) {
+            setViewReasonModal(app);
+        }
+    };
+
+    const initiateRejection = (app) => {
+        setSelectedAppForReject(app);
+        setRejectReason('');
+        setShowRejectModal(true);
+    };
+
+    const confirmRejection = async () => {
+        if (!selectedAppForReject) return;
+
+        await updateStatus(selectedAppForReject.id, 'REJECTED', rejectReason);
+        setShowRejectModal(false);
+        setSelectedAppForReject(null);
+        setRejectReason('');
+    };
+
+    return (
+        <div className="min-h-screen bg-[#FDFCFF] p-6 md:p-8 font-sans text-foreground pb-20">
+            {/* View Rejection Reason Modal */}
+            {viewReasonModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+                    <div className="bg-white rounded-xl shadow-2xl p-6 w-full max-w-md mx-4 transform transition-all scale-100">
+                        <div className="flex justify-between items-start mb-4">
+                            <div>
+                                <h3 className="text-lg font-bold text-gray-900">Rejection Reason</h3>
+                                <p className="text-sm text-gray-500 mt-1">For {viewReasonModal.candidate_details.name}</p>
+                            </div>
+                            <button onClick={() => setViewReasonModal(null)} className="text-gray-400 hover:text-gray-600">
+                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                            </button>
+                        </div>
+                        <div className="bg-red-50 border border-red-100 rounded-lg p-4 text-gray-700 text-sm leading-relaxed">
+                            {viewReasonModal.rejection_reason}
+                        </div>
+                        <div className="mt-6 flex justify-end">
+                            <button
+                                onClick={() => setViewReasonModal(null)}
+                                className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 font-medium transition-colors"
+                            >
+                                Close
+                            </button>
+                        </div>
                     </div>
-                    <div className="flex items-center gap-3">
-                        <select
-                            value={currentStatus}
-                            onChange={handleStatusChange}
-                            className="glass-input max-w-xs"
-                        >
-                            <option value="">All Statuses</option>
-                            <option value="NEW">New</option>
-                            <option value="SCREENED">Screened</option>
-                            <option value="INTERVIEW">Interview</option>
-                            <option value="OFFER">Offer</option>
-                            <option value="REJECTED">Rejected</option>
-                        </select>
+                </div>
+            )}
+
+            {/* Enter Rejection Reason Modal */}
+            {showRejectModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+                    <div className="bg-white rounded-xl shadow-2xl p-6 w-full max-w-md mx-4">
+                        <h3 className="text-lg font-bold text-gray-900 mb-4">Reject Candidate</h3>
+                        <p className="text-sm text-gray-500 mb-4">
+                            Please provide a reason for rejecting <strong>{selectedAppForReject?.candidate_details.name}</strong>.
+                        </p>
+                        <textarea
+                            className="w-full border border-gray-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none resize-none min-h-[100px]"
+                            placeholder="e.g., Lack of relevant experience..."
+                            value={rejectReason}
+                            onChange={(e) => setRejectReason(e.target.value)}
+                            autoFocus
+                        />
+                        <div className="mt-6 flex justify-end gap-3">
+                            <button
+                                onClick={() => setShowRejectModal(false)}
+                                className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg font-medium transition-colors"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={confirmRejection}
+                                disabled={!rejectReason.trim()}
+                                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium shadow-sm transition-all"
+                            >
+                                Confirm Rejection
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            <div className="max-w-7xl mx-auto space-y-6">
+                {/* ... existing header code ... */}
+                <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+                    <div>
+                        <h1 className="text-2xl font-normal text-gray-900 tracking-tight">
+                            {jobDetails ? `Candidates: ${jobDetails.title}` : 'Candidate Management'}
+                        </h1>
+                    </div>
+
+                    {/* Google-Style Search Toolbar */}
+                    <div className="w-full md:w-[600px] bg-[#F0F2F5] rounded-full h-12 flex items-center px-4 transition-shadow focus-within:shadow-md border border-transparent focus-within:bg-white focus-within:border-gray-200">
+                        {/* Search Icon */}
+                        <div className="text-gray-500 mr-3">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" /></svg>
+                        </div>
+
+                        <input
+                            type="text"
+                            placeholder="Search candidates..."
+                            className="flex-1 bg-transparent border-none outline-none text-gray-900 placeholder:text-gray-500 text-sm"
+                            value={searchQuery}
+                            onChange={handleSearch}
+                        />
+
+                        {/* Filter Dropdown (Embedded) */}
+                        <div className="relative border-l border-gray-300 pl-4 ml-2">
+                            <select
+                                value={currentStatus}
+                                onChange={handleStatusChange}
+                                className="bg-transparent border-none outline-none text-sm font-medium text-gray-700 cursor-pointer pr-6 hover:text-gray-900"
+                            >
+                                <option value="">All Status</option>
+                                <option value="NEW">New</option>
+                                <option value="SCREENED">Screened</option>
+                                <option value="INTERVIEW">Interview</option>
+                                <option value="OFFER">Offer</option>
+                                <option value="HIRED">Hired</option>
+                                <option value="REJECTED">Rejected</option>
+                            </select>
+                        </div>
                     </div>
                 </div>
 
-                {/* Applications Table Card */}
-                <div className="card-standard overflow-hidden animate-slide-up stagger-1">
+                {/* Material Design 3 Table Card */}
+                <div className="bg-white border border-[#E0E3E7] rounded-[20px] overflow-hidden">
                     {loading ? (
                         <div className="p-20 text-center">
-                            <div className="w-8 h-8 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-                            <p className="text-muted-foreground font-medium">Loading applications...</p>
+                            <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                            <p className="text-gray-500 font-medium">Loading applications...</p>
                         </div>
-                    ) : applications.length === 0 ? (
+                    ) : filteredApps.length === 0 ? (
                         <div className="p-20 text-center">
-                            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                                <span className="text-3xl text-gray-400">∅</span>
+                            <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <span className="text-3xl text-gray-300">∅</span>
                             </div>
-                            <h3 className="text-lg font-bold text-foreground">No applications found</h3>
-                            <p className="text-muted-foreground mt-1">Try adjusting your filters or check back later.</p>
+                            <h3 className="text-lg font-medium text-gray-900">No candidates found</h3>
+                            <p className="text-gray-500 mt-1">Try adjusting your filters or search terms.</p>
                         </div>
                     ) : (
-                        <div className="gemini-grid-container custom-scrollbar max-h-[700px] overflow-y-auto">
+                        <div className="overflow-x-auto">
                             <table className="w-full text-left border-collapse">
-                                <thead className="gemini-grid-header">
-                                    <tr>
-                                        <th className="py-4 px-6">Candidate</th>
-                                        <th className="py-4 px-6">Job Role</th>
-                                        <th className="py-4 px-6">Status</th>
-                                        <th className="py-4 px-6">Applied Date</th>
-                                        <th className="py-4 px-6 text-right">Actions</th>
+                                <thead>
+                                    <tr className="border-b border-gray-100">
+                                        <th className="py-4 px-6 text-xs font-medium text-gray-500 uppercase tracking-wider w-[300px]">Candidate</th>
+                                        <th className="py-4 px-6 text-xs font-medium text-gray-500 uppercase tracking-wider">Skills</th>
+                                        <th className="py-4 px-6 text-xs font-medium text-gray-500 uppercase tracking-wider">Job Role</th>
+                                        <th className="py-4 px-6 text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                        <th className="py-4 px-6 text-xs font-medium text-gray-500 uppercase tracking-wider text-right">Actions</th>
                                     </tr>
                                 </thead>
-                                <tbody className="divide-y divide-border/10">
-                                    {applications.map((app) => (
-                                        <tr key={app.id} className="gemini-grid-row group">
-                                            <td className="gemini-grid-cell">
-                                                <div className="flex items-center">
-                                                    <div className="flex-shrink-0 h-10 w-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold shadow-sm">
+                                <tbody>
+                                    {filteredApps.map((app) => (
+                                        <tr key={app.id} className="h-16 border-b border-gray-50 hover:bg-[#F8F9FA] transition-colors group cursor-default">
+                                            {/* Candidate Column */}
+                                            <td className="px-6 py-2">
+                                                <div className="flex items-center gap-4">
+                                                    <div className="flex-shrink-0 w-10 h-10 rounded-full bg-blue-600 text-white flex items-center justify-center text-sm font-bold shadow-sm">
                                                         {app.candidate_details.name.charAt(0)}
                                                     </div>
-                                                    <div className="ml-4">
-                                                        <div className="text-sm font-medium text-foreground">{app.candidate_details.name}</div>
-                                                        <div className="text-xs text-muted-foreground">{app.candidate_details.email}</div>
+                                                    <div>
+                                                        <Link to={`/admin/jobs/${app.job}`} className="text-sm font-bold text-gray-900 group-hover:text-[#1A73E8] transition-colors hover:underline">
+                                                            {app.candidate_details.name}
+                                                        </Link>
+                                                        <div className="text-xs text-gray-500 font-normal">
+                                                            {app.candidate_details.email}
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </td>
-                                            <td className="gemini-grid-cell">
-                                                <div className="text-sm font-medium text-foreground">{app.job_title}</div>
-                                                <div className="text-xs text-muted-foreground font-mono">ID: #{app.job}</div>
+
+                                            {/* Skills Column - Outlined Chips */}
+                                            <td className="px-6 py-2">
+                                                <div className="flex items-center gap-2 flex-wrap">
+                                                    {(app.candidate_details.skills || []).slice(0, 2).map((skill, idx) => (
+                                                        <span key={idx} className="inline-flex items-center px-2 py-1 rounded-lg border border-gray-300 bg-white text-xs text-gray-700">
+                                                            {skill}
+                                                        </span>
+                                                    ))}
+                                                    {(app.candidate_details.skills || []).length > 2 && (
+                                                        <span className="inline-flex items-center px-2 py-1 rounded-lg border border-gray-300 bg-gray-50 text-xs font-medium text-gray-500">
+                                                            +{app.candidate_details.skills.length - 2}
+                                                        </span>
+                                                    )}
+                                                </div>
                                             </td>
-                                            <td className="gemini-grid-cell">
-                                                <span className={`gemini-grid-chip ${app.status === 'NEW' ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' :
-                                                    app.status === 'SCREENED' ? 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20' :
-                                                        app.status === 'INTERVIEW' ? 'bg-purple-500/10 text-purple-400 border-purple-500/20' :
-                                                            app.status === 'OFFER' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' :
-                                                                'bg-red-500/10 text-red-400 border-red-500/20'
-                                                    }`}>
-                                                    <div className={`w-1.5 h-1.5 rounded-full ${app.status === 'OFFER' ? 'bg-emerald-500' :
-                                                        app.status === 'REJECTED' ? 'bg-red-500' :
-                                                            'bg-current'
+
+                                            {/* Job Role */}
+                                            <td className="px-6 py-2">
+                                                <span className="text-sm font-medium text-gray-700">{app.job_title}</span>
+                                            </td>
+
+                                            {/* Status Badge - Button Style with Stroke */}
+                                            <td className="px-6 py-2">
+                                                <div
+                                                    onClick={() => handleStatusBadgeClick(app)}
+                                                    className={`inline-flex items-center gap-2 px-3 py-1 rounded-full border border-gray-200 shadow-sm bg-white text-sm font-medium text-gray-700 ${app.status === 'REJECTED' && app.rejection_reason ? 'cursor-pointer hover:bg-red-50 hover:border-red-200' : ''}`}
+                                                >
+                                                    <div className={`w-2 h-2 rounded-full ${app.status === 'NEW' ? 'bg-blue-500' :
+                                                        app.status === 'INTERVIEW' ? 'bg-purple-500' :
+                                                            app.status === 'OFFER' ? 'bg-green-500' :
+                                                                app.status === 'HIRED' ? 'bg-green-700' :
+                                                                    app.status === 'REJECTED' ? 'bg-red-500' : 'bg-gray-500'
                                                         }`} />
                                                     {app.status}
-                                                </span>
+                                                    {app.status === 'REJECTED' && app.rejection_reason && (
+                                                        <svg className="w-3 h-3 text-red-400 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                                    )}
+                                                </div>
                                             </td>
-                                            <td className="gemini-grid-cell text-muted-foreground font-mono text-xs">
-                                                {new Date(app.applied_at).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })}
-                                            </td>
-                                            <td className="gemini-grid-cell text-right">
-                                                <a
-                                                    href={`/admin/jobs/${app.job}`}
-                                                    className="inline-flex items-center justify-center px-4 py-1.5 border border-border/10 shadow-sm text-xs font-medium rounded-full text-muted-foreground bg-secondary/50 hover:bg-secondary hover:text-foreground transition-colors"
-                                                >
-                                                    View Details
-                                                </a>
+
+                                            {/* Actions - Three Dot Menu (Simplification for now just to show ability to reject) */}
+                                            <td className="px-6 py-2 text-right">
+                                                <div className="flex justify-end gap-2">
+                                                    {app.status !== 'REJECTED' && (
+                                                        <button
+                                                            onClick={() => initiateRejection(app)}
+                                                            className="text-xs text-red-600 hover:text-red-800 font-medium px-2 py-1 hover:bg-red-50 rounded"
+                                                        >
+                                                            Reject
+                                                        </button>
+                                                    )}
+                                                    <button
+                                                        onClick={() => window.location.href = `/admin/jobs/${app.job}`}
+                                                        className="p-2 text-gray-400 hover:text-gray-900 hover:bg-gray-100 rounded-full transition-colors"
+                                                    >
+                                                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="1" /><circle cx="12" cy="5" r="1" /><circle cx="12" cy="19" r="1" /></svg>
+                                                    </button>
+                                                </div>
                                             </td>
                                         </tr>
                                     ))}
@@ -202,32 +385,24 @@ const ApplicationsPage = () => {
                         </div>
                     )}
 
-                    {/* Pagination Controls */}
-                    <div className="border-t border-border/10 bg-card/20 backdrop-blur-sm px-4 py-3 flex items-center justify-between sm:px-6 rounded-b-[16px]">
-                        <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
-                            <div>
-                                <p className="text-sm text-muted-foreground">
-                                    Displaying results
-                                </p>
-                            </div>
-                            <div>
-                                <nav className="isolate inline-flex -space-x-px rounded-md shadow-sm" aria-label="Pagination">
-                                    <button
-                                        onClick={() => loadApplications(prevPage)}
-                                        disabled={!prevPage}
-                                        className={`relative inline-flex items-center rounded-l-xl px-3 py-2 text-sm font-medium text-muted-foreground ring-1 ring-inset ring-border/20 hover:bg-secondary/50 focus:z-20 focus:outline-offset-0 ${!prevPage ? 'opacity-30 cursor-not-allowed' : ''}`}
-                                    >
-                                        Previous
-                                    </button>
-                                    <button
-                                        onClick={() => loadApplications(nextPage)}
-                                        disabled={!nextPage}
-                                        className={`relative inline-flex items-center rounded-r-xl px-3 py-2 text-sm font-medium text-muted-foreground ring-1 ring-inset ring-border/20 hover:bg-secondary/50 focus:z-20 focus:outline-offset-0 ${!nextPage ? 'opacity-30 cursor-not-allowed' : ''}`}
-                                    >
-                                        Next
-                                    </button>
-                                </nav>
-                            </div>
+                    {/* Simple Pagination */}
+                    <div className="border-t border-gray-100 px-6 py-4 flex items-center justify-between bg-white">
+                        <span className="text-xs text-gray-500 font-medium">Showing {filteredApps.length} candidates</span>
+                        <div className="flex gap-2">
+                            <button
+                                onClick={() => loadApplications(prevPage)}
+                                disabled={!prevPage}
+                                className="px-4 py-2 text-sm font-medium text-gray-600 bg-white border border-gray-200 rounded-full hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                            >
+                                Previous
+                            </button>
+                            <button
+                                onClick={() => loadApplications(nextPage)}
+                                disabled={!nextPage}
+                                className="px-4 py-2 text-sm font-medium text-gray-600 bg-white border border-gray-200 rounded-full hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                            >
+                                Next
+                            </button>
                         </div>
                     </div>
                 </div>

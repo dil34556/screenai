@@ -75,7 +75,7 @@ function ViewEmployees({ onBack, readOnly = false }) {
 
   // Layout Wrapper logic
   // Removed bg-slate-50, using transparent to let the global midnight bg show through
-  const containerClasses = 'min-h-screen p-6 md:p-8 animate-fade-in';
+  const containerClasses = 'h-full overflow-y-auto custom-scrollbar p-6 md:p-8 animate-fade-in';
 
   return (
     <div className={containerClasses}>

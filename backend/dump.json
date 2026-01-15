@@ -1,0 +1,53 @@
+{
+  "data": {
+    "candidate_name": "MEENAKSHI K",
+    "email": "meenunandakumar2002@gmail.com",
+    "phone": "6238574975",
+    "total_years_experience": 0,
+    "skills": [
+      "Python",
+      "Java",
+      "React",
+      "Html",
+      "Css",
+      "Django",
+      "Sql",
+      "Mongodb",
+      "Openai",
+      "Rag",
+      "Git",
+      "Android",
+      "Ml",
+      "C++ Sql",
+      "Django Git",
+      "Design Al Tools:",
+      "Ui/Ux Principles Openai Api",
+      "Langchain",
+      "Prompt Engineering"
+    ],
+    "education": [],
+    "certifications": [],
+    "work_experience": [
+      {
+        "company_name": "Generative Al Intern, Hireflex Global Thrissur 09/2025 \u2013 Present",
+        "job_role": "Extracted Role",
+        "duration": "Generative Al Intern, Hireflex Global Thrissur 09/2025 \u2013 Present"
+      },
+      {
+        "company_name": "MCA, Vidya Academy of Science and Technology, Thalakottukara 2023 \u2013 2025",
+        "job_role": "Extracted Role",
+        "duration": "MCA, Vidya Academy of Science and Technology, Thalakottukara 2023 \u2013 2025"
+      },
+      {
+        "company_name": "BCA, St Mary's College Autonomous Thrissur 2020 \u2013 2023",
+        "job_role": "Extracted Role",
+        "duration": "BCA, St Mary's College Autonomous Thrissur 2020 \u2013 2023"
+      },
+      {
+        "company_name": "Plus Two, Holy Family convent school Thrissur 2018 \u2013 2020",
+        "job_role": "Extracted Role",
+        "duration": "Plus Two, Holy Family convent school Thrissur 2018 \u2013 2020"
+      }
+    ]
+  }
+}

@@ -16,6 +16,7 @@ class Application(models.Model):
         ('SCREENED', 'AI Screened'),
         ('INTERVIEW', 'Interview Scheduled'),
         ('OFFER', 'Offer Sent'),
+        ('HIRED', 'Hired'),
         ('REJECTED', 'Rejected'),
     ]
 
@@ -24,6 +25,7 @@ class Application(models.Model):
     resume = models.FileField(upload_to='resumes/')
     
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='NEW')
+    rejection_reason = models.TextField(blank=True, null=True, help_text="Reason for rejection if status is REJECTED")
     
     # Source & Metadata
     # Source & Metadata

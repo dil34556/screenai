@@ -8,7 +8,9 @@ import ApplicationsPage from './pages/ApplicationsPage';
 import ApplyPage from './pages/ApplyPage';
 import HomePage from './pages/HomePage';
 import AnalyticsPage from './pages/AnalyticsPage';
+import SplashScreen from './pages/SplashScreen';
 import SettingsPage from './pages/SettingsPage';
+import GoThroughPage from './pages/GoThroughPage';
 
 import CreateJobPage from './pages/CreateJobPage';
 import CreateEmployee from './components/CreateEmployee';
@@ -16,7 +18,7 @@ import ViewEmployees from './components/ViewEmployees';
 import AdminLayout from './components/AdminLayout';
 import AdminHome from './components/AdminHome';
 import AdminLogin from './components/AdminLogin';
-
+import EmployeeAnalysis from './components/EmployeeAnalysis';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import CandidateJobBoard from './pages/CandidateJobBoard';
@@ -26,7 +28,7 @@ export default function App() {
   return (
     <Router>
       <Routes>
-        <Route path="/" element={<HomePage />} />
+        <Route path="/" element={<SplashScreen />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
 
@@ -37,16 +39,19 @@ export default function App() {
         {/* Admin Portal */}
         <Route path="/admin" element={<AdminLogin />} />
         <Route path="/admin/dashboard" element={<AdminHome />} />
+        <Route path="/admin/employeeAnalysis" element={<EmployeeAnalysis />} />
 
         {/* Recruiter Portal with Sidebar Layout */}
         <Route element={<AdminLayout />}>
+          <Route path="/home" element={<HomePage />} />
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/portal/employees" element={<ViewEmployees readOnly={true} />} />
-          <Route path="/analytics" element={<AnalyticsPage />} />
+          <Route path="/admin/analysis" element={<AnalyticsPage />} />
           <Route path="/admin/jobs/create" element={<CreateJobPage />} />
           <Route path="/admin/jobs" element={<JobListPage />} />
           <Route path="/admin/applications" element={<ApplicationsPage />} />
           <Route path="/admin/jobs/:jobId" element={<JobDetailsPage />} />
+          <Route path="/go-through" element={<GoThroughPage />} />
           <Route path="/settings" element={<SettingsPage />} />
         </Route>
 

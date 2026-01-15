@@ -25,38 +25,29 @@ const COLORS = ["#4285F4", "#DB4437", "#F4B400", "#0F9D58", "#AB47BC", "#00ACC1"
 function KPICard({ title, value, icon: Icon, trend, trendUp, color, onClick }) {
   const iconColors = {
     indigo: "text-[#4B90FF]",
-    green: "text-[#00E676]",
-    blue: "text-[#4B90FF]",
-    purple: "text-[#D946EF]",
-  };
-
-  const bgColors = {
-    indigo: "bg-[#4B90FF]/10 border-[#4B90FF]/20",
-    green: "bg-[#00E676]/10 border-[#00E676]/20",
-    blue: "bg-[#4B90FF]/10 border-[#4B90FF]/20",
-    purple: "bg-[#D946EF]/10 border-[#D946EF]/20",
+    indigo: "text-blue-600",
+    green: "text-green-600",
+    purple: "text-purple-600",
+    orange: "text-orange-600",
   };
 
   return (
     <div
       onClick={onClick}
-      className={`glass-panel p-6 flex flex-col justify-between h-[150px] group hover:bg-card/90 transition-all duration-300 hover:-translate-y-1 hover:shadow-glow relative overflow-hidden rounded-[24px] ${onClick ? 'cursor-pointer' : ''}`}
+      className={`m3-card flex flex-col justify-between h-[150px] group relative overflow-hidden ${onClick ? 'cursor-pointer' : ''}`}
     >
-      {/* Glow Effect */}
-      <div className={`absolute top-0 right-0 w-24 h-24 rounded-full blur-[50px] opacity-0 group-hover:opacity-20 transition-opacity bg-primary/20`} />
-
       <div className="flex justify-between items-start relative z-10">
-        <div className={`flex items-center justify-center w-12 h-12 rounded-2xl bg-secondary/30 backdrop-blur-md`}>
-          <Icon size={22} className={iconColors[color]} strokeWidth={2} />
+        <div className={`flex items-center justify-center w-12 h-12 rounded-xl bg-gray-100`}>
+          <Icon size={24} className={iconColors[color]} strokeWidth={2} />
         </div>
         {trend && (
-          <span className={`text-xs font-bold px-3 py-1 rounded-full border ${trendUp ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-muted/10 text-muted-foreground border-border/10'}`}>
+          <span className={`text-xs font-bold px-3 py-1 rounded-full border ${trendUp ? 'bg-green-100 text-green-700 border-green-200' : 'bg-gray-100 text-gray-600 border-gray-200'}`}>
             {trend}
           </span>
         )}
       </div>
-      <div className="relative z-10">
-        <h3 className="text-4xl font-heading font-light text-foreground tracking-tight mb-1">{value}</h3>
+      <div className="relative z-10 mt-4 flex items-baseline gap-3">
+        <h3 className="text-4xl font-heading font-medium text-foreground tracking-tight">{value}</h3>
         <p className="text-sm font-medium text-muted-foreground">{title}</p>
       </div>
     </div>
@@ -68,14 +59,17 @@ export default function AnalyticsDashboard() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [timeRange, setTimeRange] = useState('4w'); // Default 4 weeks
 
   useEffect(() => {
     fetchAnalytics();
-  }, []);
+    const interval = setInterval(fetchAnalytics, 30000); // Poll slower (30s)
+    return () => clearInterval(interval);
+  }, [timeRange]); // Re-fetch on timeRange change
 
   const fetchAnalytics = async () => {
     try {
-      const result = await getAnalyticsData();
+      const result = await getAnalyticsData({ range: timeRange });
       setData(result);
     } catch (err) {
       console.error("Error fetching analytics:", err);
@@ -86,17 +80,17 @@ export default function AnalyticsDashboard() {
   };
 
   if (loading) return (
-    <div className="flex justify-center items-center h-screen bg-background">
-      <div className="w-12 h-12 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+    <div className="flex justify-center items-center h-screen bg-transparent">
+      <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
     </div>
   );
 
   if (error) return (
-    <div className="flex flex-col justify-center items-center h-screen bg-background text-muted-foreground">
+    <div className="flex flex-col justify-center items-center h-screen bg-transparent text-muted-foreground">
       <p className="mb-4 text-lg font-medium">{error}</p>
       <button
         onClick={fetchAnalytics}
-        className="px-6 py-2 bg-indigo-600 text-white rounded-full hover:bg-indigo-500 transition"
+        className="px-6 py-2 bg-primary text-primary-foreground rounded-full hover:opacity-90 transition active:scale-95"
       >
         Retry
       </button>
@@ -106,65 +100,70 @@ export default function AnalyticsDashboard() {
   const { summary, weekly_trend, pipeline_distribution, platform_performance, hr_team_performance } = data || {};
 
   // Google Data Viz Colors (Neon Adjusted)
-  const COLORS = ["#4B90FF", "#FF55D2", "#F4B400", "#00E676", "#D946EF", "#00ACC1"];
+  const COLORS = ["#4285F4", "#DB4437", "#F4B400", "#0F9D58", "#AB47BC", "#00ACC1"];
 
   return (
-    <div className="min-h-screen bg-background p-6 md:p-8 font-sans text-foreground pb-20 selection:bg-primary/30 selection:text-primary">
+    <div className="h-full overflow-y-auto custom-scrollbar bg-transparent p-6 md:p-8 font-sans text-foreground pb-20 selection:bg-primary-container selection:text-primary-onContainer transition-colors duration-200">
       {/* Header */}
-      <div className="max-w-7xl mx-auto mb-10">
-        <h1 className="text-4xl font-heading font-light text-foreground tracking-tight">Analytics Overview</h1>
-        <p className="text-muted-foreground mt-2 font-light text-lg">Real-time insights into your recruitment pipeline and team performance.</p>
+      <div className="max-w-[1600px] mx-auto mb-10">
+        <h1 className="text-4xl font-heading font-normal text-foreground tracking-tight">Analytics Overview</h1>
+        <p className="text-muted-foreground mt-2 font-normal text-lg">Real-time insights into your recruitment pipeline and team performance.</p>
       </div>
 
-      <div className="max-w-7xl mx-auto space-y-8">
+      <div className="max-w-[1600px] mx-auto space-y-8">
         {/* KPI Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <KPICard
-            title="Total Applications"
+            title="Total Job Roles"
+            value={summary?.total_jobs || 0}
+            icon={Briefcase}
+            color="indigo"
+            onClick={() => navigate('/admin/jobs')}
+          />
+          <KPICard
+            title="Total Candidates"
             value={summary?.total_applications || 0}
             icon={Users}
-            trend="+12%"
-            trendUp={true}
             color="indigo"
             onClick={() => navigate('/admin/applications')}
           />
           <KPICard
-            title="Hired This Month"
-            value={summary?.hired_this_month || 0}
+            title="Persons Hired"
+            value={summary?.total_hired || 0}
             icon={Award}
-            trend="On Track"
-            trendUp={true}
             color="green"
-            onClick={() => navigate('/admin/applications?status=OFFER')}
+            onClick={() => navigate('/admin/applications?status=HIRED')}
           />
           <KPICard
-            title="Total Rejections"
-            value={hr_team_performance?.reduce((sum, emp) => sum + (emp.rejected || 0), 0) || 0}
-            icon={Target}
-            trend=""
-            trendUp={false}
+            title="Rejected"
+            value={summary?.rejected_count || 0}
+            icon={TrendingDown}
             color="purple"
             onClick={() => navigate('/admin/applications?status=REJECTED')}
           />
-          <KPICard
-            title="Total Jobs Created"
-            value={hr_team_performance?.reduce((sum, emp) => sum + (emp.job_count || 0), 0) || 0}
-            icon={Briefcase}
-            trend=""
-            trendUp={false}
-            color="blue"
-            onClick={() => navigate('/admin/jobs')}
-          />
+
         </div>
 
         {/* Charts Row */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Weekly Trend */}
-          <div className="glass-panel p-8 rounded-[24px]">
+          <div className="m3-card">
             <div className="flex items-center justify-between mb-8">
-              <h3 className="text-lg font-bold text-foreground">Application Trend</h3>
-              <div className="flex items-center gap-2 text-xs font-bold text-muted-foreground bg-secondary/50 px-4 py-2 rounded-full border border-border/10">
-                <Calendar size={14} /> Last 4 Weeks
+              <h3 className="text-lg font-medium text-foreground">Application Trend</h3>
+              <div className="flex items-center gap-2">
+                <div className="relative">
+                  <select
+                    value={timeRange}
+                    onChange={(e) => setTimeRange(e.target.value)}
+                    className="appearance-none bg-gray-100 text-xs font-bold text-gray-700 pl-4 pr-8 py-2 rounded-full outline-none hover:bg-gray-200 transition-colors cursor-pointer border-none"
+                  >
+                    <option value="7d">Last 7 Days</option>
+                    <option value="4w">Last 4 Weeks</option>
+                    <option value="3m">Last 3 Months</option>
+                    <option value="1y">Last Year</option>
+                  </select>
+                  <Calendar size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none" />
+                </div>
               </div>
             </div>
             <div className="h-[300px]">
@@ -172,31 +171,31 @@ export default function AnalyticsDashboard() {
                 <AreaChart data={weekly_trend}>
                   <defs>
                     <linearGradient id="colorApps" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#4B90FF" stopOpacity={0.3} />
-                      <stop offset="95%" stopColor="#4B90FF" stopOpacity={0} />
+                      <stop offset="5%" stopColor="#4285F4" stopOpacity={0.1} />
+                      <stop offset="95%" stopColor="#4285F4" stopOpacity={0} />
                     </linearGradient>
                   </defs>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" opacity={0.3} />
-                  <XAxis dataKey="week" axisLine={false} tickLine={false} tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }} dy={10} />
-                  <YAxis axisLine={false} tickLine={false} tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }} />
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E0E3E7" />
+                  <XAxis dataKey="week" axisLine={false} tickLine={false} tick={{ fill: '#444746', fontSize: 12 }} dy={10} />
+                  <YAxis axisLine={false} tickLine={false} tick={{ fill: '#444746', fontSize: 12 }} />
                   <Tooltip
-                    contentStyle={{ backgroundColor: 'var(--card)', border: '1px solid var(--border)', borderRadius: '12px', color: 'var(--foreground)', boxShadow: '0 4px 20px rgba(0,0,0,0.1)' }}
-                    itemStyle={{ color: 'var(--foreground)' }}
-                    cursor={{ stroke: '#4B90FF', strokeWidth: 1, strokeDasharray: '4 4' }}
+                    contentStyle={{ backgroundColor: '#FFFFFF', border: '1px solid #E0E3E7', borderRadius: '8px', color: '#000', boxShadow: '0 2px 5px rgba(0,0,0,0.1)' }}
+                    itemStyle={{ color: '#000' }}
+                    cursor={{ stroke: '#4285F4', strokeWidth: 1, strokeDasharray: '4 4' }}
                   />
-                  <Area type="monotone" dataKey="applications" stroke="#4B90FF" strokeWidth={3} fillOpacity={1} fill="url(#colorApps)" />
+                  <Area type="monotone" dataKey="applications" stroke="#4285F4" strokeWidth={2} fillOpacity={1} fill="url(#colorApps)" />
                 </AreaChart>
               </ResponsiveContainer>
             </div>
           </div>
 
           {/* Pipeline Status */}
-          <div className="glass-panel p-8 rounded-[24px]">
-            <h3 className="text-lg font-bold text-foreground mb-8">Pipeline Distribution</h3>
+          <div className="m3-card">
+            <h3 className="text-lg font-medium text-foreground mb-8">Pipeline Distribution</h3>
             <div className="h-[300px]">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={pipeline_distribution} layout="vertical" margin={{ left: 0, right: 30 }}>
-                  <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="var(--border)" opacity={0.3} />
+                  <CartesianGrid strokeDasharray="3 3" horizontal={false} vertical={false} stroke="transparent" />
                   <XAxis type="number" hide />
                   <YAxis
                     dataKey="status"

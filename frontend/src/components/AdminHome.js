@@ -48,7 +48,7 @@ function AdminHome() {
           </button>
 
           <button
-            onClick={() => navigate('/admin/analysis')}
+            onClick={() => navigate('/admin/employeeAnalysis')}
             className="group bg-white border border-slate-200 rounded-xl p-8 hover:border-indigo-600 hover:ring-1 hover:ring-indigo-600 transition-all text-left shadow-sm hover:shadow-md"
           >
             <div className="h-10 w-10 bg-indigo-50 text-indigo-600 rounded-lg flex items-center justify-center mb-4 group-hover:bg-indigo-600 group-hover:text-white transition-colors">

@@ -2,7 +2,7 @@ from rest_framework import generics, status, views
 from rest_framework.response import Response
 from rest_framework.parsers import MultiPartParser, FormParser
 from django.db.models import Count, Q
-from django.db.models.functions import TruncDate, TruncWeek
+from django.db.models.functions import TruncDate, TruncWeek, TruncMonth
 from django.db.models import F
 import datetime
 from .models import Candidate, Application, ApplicationComment
@@ -264,10 +264,16 @@ class DashboardStatsView(views.APIView):
         # Status counts
         status_counts = apps_query.values('status').annotate(count=Count('status'))
         
+        # Job counts
+        total_jobs = JobPosting.objects.count()
+        active_jobs = JobPosting.objects.filter(is_active=True).count()
+        
         return Response({
             "total_candidates": total,
             "today_candidates": today,
-            "status_breakdown": status_counts
+            "status_breakdown": status_counts,
+            "total_jobs": total_jobs,
+            "active_jobs": active_jobs
         })
 
 class PreviewResumeView(views.APIView):
@@ -347,6 +353,16 @@ class AnalyticsView(views.APIView):
                 applied_at__month=datetime.date.today().month,
                 status__in=['OFFER', 'HIRED']
             ).count()
+
+            # Fix: "Active Jobs" -> "Total Jobs" (including closed)
+            total_jobs_count = JobPosting.objects.count()
+            active_jobs_count = JobPosting.objects.filter(is_active=True).count()
+
+            # Separate "Total Hired" (Strictly HIRED status)
+            total_hired_count = apps_query.filter(status='HIRED').count()
+            
+            # Count Rejected
+            rejected_count = apps_query.filter(status='REJECTED').count()
             
             # Fix: "Applications Today" (formerly calls)
             today_applications = apps_query.filter(applied_at__date=datetime.date.today()).count()
@@ -355,27 +371,44 @@ class AnalyticsView(views.APIView):
             hired_total_count = apps_query.filter(status__in=['OFFER', 'HIRED']).count()
             conversion_rate = round((hired_total_count / total_applications * 100), 1) if total_applications > 0 else 0
             
-            # 2. Weekly Application Trend (last 4 weeks)
+            # 2. Application Trend (Dynamic Range)
             today = datetime.date.today()
-            four_weeks_ago = today - datetime.timedelta(weeks=4)
+            range_param = request.query_params.get('range', '4w')
             
-            weekly_data = apps_query.filter(applied_at__date__gte=four_weeks_ago).annotate(
-                week=TruncWeek('applied_at')
-            ).values('week').annotate(
+            if range_param == '7d':
+                start_date = today - datetime.timedelta(days=7)
+                trunc_func = TruncDate('applied_at')
+                date_fmt = '%a' # Mon, Tue
+            elif range_param == '3m':
+                start_date = today - datetime.timedelta(days=90)
+                trunc_func = TruncWeek('applied_at')
+                date_fmt = 'Week %W'
+            elif range_param == '1y':
+                start_date = today - datetime.timedelta(days=365)
+                trunc_func = TruncMonth('applied_at')
+                date_fmt = '%b %Y' # Jan 2024
+            else: # 4w
+                start_date = today - datetime.timedelta(weeks=4)
+                trunc_func = TruncWeek('applied_at')
+                date_fmt = 'Week %W'
+
+            trend_data = apps_query.filter(applied_at__date__gte=start_date).annotate(
+                period=trunc_func
+            ).values('period').annotate(
                 applications=Count('id'),
                 hired=Count('id', filter=Q(status__in=['OFFER', 'HIRED']))
-            ).order_by('week')
+            ).order_by('period')
             
-            # Format weekly data
+            # Format trend data
             weekly_trend = []
-            for i, week in enumerate(weekly_data, 1):
+            for item in trend_data:
+                label = item['period'].strftime(date_fmt) if item['period'] else "Unknown"
                 weekly_trend.append({
-                    'week': f"Week {week['week'].strftime('%W')}",
-                    'applications': week['applications'],
-                    'hired': week['hired']
+                    'week': label, # Processed label (Frontend uses 'week' key)
+                    'applications': item['applications'],
+                    'hired': item['hired']
                 })
             
-            # Fill in missing weeks if needed (simplified)
             # 3. Pipeline Status Distribution
             pipeline_distribution = list(apps_query.values('status').annotate(count=Count('status')))
             
@@ -387,7 +420,6 @@ class AnalyticsView(views.APIView):
                 count=Count('id')
             ).order_by('day')
             
-            # Fill in missing days
             daily_applications = []
             for i in range(7):
                 date = seven_days_ago + datetime.timedelta(days=i)
@@ -412,7 +444,7 @@ class AnalyticsView(views.APIView):
                 platform_performance.append({
                     'platform': platform['platform'] or 'Website',
                     'count': count,
-                    'percentage': percentage # This is conversion rate
+                    'percentage': percentage
                 })
 
             # 6. HR Team Performance
@@ -447,7 +479,11 @@ class AnalyticsView(views.APIView):
             return Response({
                 'summary': {
                     'total_applications': total_applications,
+                    'total_hired': total_hired_count,
+                    'total_jobs': total_jobs_count,
+                    'active_jobs': active_jobs_count,
                     'hired_this_month': this_month_hired,
+                    'rejected_count': rejected_count,
                     'total_calls_today': today_applications, # Actually New Apps Today
                     'conversion_rate': conversion_rate
                 },

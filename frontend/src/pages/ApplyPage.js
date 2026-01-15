@@ -1,12 +1,12 @@
 
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate, useLocation, Link } from 'react-router-dom';
+import { useParams, useLocation, Link } from 'react-router-dom';
 import { getJobDetail, submitApplication, previewResume, quickScanResume } from '../services/api';
-import { ArrowLeft, UploadCloud, CheckCircle2, FileText, ChevronRight, Loader2, Sparkles, ShieldCheck, Briefcase } from 'lucide-react';
+import { ArrowLeft, UploadCloud, CheckCircle2, FileText, Loader2, Sparkles, ShieldCheck, ChevronRight } from 'lucide-react';
 
 const ApplyPage = () => {
     const { jobId } = useParams();
-    const navigate = useNavigate();
+    // const navigate = useNavigate(); // Unused
     const location = useLocation();
     const [job, setJob] = useState(null);
     const [platform, setPlatform] = useState('Website');
@@ -159,6 +159,7 @@ const ApplyPage = () => {
         data.append('name', formData.name);
         data.append('email', formData.email);
         data.append('phone', formData.phone);
+        data.append('platform', platform);
 
         data.append('experience_years', formData.experience_years);
         if (formData.current_ctc) data.append('current_ctc', formData.current_ctc);
@@ -177,7 +178,9 @@ const ApplyPage = () => {
         try {
             await submitApplication(data);
             setSuccess(true);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         } catch (err) {
+            console.error("Submission failed:", err);
             setError("Application failed. Please check your data and try again.");
         } finally {
             setLoading(false);
@@ -191,364 +194,252 @@ const ApplyPage = () => {
     );
 
     if (success) return (
-        <div className="min-h-screen flex items-center justify-center bg-slate-50/50 px-4 animate-fade-in relative z-50">
-            <div className="bg-white p-12 text-center max-w-md w-full rounded-[30px] shadow-2xl shadow-indigo-500/10 border border-slate-100">
-                <div className="w-20 h-20 bg-emerald-50 rounded-full flex items-center justify-center mx-auto mb-6 border border-emerald-100">
-                    <CheckCircle2 size={40} className="text-emerald-500" />
+        <div className="min-h-screen flex items-center justify-center bg-[#FDFDF5] px-4 animate-fade-in relative z-50">
+            <div className="bg-white p-12 text-center max-w-md w-full rounded-[24px] border border-gray-200 shadow-sm">
+                <div className="w-20 h-20 bg-green-50 rounded-full flex items-center justify-center mx-auto mb-6 border border-green-100">
+                    <CheckCircle2 size={40} className="text-green-600" />
                 </div>
-                <h2 className="text-3xl font-heading font-medium text-slate-800 mb-2 tracking-tight">Application Sent!</h2>
-                <p className="text-slate-500 mb-8 leading-relaxed">
-                    Thanks for applying to <br />
-                    <strong className="text-slate-900">{job.title}</strong>
+                <h2 className="text-3xl font-heading font-medium text-[#1F1F1F] mb-3 tracking-tight">Application Sent</h2>
+                <p className="text-gray-500 mb-8 leading-relaxed">
+                    Thank you for applying to<br />
+                    <strong className="text-[#1F1F1F]">{job.title}</strong>
                 </p>
-                <div className="space-y-4">
-                    <button onClick={() => navigate('/')} className="w-full py-4 rounded-full bg-[#4F46E5] hover:bg-[#4338ca] text-white font-bold transition-all shadow-xl shadow-indigo-500/30 hover:shadow-indigo-500/40 hover:-translate-y-0.5 text-lg">
-                        Return to Home
-                    </button>
-                    <button onClick={() => navigate('/jobs')} className="w-full text-[#6366F1] font-semibold text-sm hover:text-[#4F46E5] py-2 transition-colors">
-                        Apply to another role
-                    </button>
-                </div>
+
             </div>
         </div>
     );
 
     return (
-        <div className="min-h-screen bg-background text-foreground font-sans selection:bg-indigo-500/30 selection:text-indigo-200">
-            {/* Minimal Header */}
-            <header className="fixed top-0 w-full z-40 bg-background/80 backdrop-blur-xl border-b border-border/5 mb-8 transition-all duration-300">
-                <div className="max-w-4xl mx-auto px-6 h-20 flex items-center justify-between">
-                    <Link to={`/jobs/${jobId}`} className="group flex items-center text-muted-foreground hover:text-foreground transition-colors font-medium text-sm">
-                        <div className="w-8 h-8 rounded-full bg-secondary/20 border border-border/30 flex items-center justify-center mr-3 group-hover:border-border/50 transition-colors shadow-sm">
-                            <ArrowLeft size={16} className="group-hover:-translate-x-0.5 transition-transform" />
-                        </div>
-                        Back to Job
-                    </Link>
-                    <div className="flex items-center gap-3">
-                        <div className="h-4 w-4 rounded-full bg-indigo-500 shadow-glow-sm" />
-                        <span className="font-heading font-bold text-foreground text-lg tracking-tight">ScreenAI</span>
+        <div className="h-screen bg-[#FDFDF5] text-[#1F1F1F] font-sans selection:bg-blue-100 selection:text-blue-900 overflow-hidden flex flex-col">
+
+            {/* 1. Top Bar - Minimal */}
+            <header className="h-16 shrink-0 border-b border-gray-200 bg-white/80 backdrop-blur-md flex items-center justify-between px-6 z-20">
+                <Link to={`/jobs/${jobId}`} className="flex items-center gap-2 text-gray-500 hover:text-gray-900 transition-colors text-sm font-medium">
+                    <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center">
+                        <ArrowLeft size={16} />
                     </div>
-                    <div className="w-24"></div>
+                    <span>Back to Job</span>
+                </Link>
+                <div className="flex items-center gap-2">
+                    <div className="w-6 h-6 bg-blue-600 rounded-md shadow-sm flex items-center justify-center">
+                        <span className="text-white font-bold text-xs">S</span>
+                    </div>
+                    <span className="font-medium text-lg tracking-tight">ScreenAI</span>
                 </div>
+                <div className="w-24"></div> {/* Spacer */}
             </header>
 
-            <main className="max-w-3xl mx-auto px-6 py-32">
-                <div className="mb-12 text-center">
-                    <h1 className="text-4xl md:text-5xl font-heading font-light text-foreground mb-4 tracking-tight">
-                        {job.title}
-                    </h1>
-                    <p className="text-lg text-muted-foreground max-w-xl mx-auto font-light">
-                        Complete your application below. upload your resume to autofill your details instantly.
-                    </p>
-                </div>
+            {/* 2. Main Content - TWO COLUMN GRID */}
+            <main className="flex-1 min-h-0 flex flex-col md:flex-row relative">
 
-                <form onSubmit={handleSubmit} className="space-y-8 animate-slide-up">
+                {/* --- LEFT COLUMN: Basics (Scrollable unique to this col if needed, but intended to fit) --- */}
+                <div className="w-full md:w-[400px] lg:w-[450px] shrink-0 border-r border-gray-200 bg-white flex flex-col overflow-y-auto custom-scrollbar">
+                    <div className="p-8 space-y-6">
+                        {/* Job Info */}
+                        <div>
+                            <h1 className="text-2xl font-normal text-gray-900 mb-2 leading-tight">{job.title}</h1>
+                            <p className="text-sm text-gray-500">{job.location || 'Remote'} • {job.type || 'Full Time'}</p>
+                        </div>
 
-                    {/* Resume Upload - Hero Section */}
-                    <div className="glass-panel p-1 rounded-3xl border border-border/10 bg-card/40">
-                        <div className={`relative border-2 border-dashed rounded-[1.4rem] p-10 transition-all duration-300 text-center
-                            ${formData.resume
-                                ? 'border-emerald-500/30 bg-emerald-500/5'
-                                : 'border-border/20 hover:border-indigo-500/50 hover:bg-secondary/20'
-                            }`}
-                        >
-                            <input
-                                id="resume-input"
-                                type="file"
-                                name="resume"
-                                accept=".pdf,.doc,.docx"
-                                onChange={handleChange}
-                                required
-                                className="absolute inset-0 opacity-0 cursor-pointer w-full h-full z-20"
-                                style={{ display: formData.resume ? 'none' : 'block' }}
-                            />
+                        {/* Resume Upload - Compact */}
+                        <div className={`relative border border-dashed rounded-xl p-6 transition-all text-center
+                            ${formData.resume ? 'border-blue-500/30 bg-blue-50/50' : 'border-gray-300 hover:border-blue-400 hover:bg-gray-50'}`}>
 
-                            {formData.resume && (
-                                <input
-                                    type="file"
-                                    id="resume-input-hidden"
-                                    name="resume"
-                                    accept=".pdf,.doc,.docx"
-                                    onChange={handleChange}
-                                    className="hidden"
-                                />
-                            )}
+                            <input id="resume-input" type="file" name="resume" accept=".pdf,.doc,.docx" onChange={handleChange} className="absolute inset-0 opacity-0 cursor-pointer w-full h-full z-20" />
 
                             {formData.resume ? (
-                                <div className="flex flex-col items-center">
-                                    <div className="w-16 h-16 bg-gradient-to-br from-emerald-500/20 to-teal-500/20 text-emerald-400 rounded-2xl flex items-center justify-center mb-4 shadow-sm border border-emerald-500/20">
-                                        <FileText size={32} />
+                                <div className="flex items-center gap-3 text-left">
+                                    <div className="w-10 h-10 bg-white rounded-lg border border-gray-200 flex items-center justify-center text-blue-600 shrink-0 shadow-sm">
+                                        <FileText size={20} />
                                     </div>
-                                    <h3 className="font-bold text-foreground text-xl tracking-tight mb-1">{formData.resume.name}</h3>
-                                    <div className="flex items-center gap-2 text-emerald-400 font-medium text-sm bg-emerald-500/10 px-3 py-1 rounded-full mt-2 border border-emerald-500/20">
-                                        <CheckCircle2 size={14} />
-                                        <span>File selected</span>
+                                    <div className="min-w-0 flex-1">
+                                        <p className="text-sm font-medium text-gray-900 truncate">{formData.resume.name}</p>
+                                        <p className="text-xs text-blue-600 font-medium cursor-pointer relative z-30 hover:underline">Change File</p>
                                     </div>
-                                    <button
-                                        onClick={(e) => {
-                                            e.preventDefault();
-                                            document.getElementById('resume-input').click();
-                                        }}
-                                        className="mt-6 text-sm text-slate-500 hover:text-indigo-400 font-semibold underline decoration-2 underline-offset-4 relative z-30 transition-colors"
-                                    >
-                                        Replace File
-                                    </button>
+                                    <CheckCircle2 size={18} className="text-green-500 shrink-0" />
                                 </div>
                             ) : (
-                                <div className="flex flex-col items-center">
-                                    <div className="w-16 h-16 bg-secondary/50 text-indigo-500 rounded-2xl flex items-center justify-center mb-6 shadow-inner border border-border/30 group-hover:scale-110 transition-transform duration-300">
-                                        <UploadCloud size={32} />
+                                <div>
+                                    <div className="w-10 h-10 bg-blue-50 text-blue-600 rounded-lg flex items-center justify-center mx-auto mb-2">
+                                        <UploadCloud size={20} />
                                     </div>
-                                    <h3 className="font-bold text-foreground text-xl mb-2 tracking-tight">Upload your Resume</h3>
-                                    <p className="text-muted-foreground text-sm mb-6">Drag and drop or click to browse (PDF, DOCX)</p>
-                                    <span className="inline-flex items-center justify-center px-6 py-2.5 rounded-xl bg-foreground text-background text-sm font-bold shadow-lg shadow-white/5 hover:bg-foreground/90 transition-all">
-                                        Select File
-                                    </span>
+                                    <p className="text-sm font-medium text-gray-900">Upload Resume</p>
+                                    <p className="text-xs text-gray-400 mt-1">Auto-fill details instantly</p>
                                 </div>
                             )}
                         </div>
-                    </div>
 
-                    {/* Personal Info - Auto-filled */}
-                    <div className="glass-panel p-8 md:p-10 rounded-3xl border border-border/10 bg-card/40 relative overflow-hidden">
-                        {isAnalyzing && (
-                            <div className="absolute inset-0 bg-background/80 backdrop-blur-sm z-10 flex flex-col items-center justify-center">
-                                <Loader2 size={40} className="animate-spin text-indigo-500 mb-4" />
-                                <span className="font-bold text-foreground text-lg">Extracting details from resume...</span>
-                                <span className="text-muted-foreground text-sm mt-1">This will just take a moment</span>
+                        {/* Personal Details - Dense */}
+                        <div className="space-y-4">
+                            <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest">Personal Info</h3>
+                            <div className="bg-gray-50/50 rounded-xl p-4 border border-gray-100 space-y-4 relative">
+                                {isAnalyzing && (
+                                    <div className="absolute inset-0 bg-white/80 z-10 flex items-center justify-center backdrop-blur-[1px] rounded-xl">
+                                        <Loader2 size={24} className="animate-spin text-blue-600" />
+                                    </div>
+                                )}
+                                <div>
+                                    <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Full Name</label>
+                                    <input type="text" name="name" value={formData.name || ''} onChange={handleChange} disabled={isAnalyzing} placeholder="John Doe"
+                                        className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all placeholder:text-gray-300" />
+                                </div>
+                                <div>
+                                    <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Email</label>
+                                    <input type="email" name="email" value={formData.email || ''} onChange={handleChange} disabled={isAnalyzing} placeholder="john@example.com"
+                                        className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all placeholder:text-gray-300" />
+                                </div>
+                                <div>
+                                    <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Phone</label>
+                                    <input type="tel" name="phone" value={formData.phone || ''} onChange={handleChange} disabled={isAnalyzing} placeholder="+1 555 000 0000"
+                                        className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all placeholder:text-gray-300" />
+                                </div>
                             </div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* --- RIGHT COLUMN: Form Questions (Scrollable) --- */}
+                <div className="flex-1 overflow-y-auto custom-scrollbar bg-[#FDFDF5] relative flex flex-col">
+                    <form onSubmit={handleSubmit} className="flex-1 p-8 md:p-12 max-w-3xl mx-auto w-full space-y-10">
+
+                        {/* Experience Section */}
+                        <section>
+                            <h3 className="text-xl font-medium text-gray-900 mb-6 flex items-center gap-2">
+                                <div className="w-1 h-5 bg-blue-600 rounded-full"></div>
+                                Experience & Expectations
+                                {isDeepAnalyzing && <span className="ml-auto text-xs font-medium text-blue-600 bg-blue-50 px-3 py-1 rounded-full animate-pulse flex items-center gap-1"><Sparkles size={12} /> AI analyzing...</span>}
+                            </h3>
+
+                            <div className="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm space-y-8">
+                                {/* Total Exp */}
+                                <div>
+                                    <div className="flex justify-between mb-2">
+                                        <label className="text-xs font-bold text-gray-500 uppercase">Total Experience</label>
+                                        <span className="text-xs font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded">{formData.experience_years} Years</span>
+                                    </div>
+                                    <input type="range" min="0" max="30" step="1" name="experience_years" value={formData.experience_years} onChange={handleChange}
+                                        className="w-full h-1.5 bg-gray-100 rounded-lg appearance-none cursor-pointer accent-blue-600" />
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-8">
+                                    {/* Current CTC */}
+                                    <div>
+                                        <div className="flex justify-between mb-2">
+                                            <label className="text-xs font-bold text-gray-500 uppercase">Current CTC</label>
+                                            <span className="text-xs font-bold text-green-600 bg-green-50 px-2 py-0.5 rounded">{formData.current_ctc} LPA</span>
+                                        </div>
+                                        <input type="range" min="0" max="50" step="0.5" name="current_ctc" value={formData.current_ctc} onChange={handleChange}
+                                            className="w-full h-1.5 bg-gray-100 rounded-lg appearance-none cursor-pointer accent-green-600" />
+                                    </div>
+                                    {/* Expected CTC */}
+                                    <div>
+                                        <div className="flex justify-between mb-2">
+                                            <label className="text-xs font-bold text-gray-500 uppercase">Expected CTC</label>
+                                            <span className="text-xs font-bold text-green-600 bg-green-50 px-2 py-0.5 rounded">{formData.expected_ctc} LPA</span>
+                                        </div>
+                                        <input type="range" min="0" max="100" step="0.5" name="expected_ctc" value={formData.expected_ctc} onChange={handleChange}
+                                            className="w-full h-1.5 bg-gray-100 rounded-lg appearance-none cursor-pointer accent-green-600" />
+                                    </div>
+                                </div>
+
+                                {/* Notice Period */}
+                                <div>
+                                    <div className="flex justify-between mb-2">
+                                        <label className="text-xs font-bold text-gray-500 uppercase">Notice Period</label>
+                                        <span className="text-xs font-bold text-gray-600 bg-gray-100 px-2 py-0.5 rounded">{formData.notice_period} Days</span>
+                                    </div>
+                                    <input type="range" min="0" max="90" step="15" name="notice_period" value={formData.notice_period} onChange={handleChange}
+                                        className="w-full h-1.5 bg-gray-100 rounded-lg appearance-none cursor-pointer accent-gray-500" />
+                                    <div className="flex justify-between mt-1 text-[10px] text-gray-400 font-medium">
+                                        <span>Immediate</span>
+                                        <span>3 Months</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+
+                        {/* Screening Questions */}
+                        {job.screening_questions && job.screening_questions.length > 0 && (
+                            <section>
+                                <h3 className="text-xl font-medium text-gray-900 mb-6 flex items-center gap-2">
+                                    <div className="w-1 h-5 bg-purple-600 rounded-full"></div>
+                                    Details
+                                </h3>
+                                <div className="space-y-6">
+                                    {job.screening_questions.map((q, idx) => (
+                                        <div key={idx} className="bg-white p-5 rounded-2xl border border-gray-200">
+                                            <label className="block text-sm font-medium text-gray-900 mb-3">{q.question} {q.required && <span className="text-red-500">*</span>}</label>
+
+                                            {(q.type === 'short_text' || q.type === 'text' || !q.type) && (
+                                                <input type="text" required={q.required} onChange={(e) => handleAnswerChange(q.question, e.target.value)}
+                                                    className="w-full bg-gray-50 border-0 rounded-xl px-4 py-3 text-gray-900 text-sm focus:ring-2 focus:ring-purple-500/10 placeholder:text-gray-400"
+                                                    placeholder="Type your answer here..." />
+                                            )}
+
+                                            {q.type === 'long_text' && (
+                                                <textarea rows={3} required={q.required} onChange={(e) => handleAnswerChange(q.question, e.target.value)}
+                                                    className="w-full bg-gray-50 border-0 rounded-xl px-4 py-3 text-gray-900 text-sm focus:ring-2 focus:ring-purple-500/10 placeholder:text-gray-400 min-h-[80px]"
+                                                    placeholder="Type your answer here..." />
+                                            )}
+
+                                            {q.type === 'numerical' && (
+                                                <input type="number" required={q.required} onChange={(e) => handleAnswerChange(q.question, e.target.value)}
+                                                    className="w-full bg-gray-50 border-0 rounded-xl px-4 py-3 text-gray-900 text-sm focus:ring-2 focus:ring-purple-500/10 placeholder:text-gray-400"
+                                                    placeholder="0" />
+                                            )}
+
+                                            {q.type === 'dropdown' && (
+                                                <div className="relative">
+                                                    <select required={q.required} onChange={(e) => handleAnswerChange(q.question, e.target.value)}
+                                                        className="w-full bg-gray-50 border-0 rounded-xl px-4 py-3 text-gray-900 text-sm appearance-none cursor-pointer focus:ring-2 focus:ring-purple-500/10">
+                                                        <option value="" disabled selected>Select an option</option>
+                                                        {q.options && q.options.map((opt, i) => <option key={i} value={opt}>{opt}</option>)}
+                                                    </select>
+                                                    <ChevronRight className="rotate-90 absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" size={16} />
+                                                </div>
+                                            )}
+
+                                            {q.type === 'multiple_choice' && (
+                                                <div className="space-y-3">
+                                                    {q.options && q.options.map((opt, i) => (
+                                                        <label key={i} className="flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 cursor-pointer border border-transparent hover:border-gray-200 transition-all">
+                                                            <div className="relative flex items-center justify-center">
+                                                                <input
+                                                                    type="radio"
+                                                                    name={`question_${idx}`}
+                                                                    value={opt}
+                                                                    required={q.required}
+                                                                    onChange={(e) => handleAnswerChange(q.question, e.target.value)}
+                                                                    className="peer appearance-none w-5 h-5 rounded-full border-2 border-gray-300 checked:border-blue-600 checked:bg-blue-600 transition-all"
+                                                                />
+                                                                <div className="absolute w-2 h-2 bg-white rounded-full opacity-0 peer-checked:opacity-100 transition-opacity pointer-events-none"></div>
+                                                            </div>
+                                                            <span className="text-sm text-gray-700 font-medium">{opt}</span>
+                                                        </label>
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
+                            </section>
                         )}
 
-                        <h3 className="text-xl font-heading font-semibold text-foreground mb-8 flex items-center gap-2">
-                            <div className="w-1 h-6 bg-indigo-500 rounded-full mr-2 shadow-[0_0_10px_rgba(99,102,241,0.5)]"></div>
-                            Personal Details
-                        </h3>
-
-                        <div className="grid md:grid-cols-2 gap-6">
-                            <div className="md:col-span-2">
-                                <label className="block text-xs font-bold text-muted-foreground uppercase tracking-widest mb-2 ml-1">Full Name</label>
-                                <input
-                                    type="text"
-                                    name="name"
-                                    value={formData.name || ''}
-                                    onChange={handleChange}
-                                    disabled={isAnalyzing}
-                                    placeholder="Your full name"
-                                    className="w-full bg-input/20 border border-border/30 rounded-xl px-4 py-3 text-foreground placeholder:text-muted-foreground/50 focus:ring-1 focus:ring-primary focus:border-primary/50 transition-all outline-none"
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-xs font-bold text-muted-foreground uppercase tracking-widest mb-2 ml-1">Email Address</label>
-                                <input
-                                    type="email"
-                                    name="email"
-                                    value={formData.email || ''}
-                                    onChange={handleChange}
-                                    disabled={isAnalyzing}
-                                    placeholder="name@example.com"
-                                    className="w-full bg-input/20 border border-border/30 rounded-xl px-4 py-3 text-foreground placeholder:text-muted-foreground/50 focus:ring-1 focus:ring-primary focus:border-primary/50 transition-all outline-none"
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-xs font-bold text-muted-foreground uppercase tracking-widest mb-2 ml-1">Phone Number</label>
-                                <input
-                                    type="tel"
-                                    name="phone"
-                                    value={formData.phone || ''}
-                                    onChange={handleChange}
-                                    disabled={isAnalyzing}
-                                    placeholder="+1 (555) 000-0000"
-                                    className="w-full bg-input/20 border border-border/30 rounded-xl px-4 py-3 text-foreground placeholder:text-muted-foreground/50 focus:ring-1 focus:ring-primary focus:border-primary/50 transition-all outline-none"
-                                />
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Experience & Expectations */}
-                    <div className="glass-panel p-8 md:p-10 rounded-3xl border border-border/10 bg-card/40">
-                        <h3 className="text-xl font-heading font-semibold text-foreground mb-8 flex items-center gap-2">
-                            <div className="w-1 h-6 bg-indigo-500 rounded-full mr-2 shadow-[0_0_10px_rgba(99,102,241,0.5)]"></div>
-                            Experience & Expectations
-                            {isDeepAnalyzing && (
-                                <span className="ml-auto flex items-center gap-2 text-xs font-medium text-indigo-500 bg-indigo-500/10 px-3 py-1.5 rounded-full animate-pulse border border-indigo-500/20">
-                                    <Sparkles size={12} />
-                                    AI Analyzing details...
-                                </span>
+                        <div className="pt-8 pb-12">
+                            {error && (
+                                <div className="mb-4 p-4 bg-red-50 text-red-600 rounded-xl text-sm font-medium flex items-center gap-2">
+                                    <ShieldCheck size={18} /> {error}
+                                </div>
                             )}
-                        </h3>
 
-                        <div className="space-y-10">
-                            <div>
-                                <div className="flex justify-between mb-4">
-                                    <label className="text-sm font-bold text-muted-foreground">Total Experience</label>
-                                    <span className="text-sm font-bold text-indigo-400 bg-indigo-500/10 px-3 py-1 rounded-lg border border-indigo-500/20">{formData.experience_years} Years</span>
-                                </div>
-                                <input
-                                    type="range"
-                                    min="0"
-                                    max="30"
-                                    step="1"
-                                    name="experience_years"
-                                    value={formData.experience_years}
-                                    onChange={handleChange}
-                                    className="w-full h-2 bg-secondary/50 rounded-lg appearance-none cursor-pointer accent-indigo-500"
-                                />
-                                <div className="flex justify-between mt-2 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
-                                    <span>Fresh</span>
-                                    <span>15 Years</span>
-                                    <span>30+ Years</span>
-                                </div>
-                            </div>
-
-                            <div className="grid md:grid-cols-2 gap-8">
-                                <div>
-                                    <div className="flex justify-between mb-4">
-                                        <label className="text-sm font-bold text-muted-foreground">Current CTC</label>
-                                        <span className="text-sm font-bold text-emerald-400 bg-emerald-500/10 px-3 py-1 rounded-lg border border-emerald-500/20">{formData.current_ctc} LPA</span>
-                                    </div>
-                                    <input
-                                        type="range"
-                                        min="0"
-                                        max="50"
-                                        step="0.5"
-                                        name="current_ctc"
-                                        value={formData.current_ctc}
-                                        onChange={handleChange}
-                                        className="w-full h-2 bg-secondary/50 rounded-lg appearance-none cursor-pointer accent-emerald-500"
-                                    />
-                                </div>
-                                <div>
-                                    <div className="flex justify-between mb-4">
-                                        <label className="text-sm font-bold text-muted-foreground">Expected CTC</label>
-                                        <span className="text-sm font-bold text-emerald-400 bg-emerald-500/10 px-3 py-1 rounded-lg border border-emerald-500/20">{formData.expected_ctc} LPA</span>
-                                    </div>
-                                    <input
-                                        type="range"
-                                        min="0"
-                                        max="100"
-                                        step="0.5"
-                                        name="expected_ctc"
-                                        value={formData.expected_ctc}
-                                        onChange={handleChange}
-                                        className="w-full h-2 bg-secondary/50 rounded-lg appearance-none cursor-pointer accent-emerald-500"
-                                    />
-                                </div>
-                            </div>
-
-                            <div>
-                                <div className="flex justify-between mb-4">
-                                    <label className="text-sm font-bold text-muted-foreground">Notice Period</label>
-                                    <span className="text-sm font-bold text-muted-foreground bg-secondary/50 px-3 py-1 rounded-lg border border-border/20">{formData.notice_period} Days</span>
-                                </div>
-                                <input
-                                    type="range"
-                                    min="0"
-                                    max="90"
-                                    step="15"
-                                    name="notice_period"
-                                    value={formData.notice_period}
-                                    onChange={handleChange}
-                                    className="w-full h-2 bg-secondary/50 rounded-lg appearance-none cursor-pointer accent-slate-500"
-                                />
-                                <div className="flex justify-between mt-2 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
-                                    <span>Immediate</span>
-                                    <span>1 Month</span>
-                                    <span>3 Months</span>
-                                </div>
-                            </div>
+                            <button type="submit" disabled={loading || !formData.resume}
+                                className={`w-full py-4 rounded-xl font-bold text-base transition-all flex items-center justify-center gap-2 shadow-lg
+                                    ${loading || !formData.resume ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-gray-900 text-white hover:bg-black hover:-translate-y-0.5 shadow-gray-900/10'}`}>
+                                {loading ? <Loader2 className="animate-spin" /> : 'Submit Application'}
+                            </button>
                         </div>
-                    </div>
-
-                    {/* Screening Questions */}
-                    {job.screening_questions && job.screening_questions.length > 0 && (
-                        <div className="glass-panel p-8 md:p-10 rounded-3xl border border-border/10 bg-card/40">
-                            <h3 className="text-xl font-heading font-semibold text-foreground mb-8 flex items-center gap-2">
-                                <div className="w-1 h-6 bg-indigo-500 rounded-full mr-2 shadow-[0_0_10px_rgba(99,102,241,0.5)]"></div>
-                                Additional Questions
-                            </h3>
-                            <div className="space-y-8">
-                                {job.screening_questions.map((q, idx) => (
-                                    <div key={idx}>
-                                        <label className="block text-sm font-bold text-muted-foreground mb-3">{q.question} {q.required && <span className="text-red-400">*</span>}</label>
-                                        {(q.type === 'short_text' || q.type === 'text' || !q.type) && (
-                                            <input
-                                                type="text"
-                                                required={q.required}
-                                                onChange={(e) => handleAnswerChange(q.question, e.target.value)}
-                                                className="w-full bg-input/20 border border-border/30 rounded-xl px-4 py-3 text-foreground placeholder:text-muted-foreground/50 focus:ring-1 focus:ring-primary focus:border-primary/50 transition-all outline-none"
-                                                placeholder="Your answer"
-                                            />
-                                        )}
-                                        {q.type === 'long_text' && (
-                                            <textarea
-                                                rows={3}
-                                                required={q.required}
-                                                onChange={(e) => handleAnswerChange(q.question, e.target.value)}
-                                                className="w-full bg-input/20 border border-border/30 rounded-xl px-4 py-3 text-foreground placeholder:text-muted-foreground/50 focus:ring-1 focus:ring-primary focus:border-primary/50 transition-all outline-none min-h-[100px]"
-                                                placeholder="Your answer"
-                                            />
-                                        )}
-                                        {q.type === 'dropdown' && (
-                                            <div className="relative">
-                                                <select
-                                                    required={q.required}
-                                                    onChange={(e) => handleAnswerChange(q.question, e.target.value)}
-                                                    className="w-full bg-input/20 border border-border/30 rounded-xl px-4 py-3 text-foreground appearance-none cursor-pointer focus:ring-1 focus:ring-primary focus:border-primary/50 outline-none"
-                                                    defaultValue=""
-                                                >
-                                                    <option value="" disabled className="bg-card">Select an option</option>
-                                                    {q.options && q.options.map((opt, i) => <option key={i} value={opt} className="bg-card text-foreground">{opt}</option>)}
-                                                </select>
-                                                <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-500">
-                                                    <ChevronRight className="rotate-90" size={16} />
-                                                </div>
-                                            </div>
-                                        )}
-                                        {q.type === 'multiple_choice' && (
-                                            <div className="space-y-3 mt-2">
-                                                {q.options && q.options.map((opt, i) => (
-                                                    <label key={i} className="flex items-center space-x-3 cursor-pointer p-4 rounded-xl border border-border/10 bg-secondary/20 hover:border-primary/50 hover:bg-secondary/40 transition-all group">
-                                                        <input
-                                                            type="radio"
-                                                            required={q.required}
-                                                            name={`question_${idx}`}
-                                                            value={opt}
-                                                            onChange={(e) => handleAnswerChange(q.question, e.target.value)}
-                                                            className="h-4 w-4 text-primary focus:ring-primary border-border/50 bg-input/50"
-                                                        />
-                                                        <span className="text-sm font-medium text-muted-foreground group-hover:text-foreground">{opt}</span>
-                                                    </label>
-                                                ))}
-                                            </div>
-                                        )}
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    )}
-
-                    {error && (
-                        <div className="p-4 bg-red-500/10 text-red-400 rounded-xl text-sm font-bold border border-red-500/20 flex items-center gap-2 animate-shake shadow-sm">
-                            <ShieldCheck size={18} />
-                            {error}
-                        </div>
-                    )}
-
-                    <div className="pt-4 pb-20">
-                        <button
-                            type="submit"
-                            disabled={loading || !formData.resume}
-                            className={`w-full py-4 rounded-xl font-bold text-lg transition-all flex items-center justify-center gap-2 shadow-xl
-                                ${loading || !formData.resume
-                                    ? 'bg-secondary/50 text-muted-foreground cursor-not-allowed border border-border/10'
-                                    : 'bg-indigo-600 text-white hover:bg-indigo-500 hover:-translate-y-1 shadow-indigo-500/20'
-                                }`}
-                        >
-                            {loading ? <Loader2 className="animate-spin" /> : 'Submit Application'}
-                        </button>
-                    </div>
-
-                </form>
+                    </form>
+                </div>
             </main>
         </div>
     );

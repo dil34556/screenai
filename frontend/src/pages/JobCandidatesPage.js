@@ -293,6 +293,7 @@ const JobCandidatesPage = () => {
                             <option value="SCREENED">Screened</option>
                             <option value="INTERVIEW">Interview</option>
                             <option value="OFFER">Offer</option>
+                            <option value="HIRED">Hired</option>
                             <option value="REJECTED">Rejected</option>
                         </select>
                         <select className="border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-600" onChange={(e) => setFilterPlatform(e.target.value)}>

@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ScreenAI Project Presentation</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; max-width: 800px; margin: 0 auto; padding: 20px; background-color: #f4f4f9; color: #333; }
+        h1, h2, h3 { color: #2c3e50; }
+        h1 { border-bottom: 2px solid #3498db; padding-bottom: 10px; margin-top: 40px; }
+        h2 { margin-top: 30px; color: #2980b9; }
+        .container { background: white; padding: 40px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        code { background-color: #eee; padding: 2px 5px; border-radius: 4px; font-family: 'Courier New', Courier, monospace; }
+        table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+        th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+        th { background-color: #34495e; color: white; }
+        tr:nth-child(even) { background-color: #f2f2f2; }
+        .highlight { color: #e74c3c; font-weight: bold; }
+        @media print {
+            body { background: white; }
+            .container { box-shadow: none; padding: 0; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>ScreenAI: Intelligent Recruitment Platform</h1>
+        <p><strong>Project Overview & Technical Walkthrough</strong></p>
+        
+        <p>ScreenAI is an advanced, AI-powered recruitment automation platform designed to streamline the hiring process. It bridges the gap between recruiters and candidates by automating resume screening, managing job postings, and providing real-time analytics on the hiring pipeline.</p>
+
+        <h2>1. Executive Summary</h2>
+        <ul>
+            <li><strong>Product Name</strong>: ScreenAI</li>
+            <li><strong>Core Value</strong>: Reduces time-to-hire by automating initial candidate screening and data extraction using Generative AI (Gemini).</li>
+            <li><strong>Primary Users</strong>: Recruiters/HR (for management) and Candidates (for application).</li>
+        </ul>
+
+        <h2>2. Architecture</h2>
+        <p>ScreenAI follows a modern <strong>Client-Server Architecture</strong>:</p>
+
+        <h3>Frontend (Client)</h3>
+        <ul>
+            <li><strong>Framework</strong>: React.js</li>
+            <li><strong>Styling</strong>: TailwindCSS & Custom "Gemini Canvas" Design.</li>
+            <li><strong>Key Pages</strong>: Dashboard, Job Board, Candidate Pipeline.</li>
+        </ul>
+
+        <h3>Backend (Server)</h3>
+        <ul>
+            <li><strong>Framework</strong>: Django & Django REST Framework (DRF).</li>
+            <li><strong>Data Persistence</strong>: SQLite / PostgreSQL.</li>
+            <li><strong>AI Integration</strong>: Google Gemini Pro for Resume Parsing.</li>
+        </ul>
+
+        <h2>3. Key Modules & Features</h2>
+        
+        <h3>A. Job Management</h3>
+        <p>Recruiters can create detailed job descriptions with specific criteria like salary ranges, experience years, and required skills.</p>
+        
+        <h3>B. Intelligent Resume Parsing</h3>
+        <p>The system automatically extracts details from uploaded resumes, such as Years of Experience, Skills, and Education, using Gemini AI.</p>
+
+        <h3>C. Analytics Dashboard</h3>
+        <p>Real-time visualization of the hiring pipeline, weekly trends, and application statistics.</p>
+
+        <h2>4. Operational Workflow</h2>
+        <ol>
+            <li><strong>Job Posting</strong>: Recruiter creates a job.</li>
+            <li><strong>Application</strong>: Candidate uploads a resume -> AI autofills the form -> Candidate submits.</li>
+            <li><strong>Screening</strong>: Recruiter reviews the AI-parsed application on the dashboard.</li>
+            <li><strong>Decision</strong>: Candidate is moved to Interview, Offer, or Rejected status.</li>
+        </ol>
+
+        <h2>5. Technical Stack Summary</h2>
+        <table>
+            <tr>
+                <th>Component</th>
+                <th>Technology</th>
+            </tr>
+            <tr>
+                <td>Frontend</td>
+                <td>React, React Router</td>
+            </tr>
+            <tr>
+                <td>Backend</td>
+                <td>Django, Python, DRF</td>
+            </tr>
+             <tr>
+                <td>AI Engine</td>
+                <td>Google Gemini Pro</td>
+            </tr>
+            <tr>
+                <td>Database</td>
+                <td>SQLite</td>
+            </tr>
+        </table>
+
+        <h2>6. Conclusion</h2>
+        <p>ScreenAI effectively modernizes the recruitment process by leveraging AI to handle the "heavy lifting" of data entry and initial screening, allowing recruiters to focus on the human aspect of hiring.</p>
+    </div>
+</body>
+</html>

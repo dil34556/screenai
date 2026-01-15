@@ -9,62 +9,62 @@ module.exports = {
     darkMode: 'class',
     theme: {
         extend: {
-            fontFamily: {
-                sans: ['Inter', 'DM Sans', 'sans-serif'],
-                heading: ['Google Sans', 'Inter', 'sans-serif'],
-                mono: ['JetBrains Mono', 'monospace'],
-            },
             colors: {
-                border: "hsl(var(--border))",
-                input: "hsl(var(--input))",
-                ring: "hsl(var(--ring))",
-                background: "hsl(var(--background))",
-                foreground: "hsl(var(--foreground))",
+                border: "#E0E3E7", // M3 Outline Variant
+                input: "#E0E3E7",
+                ring: "#0B57D0",   // Google Blue
+                background: "#FDFCFF", // M3 Surface
+                foreground: "#1F1F1F", // M3 On Surface
                 primary: {
-                    DEFAULT: "hsl(var(--primary))",
-                    foreground: "hsl(var(--primary-foreground))",
+                    DEFAULT: "#0B57D0", // Google Blue
+                    foreground: "#FFFFFF",
+                    container: "#D3E3FD", // M3 Primary Container
+                    onContainer: "#041E49", // M3 On Primary Container
                 },
                 secondary: {
-                    DEFAULT: "hsl(var(--secondary))",
-                    foreground: "hsl(var(--secondary-foreground))",
+                    DEFAULT: "#C2E7FF", // Light Blue (Secondary Container) 
+                    foreground: "#001D35", // On Secondary Container
+                    container: "#C2E7FF",
+                    onContainer: "#001D35",
                 },
                 destructive: {
-                    DEFAULT: "hsl(var(--destructive))",
-                    foreground: "hsl(var(--destructive-foreground))",
+                    DEFAULT: "#B3261E", // M3 Error
+                    foreground: "#FFFFFF",
                 },
                 muted: {
-                    DEFAULT: "hsl(var(--muted))",
-                    foreground: "hsl(var(--muted-foreground))",
+                    DEFAULT: "#F0F2F5", // Surface Variant / Muted
+                    foreground: "#444746", // On Surface Variant
                 },
                 accent: {
-                    DEFAULT: "hsl(var(--accent))",
-                    foreground: "hsl(var(--accent-foreground))",
+                    DEFAULT: "#D3E3FD",
+                    foreground: "#041E49",
                 },
                 popover: {
-                    DEFAULT: "hsl(var(--popover))",
-                    foreground: "hsl(var(--popover-foreground))",
+                    DEFAULT: "#FFFFFF",
+                    foreground: "#1F1F1F",
                 },
                 card: {
-                    DEFAULT: "hsl(var(--card))",
-                    foreground: "hsl(var(--card-foreground))",
+                    DEFAULT: "#FFFFFF", // Surface
+                    foreground: "#1F1F1F",
                 },
-                gemini: {
-                    bg: '#0B0E14', // Obsidian
-                    sidebar: '#0B0E14', // Seamless Void
-                    surface: '#1E1F24', // Void Glass
-                    hover: '#2A2B32',
+                surface: {
+                    light: "#FDFCFF",
+                    DEFAULT: "#FDFCFF",
+                    variant: "#F0F4F8",
                 }
             },
             borderRadius: {
-                lg: "var(--radius)",
-                md: "calc(var(--radius) - 2px)",
-                sm: "calc(var(--radius) - 4px)",
-                pill: "100px", // Full Pill
+                lg: "1.25rem", // 20px
+                md: "0.75rem", // 12px
+                sm: "0.5rem",  // 8px
+                pill: "9999px",
+            },
+            fontFamily: {
+                sans: ['Roboto', 'Inter', 'sans-serif'],
+                heading: ['Product Sans', 'Google Sans', 'sans-serif'],
             },
             backgroundImage: {
-                'gemini-gradient': 'linear-gradient(135deg, #4B90FF 0%, #FF55D2 100%)',
-                'glass-gradient': 'linear-gradient(rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0))',
-                'glass-gradient-light': 'linear-gradient(rgba(255, 255, 255, 0.6), rgba(255, 255, 255, 0.2))',
+                'none': 'none',
             },
             boxShadow: {
                 'glass': '0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.1), inset 0 1px 0 0 rgba(255, 255, 255, 0.08)',

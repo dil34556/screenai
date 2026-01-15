@@ -1,13 +1,26 @@
 import React, { useEffect, useState } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Briefcase, Users, LogOut, BarChart3, ChevronRight, Plus, Sparkles, Settings } from 'lucide-react';
-import { ThemeToggle } from './ThemeToggle';
-import { motion, AnimatePresence } from 'framer-motion';
+import {
+    LayoutDashboard,
+    Briefcase,
+    LogOut,
+    BarChart3,
+    ChevronRight,
+    Plus,
+    Settings,
+    PlayCircle,
+    PanelLeftClose,
+    PanelLeftOpen,
+    Home
+} from 'lucide-react';
+import { motion, AnimatePresence, LayoutGroup } from 'framer-motion';
+import ScreenAILogo from './ScreenAILogo';
 
 const AdminLayout = () => {
     const location = useLocation();
     const navigate = useNavigate();
     const [user, setUser] = useState(null);
+    const [isCollapsed, setIsCollapsed] = useState(false);
 
     // AUTH CHECK
     useEffect(() => {
@@ -29,138 +42,184 @@ const AdminLayout = () => {
     };
 
     const navigation = [
+        { name: 'Home', href: '/home', icon: Home },
         { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
         { name: 'Job Board', href: '/admin/jobs', icon: Briefcase },
-        { name: 'Candidates', href: '/portal/employees', icon: Users },
-        { name: 'Analytics', href: '/analytics', icon: BarChart3 },
+        { name: 'Analytics', href: '/admin/analysis', icon: BarChart3 },
+        { name: 'Go Through', href: '/go-through', icon: PlayCircle },
         { name: 'Settings', href: '/settings', icon: Settings },
     ];
 
+    const isHome = location.pathname === '/home';
+
     return (
-        <div className="flex h-screen bg-background text-foreground font-sans overflow-hidden transition-colors duration-500 relative">
-
-            {/* Ambient Background Glows - Adjusted for Theme */}
-            <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-blue-500/10 dark:bg-blue-900/20 rounded-full blur-[120px] pointer-events-none" />
-            <div className="absolute bottom-[-20%] right-[-10%] w-[50%] h-[50%] bg-purple-500/10 dark:bg-purple-900/20 rounded-full blur-[120px] pointer-events-none" />
-
-            {/* --- Floating Glass Sidebar --- */}
-            <motion.aside
-                initial={{ x: -20, opacity: 0 }}
-                animate={{ x: 0, opacity: 1 }}
-                transition={{ duration: 0.5, ease: "easeOut" }}
-                className="w-72 glass-panel m-4 rounded-[24px] flex flex-col shrink-0 z-30 hidden md:flex border border-border/50 shadow-2xl relative overflow-hidden bg-card/30"
+        <LayoutGroup>
+            <motion.div
+                layout
+                className="flex h-screen bg-[#FDFDF5] dark:bg-[#0b0f19] text-foreground font-sans overflow-hidden relative"
+                transition={{ duration: 0.5, ease: "easeInOut" }}
             >
-                {/* Logo Area */}
-                <div className="h-24 flex items-center px-8">
-                    <div className="flex items-center gap-3.5">
-                        <div className="relative flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 shadow-glow">
-                            <Sparkles size={20} className="text-white" strokeWidth={2} />
-                        </div>
-                        <div>
-                            <span className="text-xl font-heading font-light tracking-tight text-foreground block leading-none">
-                                ScreenAI
-                            </span>
-                            <span className="text-[10px] font-mono text-muted-foreground tracking-widest uppercase">Recruiter</span>
-                        </div>
-                    </div>
-                </div>
 
-                {/* Primary Action */}
-                <div className="px-6 mb-6">
-                    <motion.button
-                        whileHover={{ scale: 1.02, boxShadow: "0 0 20px rgba(79, 70, 229, 0.4)" }}
-                        whileTap={{ scale: 0.98 }}
-                        onClick={() => navigate('/admin/jobs/create')}
-                        className="w-full flex items-center justify-between bg-primary text-primary-foreground px-5 py-4 rounded-full text-sm font-semibold shadow-lg shadow-primary/20 group relative overflow-hidden"
-                    >
-                        <span className="relative z-10 flex items-center gap-3">
-                            <Plus size={18} strokeWidth={3} />
-                            Compose Job
-                        </span>
-
-                        {/* Shimmer Effect */}
-                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-200%] peer-hover:animate-shimmer" />
-                    </motion.button>
-                </div>
-
-                {/* Navigation Items */}
-                <nav className="flex-1 px-4 space-y-2 overflow-y-auto scrollbar-hide py-2">
-                    {navigation.map((item) => {
-                        const isActive = location.pathname.startsWith(item.href) &&
-                            (item.href !== '/dashboard' || location.pathname === '/dashboard');
-
-                        return (
-                            <Link
-                                key={item.name}
-                                to={item.href}
-                                className="block relative"
-                            >
-                                {isActive && (
-                                    <motion.div
-                                        layoutId="activeTab"
-                                        className="absolute inset-0 bg-primary/10 dark:bg-white/10 rounded-full border border-primary/20 dark:border-white/5"
-                                        transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
-                                    />
+                {/* --- Navigation Drawer --- */}
+                <AnimatePresence>
+                    {!isHome && (
+                        <motion.aside
+                            layout
+                            initial={{ width: 0, opacity: 0 }}
+                            animate={{ width: isCollapsed ? 80 : 288, opacity: 1 }}
+                            exit={{ width: 0, opacity: 0 }}
+                            className={`
+                                flex shrink-0 z-30 bg-[#F8F9FA] dark:bg-[#111418]
+                                flex-col h-full border-r border-gray-200 dark:border-white/10 hidden md:flex
+                            `}
+                            transition={{ duration: 0.5, ease: "easeInOut" }}
+                        >
+                            {/* Logo Area */}
+                            <div className={`h-20 flex items-center ${isCollapsed ? 'justify-center' : 'px-6 justify-between'} mb-2 shrink-0`}>
+                                {!isCollapsed && (
+                                    <div className="flex items-center gap-3 overflow-hidden whitespace-nowrap">
+                                        <div className="flex items-center justify-center shrink-0">
+                                            <ScreenAILogo className="w-8 h-8" />
+                                        </div>
+                                        <span className="text-xl font-normal text-[#1F1F1F] dark:text-gray-100 tracking-tight transition-opacity duration-200">
+                                            ScreenAI
+                                        </span>
+                                    </div>
                                 )}
-                                <motion.div
-                                    whileHover={{ x: 4 }}
-                                    className={`relative z-10 flex items-center gap-4 px-4 py-3.5 rounded-full text-sm font-medium transition-colors duration-200 ${isActive ? 'text-primary dark:text-white' : 'text-muted-foreground hover:text-foreground'
-                                        }`}
+                                <button
+                                    onClick={() => setIsCollapsed(!isCollapsed)}
+                                    className={`p-2 rounded-full hover:bg-gray-200 dark:hover:bg-white/10 text-gray-500 transition-colors ${isCollapsed ? '' : ''}`}
+                                    title={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
                                 >
-                                    <item.icon
-                                        size={20}
-                                        strokeWidth={isActive ? 2.5 : 2}
-                                        className={`${isActive ? 'text-primary dark:text-[#8AB4F8]' : 'text-muted-foreground group-hover:text-foreground'}`}
-                                    />
-                                    <span>{item.name}</span>
-                                </motion.div>
-                            </Link>
-                        );
-                    })}
-                </nav>
-
-                {/* User Profile (Bottom) */}
-                <div className="p-4 mt-auto">
-                    <div className="glass-panel-hover p-4 rounded-3xl flex items-center gap-3 cursor-pointer group border border-transparent hover:border-border/50" onClick={handleLogout}>
-                        <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-500 p-[2px]">
-                            <div className="w-full h-full rounded-full bg-background flex items-center justify-center text-xs font-bold text-foreground">
-                                {user?.email?.[0]?.toUpperCase() || 'A'}
+                                    {isCollapsed ? <PanelLeftOpen size={20} /> : <PanelLeftClose size={20} />}
+                                </button>
                             </div>
+
+                            {/* Primary Action */}
+                            <div className="px-4 mb-6 flex justify-center shrink-0">
+                                <button
+                                    onClick={() => navigate('/admin/jobs/create')}
+                                    className={`h-[56px] flex items-center bg-[#C2E7FF] dark:bg-[#004a77] text-[#001D35] dark:text-[#c2e7ff] hover:shadow-md transition-all rounded-[16px] font-medium text-sm
+                                        ${isCollapsed ? 'w-[56px] justify-center px-0' : 'w-full gap-4 px-6'}
+                                    `}
+                                    title="Compose Job"
+                                >
+                                    <Plus size={24} />
+                                    {!isCollapsed && <span className="whitespace-nowrap overflow-hidden">Compose Job</span>}
+                                </button>
+                            </div>
+
+                            {/* Navigation Items */}
+                            <nav className="flex-1 overflow-y-auto scrollbar-hide flex flex-col px-3 gap-1 py-2">
+                                {navigation.map((item) => {
+                                    const isActive = location.pathname.startsWith(item.href) &&
+                                        (item.href !== '/dashboard' || location.pathname === '/dashboard');
+
+                                    // Skip Home link in Sidebar for consistency since we have a specific Home page
+                                    if (item.name === 'Home') return null;
+
+                                    return (
+                                        <Link
+                                            key={item.name}
+                                            to={item.href}
+                                            className={`
+                                                flex items-center transition-colors rounded-full font-medium relative
+                                                ${isCollapsed ? 'justify-center px-0' : 'px-4 gap-3'} py-3 text-sm mb-1 
+                                                ${isActive ? 'text-blue-900 dark:text-blue-100' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5'}
+                                            `}
+                                            title={isCollapsed ? item.name : ''}
+                                        >
+                                            {isActive && (
+                                                <motion.div
+                                                    layoutId="activeTab"
+                                                    className="absolute inset-0 bg-blue-100 dark:bg-blue-900/40 rounded-full"
+                                                    initial={false}
+                                                    transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                                                />
+                                            )}
+                                            <item.icon
+                                                size={24}
+                                                className={`relative z-10 ${isActive ? "fill-current" : ""}`}
+                                                strokeWidth={isActive ? 2 : 2}
+                                            />
+                                            {!isCollapsed && (
+                                                <span className="relative z-10 whitespace-nowrap overflow-hidden">
+                                                    {item.name}
+                                                </span>
+                                            )}
+                                        </Link>
+                                    );
+                                })}
+                            </nav>
+
+                            {/* User Profile */}
+                            <div className="p-4 mt-auto shrink-0">
+                                <div
+                                    className={`hover:bg-black/5 dark:hover:bg-white/5 p-3 rounded-full flex items-center gap-3 cursor-pointer transition-colors ${isCollapsed ? 'justify-center' : ''}`}
+                                    onClick={handleLogout}
+                                    title="Logout"
+                                >
+                                    <div className="w-10 h-10 shrink-0 rounded-full bg-blue-100 dark:bg-blue-900/40 text-blue-900 dark:text-blue-100 flex items-center justify-center text-sm font-bold">
+                                        {user?.email?.[0]?.toUpperCase() || 'A'}
+                                    </div>
+                                    {!isCollapsed && (
+                                        <>
+                                            <div className="flex-1 min-w-0 overflow-hidden">
+                                                <p className="text-sm font-medium text-[#1F1F1F] dark:text-gray-200 truncate">{user?.email?.split('@')[0] || 'Admin'}</p>
+                                                <p className="text-xs text-gray-500 dark:text-gray-500 truncate">View Profile</p>
+                                            </div>
+                                            <LogOut size={20} className="text-gray-500 dark:text-gray-500 shrink-0" />
+                                        </>
+                                    )}
+                                </div>
+                            </div>
+                        </motion.aside>
+                    )}
+                </AnimatePresence>
+
+                {/* --- Main Content Area --- */}
+                <motion.main
+                    layout
+                    className={`flex-1 flex flex-col min-w-0 relative overflow-hidden p-0 bg-[#FDFDF5] dark:bg-[#0b0f19] ${isHome ? 'order-1' : ''}`}
+                    transition={{ duration: 0.5, ease: "easeInOut" }}
+                >
+                    <div className="flex-1 rounded-none bg-transparent flex flex-col relative overflow-hidden">
+                        {/* Minimal Transparent Header - Hide on Home */}
+                        {!isHome && (
+                            <header className="h-16 flex items-center px-6 shrink-0 justify-between z-20 border-b border-gray-200/50 dark:border-white/10 bg-[#FDFDF5] dark:bg-[#0b0f19]">
+                                <div className="flex items-center gap-2 text-sm text-gray-400">
+                                    <span
+                                        onClick={() => navigate('/home')}
+                                        className="hover:text-gray-900 dark:hover:text-gray-100 transition-colors cursor-pointer"
+                                    >
+                                        Portal
+                                    </span>
+                                    <ChevronRight size={14} />
+                                    <span className="text-gray-900 dark:text-gray-100 font-medium capitalize">
+                                        {location.pathname.split('/')[1] || 'Dashboard'}
+                                    </span>
+                                </div>
+                            </header>
+                        )}
+
+                        <div className="flex-1 flex flex-col overflow-y-auto relative bg-[#FDFDF5] dark:bg-[#0b0f19] scroll-smooth">
+                            <AnimatePresence mode="wait">
+                                <motion.div
+                                    key={location.pathname}
+                                    initial={{ opacity: 0, y: 10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, y: -10 }}
+                                    transition={{ duration: 0.3 }}
+                                    className="flex-1"
+                                >
+                                    <Outlet />
+                                </motion.div>
+                            </AnimatePresence>
                         </div>
-                        <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-foreground truncate">{user?.email?.split('@')[0] || 'Admin'}</p>
-                            <p className="text-xs text-muted-foreground truncate">View Profile</p>
-                        </div>
-                        <LogOut size={18} className="text-muted-foreground group-hover:text-destructive transition-colors" />
                     </div>
-                </div>
-            </motion.aside>
-
-            {/* --- Main Content Area (Glass Canvas) --- */}
-            <main className="flex-1 h-full flex flex-col min-w-0 relative overflow-hidden p-4 pl-0">
-                <div className="flex-1 rounded-[24px] bg-card/40 backdrop-blur-sm border border-border/50 flex flex-col relative overflow-hidden">
-                    {/* Minimal Transparent Header */}
-                    <header className="h-20 flex items-center px-8 shrink-0 justify-between z-20">
-                        <div className="flex items-center gap-2 text-sm text-white/40">
-                            <span className="hover:text-white transition-colors cursor-pointer">Portal</span>
-                            <ChevronRight size={14} />
-                            <span className="text-white/90 font-medium capitalize">
-                                {location.pathname.split('/')[1] || 'Dashboard'}
-                            </span>
-                        </div>
-
-                        <div className="flex items-center gap-4">
-                            {/* Removed ThemeToggle for now as we are enforcing Dark Mode for this specific aesthetic */}
-
-                        </div>
-                    </header>
-
-                    <div className="flex-1 overflow-y-auto px-8 pb-8 scrollbar-hide">
-                        <Outlet />
-                    </div>
-                </div>
-            </main>
-        </div>
+                </motion.main>
+            </motion.div>
+        </LayoutGroup>
     );
 };
 

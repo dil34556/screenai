@@ -9,6 +9,7 @@ import json
 
 from .models import Employee, Application
 from candidates.models import Application as CandidateApplication
+from jobs.models import JobPosting
 from .serializers import EmployeeSerializer
 
 
@@ -27,16 +28,26 @@ def employees_list(request):
 @api_view(["GET"])
 def analytics_overview(request):
     total_apps = CandidateApplication.objects.count()
-    hired = CandidateApplication.objects.filter(status="OFFER").count()
+    hired = CandidateApplication.objects.filter(status__in=["OFFER", "HIRED"]).count()
+    rejected = CandidateApplication.objects.filter(status="REJECTED").count()
+    
+    # Job Stats
+    total_jobs = JobPosting.objects.count()
+    active_jobs = JobPosting.objects.filter(is_active=True).count()
+
     # 'calls' not yet available in new model, setting to 0 or legacy
     total_calls = 0 
     conversion = round((hired / total_apps * 100), 1) if total_apps else 0
 
     return Response({
         "total_applications": total_apps,
-        "hired_this_month": hired,
+        "total_hired": hired,
+        "rejected_count": rejected,
+        "hired_this_month": hired, # Keep for backward compatibility
         "total_calls_today": total_calls,
         "conversion_rate": conversion,
+        "total_jobs": total_jobs,
+        "active_jobs": active_jobs,
     })
 
 
