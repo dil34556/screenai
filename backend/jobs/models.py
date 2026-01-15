@@ -30,6 +30,7 @@ class JobPosting(models.Model):
     notes = models.TextField(blank=True, default='', help_text="Internal notes for recruiters")
     
     is_active = models.BooleanField(default=True)
+    interview_rounds = models.IntegerField(default=1, help_text="Number of interview rounds for this job")
     recruiter = models.ForeignKey(Employee, on_delete=models.CASCADE, null=True, blank=True, related_name='job_postings')
     created_at = models.DateTimeField(auto_now_add=True)
 

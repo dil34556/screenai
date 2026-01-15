@@ -6,7 +6,7 @@ function AdminHome() {
 
   return (
     <div className="min-h-screen bg-slate-50 flex items-center justify-center p-8">
-      <div className="max-w-3xl w-full">
+      <div className="max-w-5xl w-full">
         <div className="text-center mb-12">
           <h1 className="text-4xl font-bold text-slate-900 mb-2">
             Admin Portal
@@ -16,7 +16,7 @@ function AdminHome() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <button
             onClick={() => navigate('/admin/users/create')}
             className="group bg-white border border-slate-200 rounded-xl p-8 hover:border-indigo-600 hover:ring-1 hover:ring-indigo-600 transition-all text-left shadow-sm hover:shadow-md"
@@ -44,6 +44,21 @@ function AdminHome() {
             </h2>
             <p className="text-slate-500 text-sm leading-relaxed">
               Update details or remove accounts.
+            </p>
+          </button>
+
+          <button
+            onClick={() => navigate('/admin/analysis')}
+            className="group bg-white border border-slate-200 rounded-xl p-8 hover:border-indigo-600 hover:ring-1 hover:ring-indigo-600 transition-all text-left shadow-sm hover:shadow-md"
+          >
+            <div className="h-10 w-10 bg-indigo-50 text-indigo-600 rounded-lg flex items-center justify-center mb-4 group-hover:bg-indigo-600 group-hover:text-white transition-colors">
+              <span className="text-xl">📊</span>
+            </div>
+            <h2 className="text-xl font-bold text-slate-900 mb-2">
+              Employee Analysis
+            </h2>
+            <p className="text-slate-500 text-sm leading-relaxed">
+              View recruitment performance by employee.
             </p>
           </button>
         </div>

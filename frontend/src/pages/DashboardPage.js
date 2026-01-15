@@ -169,8 +169,8 @@ const DashboardPage = () => {
                 />
                 <MetricCard
                     title="Active Jobs"
-                    value="8"
-                    trend="+2 new"
+                    value={stats.active_jobs || 0}
+                    trend="In Pipeline"
                     icon={Briefcase}
                 />
                 <MetricCard

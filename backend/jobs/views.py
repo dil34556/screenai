@@ -9,10 +9,10 @@ class JobListView(generics.ListCreateAPIView):
         queryset = JobPosting.objects.all().order_by('-created_at')
         
         
-        # 1. Multi-tenant Filter - DISABLED per user request (show all jobs)
-        # employee_id = self.request.headers.get('X-Employee-Id')
-        # if employee_id:
-        #     queryset = queryset.filter(recruiter_id=employee_id)
+        # 1. Multi-tenant Filter - Enabled
+        employee_id = self.request.headers.get('X-Employee-Id')
+        if employee_id:
+            queryset = queryset.filter(recruiter_id=employee_id)
         
         # 2. Check for closed filter
         include_closed = self.request.query_params.get('include_closed', 'false')

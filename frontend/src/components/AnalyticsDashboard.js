@@ -118,7 +118,7 @@ export default function AnalyticsDashboard() {
 
       <div className="max-w-7xl mx-auto space-y-8">
         {/* KPI Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <KPICard
             title="Total Applications"
             value={summary?.total_applications || 0}
@@ -137,7 +137,24 @@ export default function AnalyticsDashboard() {
             color="green"
             onClick={() => navigate('/admin/applications?status=OFFER')}
           />
-
+          <KPICard
+            title="Total Rejections"
+            value={hr_team_performance?.reduce((sum, emp) => sum + (emp.rejected || 0), 0) || 0}
+            icon={Target}
+            trend=""
+            trendUp={false}
+            color="purple"
+            onClick={() => navigate('/admin/applications?status=REJECTED')}
+          />
+          <KPICard
+            title="Total Jobs Created"
+            value={hr_team_performance?.reduce((sum, emp) => sum + (emp.job_count || 0), 0) || 0}
+            icon={Briefcase}
+            trend=""
+            trendUp={false}
+            color="blue"
+            onClick={() => navigate('/admin/jobs')}
+          />
         </div>
 
         {/* Charts Row */}
@@ -203,7 +220,6 @@ export default function AnalyticsDashboard() {
             </div>
           </div>
         </div>
-
 
       </div>
     </div>
