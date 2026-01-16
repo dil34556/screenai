@@ -20,7 +20,7 @@ import { motion } from 'framer-motion';
 
 const DashboardPage = () => {
     const navigate = useNavigate();
-    const [stats, setStats] = useState({ total_candidates: 0, today_candidates: 0, status_breakdown: [] });
+    const [stats, setStats] = useState({ total_candidates: 0, today_candidates: 0, status_breakdown: [], platform_breakdown: [] });
     const [applications, setApplications] = useState([]);
     const [loading, setLoading] = useState(true);
 
@@ -190,7 +190,7 @@ const DashboardPage = () => {
                     {/* Pipeline Status */}
                     <div className="bg-white dark:bg-[#1e1f20] border border-gray-200 dark:border-white/10 rounded-[24px] p-6 relative overflow-hidden">
                         <div className="flex items-center justify-between mb-8 relative z-10">
-                            <h3 className="text-xl font-normal text-[#1F1F1F] dark:text-white">Pipeline Status</h3>
+                            <h3 className="text-xl font-normal text-[#1F1F1F] dark:text-white">Status</h3>
                             <button
                                 onClick={() => navigate('/admin/applications')}
                                 className="text-sm font-medium text-blue-600 dark:text-blue-400 hover:underline transition-colors"
@@ -211,6 +211,16 @@ const DashboardPage = () => {
                                 color="bg-green-600"
                                 onClick={() => navigate('/admin/applications?status=OFFER')}
                             />
+                            {/* Platform Stats */}
+                            {stats.platform_breakdown && stats.platform_breakdown.map((platform) => (
+                                <PipelineStat
+                                    key={platform.platform}
+                                    label={platform.platform}
+                                    count={platform.count}
+                                    color="bg-blue-600"
+                                    onClick={() => navigate(`/go-through?platform=${encodeURIComponent(platform.platform)}`)}
+                                />
+                            ))}
                         </div>
                     </div>
                 </div>

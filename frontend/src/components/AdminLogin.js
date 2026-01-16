@@ -18,6 +18,9 @@ function AdminLogin() {
             if (data.user && data.user.is_admin) {
                 // Store user/token if needed, for simplicity passing flow
                 localStorage.setItem('admin_user', JSON.stringify(data.user));
+                if (data.token) {
+                    localStorage.setItem('token', data.token);
+                }
                 navigate('/admin/dashboard');
             } else {
                 setError("Access Denied: You do not have administrator permissions.");

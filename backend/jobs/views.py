@@ -1,9 +1,14 @@
-from rest_framework import generics
+from rest_framework import generics, permissions
 from .models import JobPosting
 from .serializers import JobPostingSerializer
 
 class JobListView(generics.ListCreateAPIView):
     serializer_class = JobPostingSerializer
+
+    def get_permissions(self):
+        if self.request.method == 'GET':
+            return [permissions.AllowAny()]
+        return [permissions.IsAuthenticated()]
 
     def get_queryset(self):
         queryset = JobPosting.objects.all().order_by('-created_at')
@@ -35,4 +40,10 @@ class JobListView(generics.ListCreateAPIView):
 
 class JobDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = JobPosting.objects.all()
+    queryset = JobPosting.objects.all()
     serializer_class = JobPostingSerializer
+
+    def get_permissions(self):
+        if self.request.method == 'GET':
+            return [permissions.AllowAny()]
+        return [permissions.IsAuthenticated()]

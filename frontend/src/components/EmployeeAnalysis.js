@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import {
     BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, AreaChart, Area
 } from 'recharts';
+import { getAnalyticsData } from '../services/api';
 
 function EmployeeAnalysis() {
     const navigate = useNavigate();
@@ -14,19 +15,20 @@ function EmployeeAnalysis() {
     const [dashboardStats, setDashboardStats] = useState(null);
 
     useEffect(() => {
-        fetch('http://localhost:8000/api/v1/analytics/')
-            .then(res => res.json())
-            .then(data => {
+        const fetchData = async () => {
+            try {
+                const data = await getAnalyticsData();
                 if (data.hr_team_performance) {
                     setEmployees(data.hr_team_performance);
                     calculateDashboardStats(data.hr_team_performance);
                 }
                 setLoading(false);
-            })
-            .catch(err => {
+            } catch (err) {
                 console.error("Error fetching analytics:", err);
                 setLoading(false);
-            });
+            }
+        };
+        fetchData();
     }, []);
 
     const calculateDashboardStats = (emps) => {

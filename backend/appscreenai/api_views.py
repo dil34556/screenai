@@ -1,13 +1,17 @@
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
+from rest_framework import status
 from django.db.models import Count, Sum, Q
 from django.db.models.functions import TruncWeek
-from django.views.decorators.csrf import csrf_exempt
 from django.http import JsonResponse
 from datetime import date, timedelta
 import json
+from datetime import date, timedelta
+import json
 
-from .models import Employee, Application
+from .models import Employee
+from candidates.models import Application
 from candidates.models import Application as CandidateApplication
 from jobs.models import JobPosting
 from .serializers import EmployeeSerializer
@@ -196,15 +200,13 @@ def hr_team_performance(request):
 # ===========================
 # 📌 APPLICATION SUBMISSION API (CONNECTS CANDIDATE → ANALYTICS)
 # ===========================
-@csrf_exempt
+@api_view(['POST'])
+@permission_classes([AllowAny])
 def create_application_api(request, job_id):
-    if request.method != "POST":
-        return JsonResponse({"error": "Only POST method allowed"}, status=405)
-
     try:
-        data = json.loads(request.body.decode("utf-8"))
+        data = request.data
     except:
-        return JsonResponse({"error": "Invalid JSON"}, status=400)
+        return Response({"error": "Invalid JSON"}, status=status.HTTP_400_BAD_REQUEST)
 
     email = data.get("email")
     first = data.get("first_name", "")
@@ -212,7 +214,7 @@ def create_application_api(request, job_id):
     source = data.get("source", "Website")
 
     if not email:
-        return JsonResponse({"error": "Email is required"}, status=400)
+        return Response({"error": "Email is required"}, status=status.HTTP_400_BAD_REQUEST)
 
     # Create or fetch employee
     employee, _ = Employee.objects.get_or_create(
@@ -230,7 +232,7 @@ def create_application_api(request, job_id):
         calls=0
     )
 
-    return JsonResponse({
+    return Response({
         "message": "Application submitted successfully",
         "application_id": application.id
-    }, status=201)
+    }, status=status.HTTP_201_CREATED)

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
-import { getApplications, getJobDetail } from '../services/api';
+import { getApplications, getJobDetail, updateApplication } from '../services/api';
 
 const ApplicationsPage = () => {
     const [searchParams, setSearchParams] = useSearchParams();
@@ -11,6 +11,7 @@ const ApplicationsPage = () => {
     // Filter State (Sync with URL)
     const currentStatus = searchParams.get('status') || '';
     const currentJobId = searchParams.get('job') || '';
+    const currentPlatform = searchParams.get('platform') || '';
 
     useEffect(() => {
         loadApplications();
@@ -19,7 +20,7 @@ const ApplicationsPage = () => {
         } else {
             setJobDetails(null);
         }
-    }, [currentStatus, currentJobId]);
+    }, [currentStatus, currentJobId, currentPlatform]);
 
     const loadJobDetails = async (id) => {
         try {
@@ -49,6 +50,7 @@ const ApplicationsPage = () => {
                 const params = {};
                 if (currentStatus) params.status = currentStatus;
                 if (currentJobId) params.job = currentJobId;
+                if (currentPlatform) params.platform = currentPlatform;
                 data = await getApplications(params);
             }
 
@@ -72,12 +74,14 @@ const ApplicationsPage = () => {
         const val = e.target.value;
         const newParams = { status: val };
         if (currentJobId) newParams.job = currentJobId; // Preserve job filter
+        if (currentPlatform) newParams.platform = currentPlatform; // Preserve platform filter
 
         if (val) {
             setSearchParams(newParams);
         } else {
             const cleanParams = {};
             if (currentJobId) cleanParams.job = currentJobId;
+            if (currentPlatform) cleanParams.platform = currentPlatform;
             setSearchParams(cleanParams);
         }
     };
@@ -128,15 +132,9 @@ const ApplicationsPage = () => {
 
     const updateStatus = async (id, newStatus, reason = null) => {
         try {
-            await fetch(`http://localhost:8000/api/applications/${id}/`, {
-                method: 'PATCH',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    status: newStatus,
-                    rejection_reason: reason
-                }),
+            await updateApplication(id, {
+                status: newStatus,
+                rejection_reason: reason
             });
             loadApplications(); // Refresh list
         } catch (error) {

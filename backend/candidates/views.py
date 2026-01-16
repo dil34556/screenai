@@ -23,6 +23,13 @@ class ApplicationListCreateView(generics.ListAPIView):
     # Standard ListAPIView settings
     serializer_class = ApplicationSerializer
     
+    def get_permissions(self):
+        if self.request.method == 'POST':
+            return [permissions.AllowAny()]
+        return [permissions.IsAuthenticated()]
+    
+    # Settings from ApplicationCreateView
+    
     # Settings from ApplicationCreateView
     parser_classes = (MultiPartParser, FormParser)
 
@@ -41,6 +48,10 @@ class ApplicationListCreateView(generics.ListAPIView):
         status_param = self.request.query_params.get('status')
         if status_param:
             queryset = queryset.filter(status=status_param)
+
+        platform_param = self.request.query_params.get('platform')
+        if platform_param:
+            queryset = queryset.filter(platform=platform_param)
             
         return queryset
 
@@ -181,6 +192,19 @@ class ApplicationDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Application.objects.all()
     serializer_class = ApplicationSerializer
 
+    def perform_update(self, serializer):
+        instance = self.get_object()
+        new_status = self.request.data.get('status')
+
+        # If status is changing TO Rejected, capture the OLD status as the rejected_stage
+        if new_status == 'REJECTED' and instance.status != 'REJECTED':
+            # Check if rejected_stage is manually provided, else default to current status
+            if 'rejected_stage' not in self.request.data:
+                serializer.save(rejected_stage=instance.status)
+                return
+
+        serializer.save()
+
 class AddCommentView(generics.CreateAPIView):
     queryset = ApplicationComment.objects.all()
     serializer_class = ApplicationCommentSerializer
@@ -263,6 +287,9 @@ class DashboardStatsView(views.APIView):
         
         # Status counts
         status_counts = apps_query.values('status').annotate(count=Count('status'))
+
+        # Platform counts
+        platform_counts = apps_query.values('platform').annotate(count=Count('platform'))
         
         # Job counts
         total_jobs = JobPosting.objects.count()
@@ -272,11 +299,15 @@ class DashboardStatsView(views.APIView):
             "total_candidates": total,
             "today_candidates": today,
             "status_breakdown": status_counts,
+            "platform_breakdown": platform_counts,
             "total_jobs": total_jobs,
             "active_jobs": active_jobs
         })
 
+from rest_framework import permissions
+
 class PreviewResumeView(views.APIView):
+    permission_classes = [permissions.AllowAny]
     parser_classes = (MultiPartParser, FormParser)
 
     def post(self, request):
@@ -301,7 +332,7 @@ class PreviewResumeView(views.APIView):
                 "data": parsed_data["data"]
             }, status=status.HTTP_200_OK)
 
-            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
 
         except Exception as e:
             # Cleanup on error
@@ -513,6 +544,7 @@ class AnalyticsView(views.APIView):
 
 
 class QuickScanResumeView(views.APIView):
+    permission_classes = [permissions.AllowAny]
     def post(self, request):
         try:
             if 'resume' not in request.FILES:

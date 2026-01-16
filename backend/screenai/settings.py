@@ -18,11 +18,14 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure--^nlsq2=y2l*_okxib3pn-_kkm%=g)$qiso1uemywcpsuc^h)b'
 
 import os
+import dj_database_url
+
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 
-DEBUG = True
+# SECURITY WARNING: don't run with debug turned on in production!
+DEBUG = os.environ.get("DEBUG", "True").lower() == "true"
 
-ALLOWED_HOSTS = ["*"]   # Allow frontend access for development
+ALLOWED_HOSTS = os.environ.get("ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
 
 
 # -------------------------------------------------------------------
@@ -34,6 +37,7 @@ INSTALLED_APPS = [
     'jobs',
     'candidates',
     'rest_framework',
+    'rest_framework.authtoken',
 
     'django.contrib.admin',
     'django.contrib.auth',
@@ -93,6 +97,11 @@ DATABASES = {
     }
 }
 
+# Production Database Support
+# If DATABASE_URL is set (e.g., by Render/Heroku), use it. otherwise keep sqlite.
+db_from_env = dj_database_url.config(conn_max_age=600)
+DATABASES['default'].update(db_from_env)
+
 
 # -------------------------------------------------------------------
 # Password validation
@@ -144,4 +153,10 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 REST_FRAMEWORK = {
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 20,
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.TokenAuthentication',
+    ],
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticated',
+    ],
 }

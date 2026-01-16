@@ -1,20 +1,28 @@
 import React, { useState, useEffect } from 'react';
 import { getApplications } from '../services/api';
-import { Check, Clock, AlertCircle, Info } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Check, Clock, AlertCircle, Info, ChevronRight } from 'lucide-react';
+import { Link, useSearchParams } from 'react-router-dom';
+import CandidateDetailModal from '../components/CandidateDetailModal';
 
 const GoThroughPage = () => {
+    const [searchParams] = useSearchParams();
     const [applications, setApplications] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [selectedCandidate, setSelectedCandidate] = useState(null);
+    const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
 
     useEffect(() => {
         fetchApplications();
-    }, []);
+    }, [searchParams]);
 
     const fetchApplications = async () => {
         try {
-            const data = await getApplications();
+            const params = {};
+            const platform = searchParams.get('platform');
+            if (platform) params.platform = platform;
+
+            const data = await getApplications(params);
             // Handle pagination if data.results exists, else assume array
             const results = Array.isArray(data) ? data : data.results || [];
             console.log("Fetched applications:", results);
@@ -88,23 +96,30 @@ const GoThroughPage = () => {
                 ) : (
                     <div className="space-y-6">
                         {applications.map((app) => (
-                            <div key={app.id} className="bg-white rounded-[24px] border border-gray-100 p-8 shadow-[0_2px_20px_rgba(0,0,0,0.02)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)] transition-all duration-300">
+                            <div
+                                key={app.id}
+                                onClick={() => {
+                                    setSelectedCandidate(app);
+                                    setIsDetailModalOpen(true);
+                                }}
+                                className="bg-white rounded-[24px] border border-gray-100 p-8 shadow-[0_2px_20px_rgba(0,0,0,0.02)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)] transition-all duration-300 cursor-pointer group"
+                            >
                                 <div className="flex flex-col md:flex-row md:items-start justify-between gap-6 mb-10">
                                     <div className="flex items-start gap-5">
-                                        <div className="w-14 h-14 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-xl shadow-lg shadow-blue-200">
+                                        <div className="w-14 h-14 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-xl shadow-lg shadow-blue-200 group-hover:scale-105 transition-transform">
                                             {app.candidate_details?.name ? app.candidate_details.name.charAt(0).toUpperCase() : 'C'}
                                         </div>
                                         <div>
-                                            <h3 className="text-xl font-bold text-gray-900 leading-tight mb-1">
+                                            <h3 className="text-xl font-bold text-gray-900 leading-tight mb-1 group-hover:text-indigo-600 transition-colors">
                                                 {app.candidate_details?.name || 'Unknown Candidate'}
                                             </h3>
                                             <div className="text-base text-gray-500 flex flex-wrap items-center gap-2">
                                                 <span>Applied for</span>
                                                 {/* Fallback if job is missing */}
                                                 {app.job ? (
-                                                    <Link to={`/admin/jobs/${app.job}`} className="font-medium text-indigo-600 hover:underline">
+                                                    <span className="font-medium text-indigo-600">
                                                         {app.job_title || 'View Job'}
-                                                    </Link>
+                                                    </span>
                                                 ) : (
                                                     <span className="font-medium text-gray-400">Unknown Job</span>
                                                 )}
@@ -126,42 +141,80 @@ const GoThroughPage = () => {
 
                                 {/* Stepper / Root Map */}
                                 <div className="relative px-2">
-                                    {/* Connecting Line */}
-                                    <div className="absolute top-5 left-0 w-full h-0.5 bg-gray-100 -z-10 hidden md:block rounded-full"></div>
+                                    {/* <div className="absolute top-5 left-0 w-full h-0.5 bg-gray-100 -z-10 hidden md:block rounded-full"></div> */}
 
-                                    <div className="flex flex-col md:flex-row justify-between gap-6 md:gap-0 relative">
+                                    <div className="flex flex-col md:flex-row items-center w-full">
                                         {steps.map((step, idx) => {
                                             let status = getStepStatus(step.id, app.status);
+                                            let isRejectedAtThisStep = app.status === 'REJECTED' && app.rejected_stage === step.id;
 
                                             // Visual Logic
                                             let circleClass = "bg-white border-2 border-gray-200 text-gray-300";
                                             let textClass = "text-gray-400 font-normal";
                                             let icon = <span className="text-xs font-semibold">{idx + 1}</span>;
+                                            let connectorColor = "bg-gray-100 text-gray-200"; // Default connector
 
-                                            if (app.status === 'REJECTED') {
-                                                circleClass = "bg-gray-50 border-gray-200 text-gray-300";
-                                                textClass = "text-gray-300";
-                                                icon = <span className="text-xs font-semibold">{idx + 1}</span>;
+                                            if (isRejectedAtThisStep) {
+                                                circleClass = "bg-red-50 border-red-200 text-red-500 shadow-lg shadow-red-100 scale-110";
+                                                textClass = "text-red-500 font-medium";
+                                                icon = <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>;
+                                            } else if (app.status === 'REJECTED') {
+                                                // If this step was BEFORE the rejection, it should be green?
+                                                // We need to compare indices
+                                                const statusOrder = ['NEW', 'SCREENED', 'INTERVIEW', 'OFFER', 'HIRED'];
+                                                const stepIndex = statusOrder.indexOf(step.id);
+                                                const rejectedIndex = statusOrder.indexOf(app.rejected_stage);
+
+                                                if (stepIndex < rejectedIndex) {
+                                                    // Completed before rejection
+                                                    circleClass = "bg-[#22C55E] border-[#22C55E] text-white shadow-lg shadow-green-200";
+                                                    textClass = "text-[#22C55E] font-medium";
+                                                    icon = <Check size={16} strokeWidth={3} />;
+                                                    connectorColor = "bg-[#22C55E] text-[#22C55E]";
+                                                } else {
+                                                    // Future steps after rejection
+                                                    circleClass = "bg-gray-50 border-gray-200 text-gray-300";
+                                                    textClass = "text-gray-300";
+                                                    icon = <span className="text-xs font-semibold">{idx + 1}</span>;
+                                                }
+
                                             } else if (status === 'completed') {
                                                 circleClass = "bg-[#22C55E] border-[#22C55E] text-white shadow-lg shadow-green-200 scale-100";
                                                 textClass = "text-[#22C55E] font-medium";
                                                 icon = <Check size={16} strokeWidth={3} />;
+                                                connectorColor = "bg-[#22C55E] text-[#22C55E]"; // Green connector
                                             } else if (status === 'current') {
                                                 circleClass = "bg-indigo-600 border-indigo-600 text-white shadow-lg shadow-indigo-200 scale-110";
                                                 textClass = "text-indigo-700 font-bold";
                                                 icon = <Clock size={16} />;
+                                                connectorColor = "bg-gray-200 text-gray-300"; // Next one is pending
                                             } else if (status === 'rejected_view') {
+                                                // Fallback if rejected_stage is missing
                                                 circleClass = "bg-gray-50 border-gray-200 text-gray-300";
                                                 textClass = "text-gray-400";
+                                            } else {
+                                                // Pending
+                                                connectorColor = "bg-gray-100 text-gray-200";
                                             }
 
                                             return (
-                                                <div key={step.id} className="flex md:flex-col items-center gap-4 md:gap-4 bg-white md:bg-transparent p-2 md:p-0 rounded-lg">
-                                                    <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 z-10 ${circleClass}`}>
-                                                        {icon}
+                                                <React.Fragment key={step.id}>
+                                                    <div className="flex md:flex-col items-center gap-4 md:gap-4 lg:gap-4 bg-white md:bg-transparent p-2 md:p-0 rounded-lg z-10 transition-transform duration-300 hover:scale-110">
+                                                        <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 ${circleClass}`}>
+                                                            {icon}
+                                                        </div>
+                                                        <span className={`text-sm ${textClass} transition-colors duration-300 whitespace-nowrap`}>{step.label}</span>
                                                     </div>
-                                                    <span className={`text-sm ${textClass} transition-colors duration-300`}>{step.label}</span>
-                                                </div>
+
+                                                    {/* Arrow Connector */}
+                                                    {idx < steps.length - 1 && (
+                                                        <div className="hidden md:flex flex-1 items-center px-2 w-full">
+                                                            <div className={`h-[2px] w-full relative rounded-full ${connectorColor.includes('bg-[#22C55E]') ? 'bg-green-500' : 'bg-gray-100'}`}>
+                                                                <ChevronRight size={16} className={`absolute right-0 -top-[7px] ${connectorColor.includes('text-[#22C55E]') ? 'text-green-500' : 'text-gray-200'}`} />
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                </React.Fragment>
                                             );
                                         })}
                                     </div>
@@ -193,6 +246,12 @@ const GoThroughPage = () => {
                     </div>
                 )}
             </div>
+
+            <CandidateDetailModal
+                isOpen={isDetailModalOpen}
+                onClose={() => setIsDetailModalOpen(false)}
+                candidate={selectedCandidate}
+            />
         </div>
     );
 };

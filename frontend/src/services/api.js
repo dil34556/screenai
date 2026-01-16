@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE_URL = 'http://127.0.0.1:8000/api/v1';
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000/api/v1';
 
 const api = axios.create({
     baseURL: API_BASE_URL,
@@ -16,7 +16,14 @@ api.interceptors.request.use((config) => {
         if (userStr) {
             const user = JSON.parse(userStr);
             if (user && user.id) {
-                config.headers['X-Employee-Id'] = user.id;
+                if (user && user.id) {
+                    config.headers['X-Employee-Id'] = user.id;
+                }
+            }
+
+            const token = localStorage.getItem('token');
+            if (token) {
+                config.headers['Authorization'] = `Token ${token}`;
             }
         }
     } catch (e) {
@@ -24,6 +31,25 @@ api.interceptors.request.use((config) => {
     }
     return config;
 });
+
+// Add Response Interceptor to handle 401 Unauthorized
+api.interceptors.response.use(
+    (response) => response,
+    (error) => {
+        if (error.response && error.response.status === 401) {
+            // Token invalid or expired
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            localStorage.removeItem('admin_user');
+
+            // Only redirect if not already on login/register pages
+            if (!window.location.pathname.includes('/login') && !window.location.pathname.includes('/register') && !window.location.pathname.includes('/jobs')) {
+                window.location.href = '/login';
+            }
+        }
+        return Promise.reject(error);
+    }
+);
 
 export const getJobs = async (params = {}) => {
     // Convert object to query string

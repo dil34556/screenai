@@ -26,6 +26,7 @@ class Application(models.Model):
     
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='NEW')
     rejection_reason = models.TextField(blank=True, null=True, help_text="Reason for rejection if status is REJECTED")
+    rejected_stage = models.CharField(max_length=20, blank=True, null=True, help_text="The stage at which the candidate was rejected")
     
     # Source & Metadata
     # Source & Metadata

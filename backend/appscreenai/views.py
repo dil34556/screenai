@@ -1,136 +1,143 @@
-from django.http import JsonResponse
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.response import Response
+from rest_framework import status
+from django.db import IntegrityError
+import json
+from .models import Employee, Applicant
+from django.contrib.auth.models import User
+from rest_framework.authtoken.models import Token
 from django.db import IntegrityError
 from django.views.decorators.csrf import csrf_exempt
 import json
 from .models import Employee, Applicant
+from django.contrib.auth.models import User
+from rest_framework.authtoken.models import Token
 
 # ================= EMPLOYEE APIs ====================
-@csrf_exempt
+@api_view(['POST'])
+@permission_classes([AllowAny])
 def create_employee_api(request):
-    if request.method == "POST":
-        try:
-            data = json.loads(request.body.decode("utf-8"))
-        except:
-            return JsonResponse({"error": "Invalid JSON"}, status=400)
+    try:
+        data = request.data # DRF handles JSON parsing
+    except:
+        return Response({"error": "Invalid JSON"}, status=status.HTTP_400_BAD_REQUEST)
 
+    email = data.get("email")
+    password = data.get("password")
+
+    if not email or not password:
+        return Response({"error": "email and password are required"}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        employee = Employee.objects.create(email=email, password=password)
+    except IntegrityError:
+        return Response({"error": "Employee with this email already exists"}, status=status.HTTP_400_BAD_REQUEST)
+    except Exception as e:
+        return Response({"error": f"An error occurred: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    return Response({
+        "message": "Employee created successfully",
+        "employee": {
+            "id": employee.id,
+            "email": employee.email,
+            "password": employee.password
+        }
+    }, status=status.HTTP_201_CREATED)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def view_employees_api(request):
+    # Filter out admins so they don't appear in the list
+    employees = Employee.objects.filter(is_admin=False)
+    data = [
+        {
+            "id": emp.id,
+            "email": emp.email,
+            "password": emp.password
+        }
+        for emp in employees
+    ]
+    return Response({"employees": data}, status=status.HTTP_200_OK)
+
+
+@csrf_exempt
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def login_employee_api(request):
+    try:
+        data = request.data
         email = data.get("email")
         password = data.get("password")
 
         if not email or not password:
-            return JsonResponse({"error": "email and password are required"}, status=400)
+            return Response(
+                {"error": "Email and password are required"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
         try:
-            employee = Employee.objects.create(email=email, password=password)
-        except IntegrityError:
-            return JsonResponse({"error": "Employee with this email already exists"}, status=400)
-        except Exception as e:
-            return JsonResponse({"error": f"An error occurred: {str(e)}"}, status=500)
+            employee = Employee.objects.get(
+                email=email,
+                password=password  # ⚠️ plain-text only for now
+            )
 
-        return JsonResponse({
-            "message": "Employee created successfully",
-            "employee": {
-                "id": employee.id,
-                "email": employee.email,
-                "password": employee.password
-            }
-        }, status=201)
+            # Get or Create Django User for Token Auth
+            user, _ = User.objects.get_or_create(username=email, defaults={'email': email})
+            token, _ = Token.objects.get_or_create(user=user)
 
-    return JsonResponse({"error": "Only POST method allowed"}, status=405)
+            return Response({
+                "message": "Login successful",
+                "token": token.key,
+                "user": {
+                    "id": employee.id,
+                    "email": employee.email,
+                    "is_admin": getattr(employee, "is_admin", False)
+                }
+            }, status=status.HTTP_200_OK)
 
+        except Employee.DoesNotExist:
+            return Response(
+                {"error": "Invalid email or password"},
+                status=status.HTTP_401_UNAUTHORIZED
+            )
 
-def view_employees_api(request):
-    if request.method == "GET":
-        # Filter out admins so they don't appear in the list
-        employees = Employee.objects.filter(is_admin=False)
-        data = [
-            {
-                "id": emp.id,
-                "email": emp.email,
-                "password": emp.password
-            }
-            for emp in employees
-        ]
-        return JsonResponse({"employees": data}, status=200)
-
-    return JsonResponse({"error": "Only GET method allowed"}, status=405)
+    except Exception as e:
+        return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 @csrf_exempt
-def login_employee_api(request):
-    if request.method == "POST":
-        try:
-            data = json.loads(request.body.decode("utf-8"))
-            email = data.get("email")
-            password = data.get("password")
-
-            if not email or not password:
-                return JsonResponse(
-                    {"error": "Email and password are required"},
-                    status=400
-                )
-
-            try:
-                employee = Employee.objects.get(
-                    email=email,
-                    password=password  # ⚠️ plain-text only for now
-                )
-
-                return JsonResponse({
-                    "message": "Login successful",
-                    "user": {
-                        "id": employee.id,
-                        "email": employee.email,
-                        "is_admin": getattr(employee, "is_admin", False)
-                    }
-                }, status=200)
-
-            except Employee.DoesNotExist:
-                return JsonResponse(
-                    {"error": "Invalid email or password"},
-                    status=401
-                )
-
-        except Exception as e:
-            return JsonResponse({"error": str(e)}, status=500)
-
-    return JsonResponse(
-        {"error": "Only POST method allowed"},
-        status=405
-    )
-
-
-@csrf_exempt
+@api_view(['DELETE'])
+@permission_classes([IsAuthenticated])
 def delete_employee_api(request, pk):
-    if request.method == "DELETE":
-        try:
-            employee = Employee.objects.get(pk=pk)
-            employee.delete()
-            return JsonResponse({"message": "Employee deleted successfully"}, status=200)
-        except Employee.DoesNotExist:
-            return JsonResponse({"error": "Employee not found"}, status=404)
-        except Exception as e:
-            return JsonResponse({"error": str(e)}, status=500)
-    return JsonResponse({"error": "Only DELETE method allowed"}, status=405)
+    try:
+        employee = Employee.objects.get(pk=pk)
+        employee.delete()
+        return Response({"message": "Employee deleted successfully"}, status=status.HTTP_200_OK)
+    except Employee.DoesNotExist:
+        return Response({"error": "Employee not found"}, status=status.HTTP_404_NOT_FOUND)
+    except Exception as e:
+        return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
-@csrf_exempt
+@api_view(['POST', 'PUT'])
+@permission_classes([IsAuthenticated])
 def update_employee_password_api(request, pk):
-    if request.method == "POST" or request.method == "PUT":
-        try:
-            data = json.loads(request.body.decode("utf-8"))
-            # Frontend sends "new_password", so checking both for compatibility
-            new_password = data.get("new_password") or data.get("password")
-            
-            if not new_password:
-                return JsonResponse({"error": "Password required"}, status=400)
+    try:
+        data = request.data
+        # Frontend sends "new_password", so checking both for compatibility
+        new_password = data.get("new_password") or data.get("password")
+        
+        if not new_password:
+            return Response({"error": "Password required"}, status=status.HTTP_400_BAD_REQUEST)
 
-            employee = Employee.objects.get(pk=pk)
-            employee.password = new_password
-            employee.save()
-            return JsonResponse({"message": "Password updated successfully"}, status=200)
+        employee = Employee.objects.get(pk=pk)
+        employee.password = new_password
+        employee.save()
+        return Response({"message": "Password updated successfully"}, status=status.HTTP_200_OK)
 
-        except Employee.DoesNotExist:
-            return JsonResponse({"error": "Employee not found"}, status=404)
-        except Exception as e:
-            return JsonResponse({"error": str(e)}, status=500)
-    return JsonResponse({"error": "Only POST or PUT method allowed"}, status=405)
+    except Employee.DoesNotExist:
+        return Response({"error": "Employee not found"}, status=status.HTTP_404_NOT_FOUND)
+    except Exception as e:
+        return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

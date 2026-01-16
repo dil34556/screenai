@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { getJobDetail, getApplicationsForJob, updateApplicationStatus, updateApplication, reparseApplication, updateJob } from '../services/api';
+import api, { getJobDetail, getApplicationsForJob, updateApplicationStatus, updateApplication, reparseApplication, updateJob } from '../services/api';
 import {
     Search, Filter, ChevronDown,
     Linkedin, FileText, ArrowLeft,
@@ -185,8 +185,8 @@ const JobDetailsPage = () => {
         if (app && app.resume && app.resume.toLowerCase().endsWith('.docx')) {
             setDocxContent("Loading preview...");
             try {
-                const response = await fetch(app.resume);
-                const arrayBuffer = await response.arrayBuffer();
+                const response = await api.get(app.resume, { responseType: 'arraybuffer' });
+                const arrayBuffer = response.data;
                 const result = await mammoth.convertToHtml({ arrayBuffer });
                 setDocxContent(result.value);
             } catch (err) {

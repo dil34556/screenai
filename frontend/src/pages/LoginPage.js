@@ -19,6 +19,9 @@ const LoginPage = () => {
         try {
             const response = await login({ email, password });
             localStorage.setItem('user', JSON.stringify(response.user));
+            if (response.token) {
+                localStorage.setItem('token', response.token);
+            }
             setShowSplash(true);
             setTimeout(() => {
                 navigate('/home');
